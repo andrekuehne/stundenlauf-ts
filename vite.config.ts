@@ -19,9 +19,10 @@ const appVersion = readGitValue(
   "git describe --tags --always --dirty",
   appCommit,
 );
+const basePath = process.env.VITE_BASE_PATH ?? "/stundenlauf-ts/";
 
 export default defineConfig({
-  base: "/stundenlauf/",
+  base: basePath,
   plugins: [
     react(),
     VitePWA({
@@ -33,8 +34,8 @@ export default defineConfig({
         description:
           "Auswertung und Verwaltung von Stundenlauf-Rennserien - lokal im Browser, ohne Server.",
         lang: "de",
-        start_url: "/stundenlauf/",
-        scope: "/stundenlauf/",
+        start_url: basePath,
+        scope: basePath,
         display: "standalone",
         orientation: "any",
         theme_color: "#1565C0",
