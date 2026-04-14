@@ -90,6 +90,12 @@ interface PendingImportState {
   session: ImportSession;
 }
 
+interface RouteSummary {
+  auto: number;
+  review: number;
+  new_identity: number;
+}
+
 class LegacyAdapterError extends Error {
   readonly code: string;
   readonly details: Record<string, unknown>;
@@ -290,6 +296,31 @@ function uniqueAlias(baseYear: number, used: Set<number>): number {
 
 function sortTimeline(items: TimelineItem[]): TimelineItem[] {
   return items.sort((a, b) => timelineTimestamp(b).localeCompare(timelineTimestamp(a)));
+}
+
+function debugLegacyImport(message: string, payload?: Record<string, unknown>): void {
+  // Intentionally enabled in production builds while diagnosing import routing issues.
+  if (payload) {
+    console.info(`[legacy-import-debug] ${message}`, payload);
+    return;
+  }
+  console.info(`[legacy-import-debug] ${message}`);
+}
+
+function summarizeSessionRoutes(session: ImportSession): RouteSummary {
+  const summary: RouteSummary = {
+    auto: 0,
+    review: 0,
+    new_identity: 0,
+  };
+  for (const section of session.section_results) {
+    for (const entry of section.staged_entries) {
+      if (entry.review_routing === "auto") summary.auto += 1;
+      else if (entry.review_routing === "review") summary.review += 1;
+      else summary.new_identity += 1;
+    }
+  }
+  return summary;
 }
 
 function timelineTimestamp(item: TimelineItem): string {
@@ -656,10 +687,16 @@ export class LegacyApiRuntime {
   }
 
   private setMatchingConfig(payload: Record<string, unknown>): Record<string, unknown> {
+    const previous = this.matchingConfigPayload();
     this.matchingConfig = sanitizeMatchingConfigPatch(
       payload as Partial<MatchingConfig>,
       this.matchingConfig,
     );
+    debugLegacyImport("matching config updated", {
+      previous,
+      requested: payload,
+      effective: this.matchingConfigPayload(),
+    });
     writeStorageJson(MATCHING_STORAGE_KEY, this.matchingConfigPayload());
     return this.matchingConfigPayload();
   }
@@ -1574,16 +1611,44 @@ export class LegacyApiRuntime {
     const file = this.resolvePickedFile(asString(payload.file_path).trim());
     const sourceType = asString(payload.source_type) === "couples" ? "couples" : "singles";
     const raceNo = asInteger(payload.race_no);
+    debugLegacyImport("import_race started", {
+      season_id: snapshot.descriptor.season_id,
+      file_name: file.name,
+      source_type: sourceType,
+      race_no: raceNo,
+      matching_config: this.matchingConfigPayload(),
+    });
 
     let session = await startImport(file, snapshot.seasonState, {
       sourceType,
       raceNoOverride: raceNo ?? undefined,
     });
+    debugLegacyImport("startImport completed", {
+      session_id: session.session_id,
+      parsed_rows: {
+        singles: session.parsed.singles_sections.reduce((sum, s) => sum + s.rows.length, 0),
+        couples: session.parsed.couples_sections.reduce((sum, s) => sum + s.rows.length, 0),
+      },
+      season_people: snapshot.seasonState.persons.size,
+      season_teams: snapshot.seasonState.teams.size,
+      effective_races: snapshot.seasonState.race_events.size,
+    });
     session = await runMatching(session, this.matchingConfig);
+    debugLegacyImport("runMatching completed", {
+      session_id: session.session_id,
+      phase: session.phase,
+      routes: summarizeSessionRoutes(session),
+      report: session.report,
+      review_queue_count: getReviewQueue(session).length,
+    });
 
     const repo = await this.repository();
     if (session.phase === "committing") {
       const events = finalizeImport(session, { startSeq: snapshot.eventLog.length });
+      debugLegacyImport("finalizing import immediately", {
+        event_count: events.length,
+        reason: "no pending review items",
+      });
       await repo.appendEvents(snapshot.descriptor.season_id, events);
       this.pendingImport = null;
       return {
@@ -1596,6 +1661,9 @@ export class LegacyApiRuntime {
       seasonId: snapshot.descriptor.season_id,
       session,
     };
+    debugLegacyImport("import waiting for review decisions", {
+      review_queue_count: getReviewQueue(session).length,
+    });
     return {
       review_queue_count: getReviewQueue(session).length,
       imported: true,
