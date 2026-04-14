@@ -107,15 +107,15 @@ The domain model is team-centric (a single runner is a solo team), but the singl
 - [x] Tests added/updated and passing (Vitest)
 - [x] Types are strict (no `any` escapes without justification)
 - [x] Docs updated
-- [x] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`
-- [x] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md` where applicable
+- [x] Entry added to `docs/ACCOMPLISHMENTS.md`
+- [x] Requirement/milestone status updated in `PROJECT_PLAN.md` where applicable
 
 ## Links
 
 - Related feature docs:
-  - `packages/stundenlauf-ts/docs/features/F-TS03-fuzzy-matching-engine.md`
-  - `packages/stundenlauf-ts/docs/features/F-TS05-import-orchestration-workflow.md`
+  - `docs/features/F-TS03-fuzzy-matching-engine.md`
+  - `docs/features/F-TS05-import-orchestration-workflow.md`
 - Triggering bug area:
-  - `packages/stundenlauf-ts/src/matching/workflow.ts`
-  - `packages/stundenlauf-ts/src/matching/resolve.ts`
-  - `packages/stundenlauf-ts/src/import/review.ts`
+  - `src/matching/workflow.ts`
+  - `src/matching/resolve.ts`
+  - `src/import/review.ts`

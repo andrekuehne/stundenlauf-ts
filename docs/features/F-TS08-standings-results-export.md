@@ -570,8 +570,8 @@ These pure functions port with minimal adaptation:
 - [x] Projection layer tested for both flat and Laufübersicht layouts.
 - [x] No UI framework imports in any export module.
 - [x] All tests pass (Vitest).
-- [x] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`.
-- [x] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md`.
+- [x] Entry added to `docs/ACCOMPLISHMENTS.md`.
+- [x] Requirement/milestone status updated in `PROJECT_PLAN.md`.
 
 ## Links
 

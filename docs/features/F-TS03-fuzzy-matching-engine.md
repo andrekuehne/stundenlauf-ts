@@ -656,8 +656,8 @@ All exports are pure functions with no side effects and no framework dependencie
 - [ ] Types are strict (no `any` escapes without justification)
 - [ ] Cross-language scoring parity verified with fixture tests
 - [ ] Docs updated
-- [ ] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`
-- [ ] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md`
+- [ ] Entry added to `docs/ACCOMPLISHMENTS.md`
+- [ ] Requirement/milestone status updated in `PROJECT_PLAN.md`
 
 ## Links
 

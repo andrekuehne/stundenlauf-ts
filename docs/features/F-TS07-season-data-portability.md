@@ -384,7 +384,7 @@ All exports are pure async functions (except `triggerDownload` which touches the
 4. **Implement `manifest.ts`** — `buildManifest(...)` to construct manifest from season metadata + checksum; `validateManifest(raw: unknown)` with structural + type + version checks.
 5. **Implement `export-season.ts`** — `exportSeason(seasonId)`: load events from storage → serialize → checksum → build manifest → create ZIP → trigger download.
 6. **Implement `import-season.ts`** — `importSeason(file, options?)`: unzip → validate structure → validate manifest → verify checksum → parse event log → validate event log header → check conflicts → write to IndexedDB.
-7. **Add JSZip dependency** — `npm install jszip` (or `fflate` if bundle size is a concern).
+7. **Add JSZip dependency** — `pnpm add jszip` (or `fflate` if bundle size is a concern).
 8. **Write unit tests** for manifest building and validation.
 9. **Write unit tests** for SHA-256 computation and verification.
 10. **Write unit tests** for filename sanitization.
@@ -447,8 +447,8 @@ All exports are pure async functions (except `triggerDownload` which touches the
 - [x] Tests added/updated and passing (Vitest)
 - [x] Types are strict (no `any` escapes without justification)
 - [x] Docs updated
-- [x] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`
-- [x] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md`
+- [x] Entry added to `docs/ACCOMPLISHMENTS.md`
+- [x] Requirement/milestone status updated in `PROJECT_PLAN.md`
 
 ## Links
 

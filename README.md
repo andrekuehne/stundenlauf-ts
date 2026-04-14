@@ -9,68 +9,67 @@ See `PROJECT_PLAN.md` for the full vision, requirements, and milestone roadmap.
 | Tool | Version | Notes |
 |---|---|---|
 | Node.js | LTS (v22+) | Only runtime dependency |
-| npm | ships with Node | Package manager |
+| pnpm | via Corepack | Package manager |
 
 No other global tools required. All dev dependencies (TypeScript, Vite, ESLint, Vitest, Prettier) are project-local in `node_modules/`.
 
 ## Environment Setup
 
 ```bash
-cd packages/stundenlauf-ts
-npm install
+pnpm install
 ```
 
 Verify everything works:
 
 ```bash
-npm run typecheck   # TypeScript strict-mode check (no emit)
-npm test            # Vitest test suite
-npm run build       # Vite production build → dist/
+pnpm run typecheck   # TypeScript strict-mode check (no emit)
+pnpm test            # Vitest test suite
+pnpm run build       # Vite production build → dist/
 ```
 
 ## Development
 
 ```bash
-npm run dev         # Vite dev server with HMR (http://localhost:5173)
+pnpm run dev         # Vite dev server with HMR (http://localhost:5173)
 ```
 
 ## Available Scripts
 
 | Script | Purpose |
 |---|---|
-| `npm run dev` | Start Vite dev server with hot module replacement |
-| `npm run build` | Typecheck + production build to `dist/` |
-| `npm run preview` | Serve the production build locally |
-| `npm test` | Run Vitest test suite (single run) |
-| `npm run test:watch` | Run Vitest in watch mode |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run typecheck` | TypeScript type checking (`tsc --noEmit`) |
-| `npm run lint` | ESLint check on `src/` and `tests/` |
-| `npm run lint:fix` | ESLint auto-fix |
-| `npm run format` | Prettier format all source files |
-| `npm run format:check` | Prettier check (CI-friendly, no writes) |
-| `npm run inspect:excel-fixtures` | Plain-text parse report for local `.xlsx` under `tests/data/xlsx/` (see below) |
+| `pnpm run dev` | Start Vite dev server with hot module replacement |
+| `pnpm run build` | Typecheck + production build to `dist/` |
+| `pnpm run preview` | Serve the production build locally |
+| `pnpm test` | Run Vitest test suite (single run) |
+| `pnpm run test:watch` | Run Vitest in watch mode |
+| `pnpm run test:coverage` | Run tests with coverage report |
+| `pnpm run typecheck` | TypeScript type checking (`tsc --noEmit`) |
+| `pnpm run lint` | ESLint check on `src/` and `tests/` |
+| `pnpm run lint:fix` | ESLint auto-fix |
+| `pnpm run format` | Prettier format all source files |
+| `pnpm run format:check` | Prettier check (CI-friendly, no writes) |
+| `pnpm run inspect:excel-fixtures` | Plain-text parse report for local `.xlsx` under `tests/data/xlsx/` (see below) |
 
 ### Manual Excel parse dump (local fixtures)
 
 Place organizer workbooks under `tests/data/xlsx/` in any subdirectory (recursive). Files are not committed: the repo root `.gitignore` ignores `*.xlsx`.
 
-From `packages/stundenlauf-ts/`:
+From the repository root:
 
 ```bash
-npm run inspect:excel-fixtures
+pnpm run inspect:excel-fixtures
 ```
 
 Capture output to a file (still run from the package directory):
 
 ```bash
-npm run inspect:excel-fixtures > excel-dump.txt
+pnpm run inspect:excel-fixtures > excel-dump.txt
 ```
 
 The script prints **ASCII separators** so the file stays readable if an editor assumes a legacy Windows code page. Names and clubs from the sheet are still UTF-8; open `excel-dump.txt` as **UTF-8** in your editor (VS Code does this by default). On Windows PowerShell, you can also use:
 
 ```powershell
-npm run inspect:excel-fixtures | Out-File -Encoding utf8 excel-dump.txt
+pnpm run inspect:excel-fixtures | Out-File -Encoding utf8 excel-dump.txt
 ```
 
 Optional Vitest integration tests for the same tree are in `tests/ingestion/local-excel-examples.test.ts` (skipped when no matching files are present).
@@ -89,7 +88,7 @@ Optional Vitest integration tests for the same tree are in `tests/ingestion/loca
 ## Folder Structure
 
 ```
-packages/stundenlauf-ts/
+./
 ├── docs/                              # Feature plans and accomplishments
 │   ├── ACCOMPLISHMENTS.md
 │   └── features/                      # Per-feature design docs (F-TS01..F-TS09)

@@ -2,8 +2,8 @@
  * Manual inspection: parse every .xlsx under tests/data/xlsx/ (recursive) and print a plaintext report.
  *
  * Run from package root:
- *   npm run inspect:excel-fixtures
- *   npm run inspect:excel-fixtures > excel-dump.txt
+ *   pnpm run inspect:excel-fixtures
+ *   pnpm run inspect:excel-fixtures > excel-dump.txt
  *
  * See README.md ("Manual Excel parse dump") and F-TS02 Test Plan for details.
  *

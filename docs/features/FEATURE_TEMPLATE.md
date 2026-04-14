@@ -77,8 +77,8 @@ What user or technical problem are we solving?
 - [ ] Tests added/updated and passing (Vitest)
 - [ ] Types are strict (no `any` escapes without justification)
 - [ ] Docs updated
-- [ ] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`
-- [ ] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md`
+- [ ] Entry added to `docs/ACCOMPLISHMENTS.md`
+- [ ] Requirement/milestone status updated in `PROJECT_PLAN.md`
 
 ## Links
 

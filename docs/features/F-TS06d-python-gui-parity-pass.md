@@ -11,7 +11,7 @@
 
 ## Goal
 
-Align the TS production GUI in `packages/stundenlauf-ts` with the hand-tuned legacy Python frontend behavior and layout from `frontend/` to reduce usability drift early.
+Align the TS production GUI in `./` with the hand-tuned legacy Python frontend behavior and layout from `frontend/` to reduce usability drift early.
 
 ## Source references
 
@@ -21,13 +21,13 @@ Align the TS production GUI in `packages/stundenlauf-ts` with the hand-tuned leg
   - `frontend/strings.js`
   - `frontend/styles.css`
 - TS implementation anchors:
-  - `packages/stundenlauf-ts/src/App.tsx`
-  - `packages/stundenlauf-ts/src/theme.css`
-  - `packages/stundenlauf-ts/src/strings.ts`
-  - `packages/stundenlauf-ts/src/components/standings/StandingsView.tsx`
-  - `packages/stundenlauf-ts/src/components/import/ImportView.tsx`
-  - `packages/stundenlauf-ts/src/components/season/SeasonEntryView.tsx`
-  - `packages/stundenlauf-ts/src/components/history/HistoryView.tsx`
+  - `src/App.tsx`
+  - `src/theme.css`
+  - `src/strings.ts`
+  - `src/components/standings/StandingsView.tsx`
+  - `src/components/import/ImportView.tsx`
+  - `src/components/season/SeasonEntryView.tsx`
+  - `src/components/history/HistoryView.tsx`
 
 ## Screen-by-screen parity checklist
 

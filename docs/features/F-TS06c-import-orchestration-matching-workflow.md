@@ -11,7 +11,7 @@
 
 ## Goal
 
-Implement the production GUI for import orchestration and human-in-the-loop matching review in a focused slice that maps directly to the existing dev prototype (`npm run dev` + `?harness=import-season`).
+Implement the production GUI for import orchestration and human-in-the-loop matching review in a focused slice that maps directly to the existing dev prototype (`pnpm run dev` + `?harness=import-season`).
 
 ## Why this is its own slice
 

@@ -94,7 +94,7 @@ Deliver the UI foundation layer: app shell, typed German copy/format helpers, an
   - tab rendering and switching
   - status bar state rendering
   - confirm modal keyboard/click interactions
-- Manual dev check: `npm run dev` renders shell without harness query params.
+- Manual dev check: `pnpm run dev` renders shell without harness query params.
 
 ## Definition of done
 

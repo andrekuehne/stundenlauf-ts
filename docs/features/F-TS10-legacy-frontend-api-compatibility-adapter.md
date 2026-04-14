@@ -386,8 +386,8 @@ That is preferable to pretending the event-sourced timeline is the old `matching
 - [ ] Tests added/updated and passing (Vitest)
 - [ ] Types are strict (no `any` escapes without justification)
 - [ ] Docs updated
-- [ ] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`
-- [ ] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md`
+- [ ] Entry added to `docs/ACCOMPLISHMENTS.md`
+- [ ] Requirement/milestone status updated in `PROJECT_PLAN.md`
 
 ## Links
 
@@ -396,6 +396,6 @@ That is preferable to pretending the event-sourced timeline is the old `matching
   - `backend/ui_api/workspace.py`
   - `backend/ui_api/commands.py`
   - `backend/ui_api/queries.py`
-  - `packages/stundenlauf-ts/public/legacy/app.js`
-  - `packages/stundenlauf-ts/docs/features/F-TS05-import-orchestration-workflow.md`
-  - `packages/stundenlauf-ts/docs/features/F-TS07-season-data-portability.md`
+  - `public/legacy/app.js`
+  - `docs/features/F-TS05-import-orchestration-workflow.md`
+  - `docs/features/F-TS07-season-data-portability.md`

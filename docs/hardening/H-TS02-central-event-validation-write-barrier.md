@@ -107,16 +107,16 @@ H-TS01 removed a major producer-side source of invalid team references in matchi
 - [x] Tests added/updated and passing (Vitest)
 - [x] Types are strict (no `any` escapes without justification)
 - [x] Docs updated
-- [x] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`
-- [x] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md` where applicable
+- [x] Entry added to `docs/ACCOMPLISHMENTS.md`
+- [x] Requirement/milestone status updated in `PROJECT_PLAN.md` where applicable
 
 ## Links
 
 - Existing validator:
-  - `packages/stundenlauf-ts/src/domain/validation.ts`
+  - `src/domain/validation.ts`
 - Current append path:
-  - `packages/stundenlauf-ts/src/storage/event-store.ts`
+  - `src/storage/event-store.ts`
 - New storage-boundary regression coverage:
-  - `packages/stundenlauf-ts/tests/storage/event-store.test.ts`
+  - `tests/storage/event-store.test.ts`
 - Related hardening:
-  - `packages/stundenlauf-ts/docs/hardening/H-TS01-team-first-matching-identity-unification.md`
+  - `docs/hardening/H-TS01-team-first-matching-identity-unification.md`

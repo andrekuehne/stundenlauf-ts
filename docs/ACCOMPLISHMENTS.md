@@ -187,8 +187,8 @@ Copy this block for each notable accomplishment:
 
 ### 2026-04-12 - Project plan scaffold and F-TS01 feature spec created
 - Requirement/Milestone: [M-TS1]
-- What shipped: Created `packages/stundenlauf-ts/` planning directory with project plan, feature template, accomplishments log, and detailed F-TS01 event-sourced architecture feature plan derived from analysis of the Python backend.
-- Evidence: `packages/stundenlauf-ts/PROJECT_PLAN.md`, `packages/stundenlauf-ts/docs/features/FEATURE_TEMPLATE.md`, `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`, `packages/stundenlauf-ts/docs/features/F-TS01-event-sourced-command-architecture.md`
+- What shipped: Created the project planning directory with project plan, feature template, accomplishments log, and detailed F-TS01 event-sourced architecture feature plan derived from analysis of the Python backend.
+- Evidence: `PROJECT_PLAN.md`, `docs/features/FEATURE_TEMPLATE.md`, `docs/ACCOMPLISHMENTS.md`, `docs/features/F-TS01-event-sourced-command-architecture.md`
 - Impact: Establishes the planning foundation and core architectural direction for the TS port.
 - Follow-up: Implement F-TS01 domain types and command/event definitions in TypeScript.
 
@@ -215,7 +215,7 @@ Copy this block for each notable accomplishment:
 
 ### 2026-04-13 - Optional local Excel fixture tests (tests/data/xlsx)
 - Requirement/Milestone: [M-TS2], [F-TS02]
-- What shipped: Vitest suites and `npm run inspect:excel-fixtures` scan `tests/data/xlsx/` recursively for `.xlsx` files when present (skipped in CI / clean checkouts). Couples fixtures match production `detectSourceType` (“paare” in basename); singles are non-paare basenames matching `MW[_\s]` (covers `Ergebnisliste MW_1.xlsx` and “MW Lauf” style names). `parseWorkbook` receives relative paths from the xlsx root. Shared discovery in `tests/ingestion/local-xlsx-fixture-discovery.ts`; tracked `tests/data/xlsx/.gitkeep`; `@types/node` for fs in tests; fixtures stay untracked via root `*.xlsx` gitignore.
+- What shipped: Vitest suites and `pnpm run inspect:excel-fixtures` scan `tests/data/xlsx/` recursively for `.xlsx` files when present (skipped in CI / clean checkouts). Couples fixtures match production `detectSourceType` (“paare” in basename); singles are non-paare basenames matching `MW[_\s]` (covers `Ergebnisliste MW_1.xlsx` and “MW Lauf” style names). `parseWorkbook` receives relative paths from the xlsx root. Shared discovery in `tests/ingestion/local-xlsx-fixture-discovery.ts`; tracked `tests/data/xlsx/.gitkeep`; `@types/node` for fs in tests; fixtures stay untracked via root `*.xlsx` gitignore.
 - Evidence: `tests/ingestion/local-excel-examples.test.ts`, `tests/ingestion/local-xlsx-fixture-discovery.ts`, `tests/data/xlsx/.gitkeep`, `scripts/dump-local-excel-fixtures.ts`, `package.json` (devDependency `@types/node`)
 - Impact: Local regression checks against organizer exports without bloating the repo or breaking automated runs.
 - Follow-up: None required; optionally add golden row-count assertions per known file if desired.

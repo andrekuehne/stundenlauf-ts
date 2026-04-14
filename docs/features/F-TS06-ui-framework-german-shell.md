@@ -18,7 +18,7 @@ This umbrella keeps the architectural through-line and delegates implementation 
 
 ### F-TS06a — Foundation: app shell + German strings
 
-File: `packages/stundenlauf-ts/docs/features/F-TS06a-ui-shell-layout-and-strings.md`
+File: `docs/features/F-TS06a-ui-shell-layout-and-strings.md`
 
 Focus:
 - Framework baseline (React + Zustand + testing harness setup assumptions).
@@ -29,7 +29,7 @@ Focus:
 
 ### F-TS06b — Season, standings, history workflows
 
-File: `packages/stundenlauf-ts/docs/features/F-TS06b-season-standings-history-workflows.md`
+File: `docs/features/F-TS06b-season-standings-history-workflows.md`
 
 Focus:
 - Saison wechseln / season lifecycle screen.
@@ -40,7 +40,7 @@ Focus:
 
 ### F-TS06c — Import orchestration + matching review GUI
 
-File: `packages/stundenlauf-ts/docs/features/F-TS06c-import-orchestration-matching-workflow.md`
+File: `docs/features/F-TS06c-import-orchestration-matching-workflow.md`
 
 Focus:
 - Lauf import flow (`startImport` → `runMatching` → review queue → `resolveReviewEntry` → `finalizeImport`).
@@ -50,7 +50,7 @@ Focus:
 
 ### F-TS06d — Python GUI parity pass (layout + workflow)
 
-File: `packages/stundenlauf-ts/docs/features/F-TS06d-python-gui-parity-pass.md`
+File: `docs/features/F-TS06d-python-gui-parity-pass.md`
 
 Focus:
 - Cross-check production TS GUI behavior against `frontend/` legacy behavior.
@@ -59,7 +59,7 @@ Focus:
 
 ### F-TS06e — Legacy layout parity page (dev-only)
 
-File: `packages/stundenlauf-ts/docs/features/F-TS06e-legacy-layout-parity-page-dev.md`
+File: `docs/features/F-TS06e-legacy-layout-parity-page-dev.md`
 
 Focus:
 - Add a dedicated dev-only parity page (`?harness=legacy-layout`) separate from production navigation.

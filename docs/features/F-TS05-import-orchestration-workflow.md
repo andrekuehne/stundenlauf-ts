@@ -449,8 +449,8 @@ All exports are pure functions (except `startImport` which is async due to file 
 A minimal, dev-only interactive harness is available for manual MW1 → MW2 validation
 before the full GUI workflow.
 
-- **Entry:** run `npm run dev` and open `/?harness=import`.
-- **Season walkthrough harness:** run `npm run dev` and open `/?harness=import-season`
+- **Entry:** run `pnpm run dev` and open `/?harness=import`.
+- **Season walkthrough harness:** run `pnpm run dev` and open `/?harness=import-season`
   for a pragmatic full-season loop (file-by-file import with manual review radio picks and
   accumulated ranking view).
 - **Input mode:** file picker (local `.xlsx` files, no fixture hosting required).
@@ -479,8 +479,8 @@ Implementation files:
 - [x] Tests added/updated and passing (Vitest)
 - [x] Types are strict (no `any` escapes without justification)
 - [x] Docs updated
-- [x] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`
-- [x] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md`
+- [x] Entry added to `docs/ACCOMPLISHMENTS.md`
+- [x] Requirement/milestone status updated in `PROJECT_PLAN.md`
 
 ## Links
 

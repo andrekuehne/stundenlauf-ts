@@ -58,7 +58,7 @@ A CI/CD pipeline automates the build → test → deploy cycle on every push to 
 
 ## Acceptance Criteria
 
-- [ ] `npm run build` (Vite) produces a `dist/` directory containing a fully functional static site.
+- [ ] `pnpm run build` (Vite) produces a `dist/` directory containing a fully functional static site.
 - [ ] The built site works correctly when served from a subdirectory path (e.g., `/stundenlauf/`).
 - [ ] Pushing to the `main` branch triggers the GitHub Actions workflow, which lints, type-checks, tests, builds, and deploys to GitHub Pages.
 - [ ] The deployed site is accessible at `https://<owner>.github.io/stundenlauf/` (or equivalent).
@@ -120,12 +120,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/stundenlauf-ts/**'
+      - '**'
       - '.github/workflows/ts-deploy.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'packages/stundenlauf-ts/**'
+      - '**'
 
 permissions:
   contents: read
@@ -142,18 +142,18 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/stundenlauf-ts
+        working-directory: ./
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: packages/stundenlauf-ts/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test -- --run
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm run test -- --run
 
   build:
     name: Build
@@ -161,19 +161,19 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/stundenlauf-ts
+        working-directory: ./
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: packages/stundenlauf-ts/package-lock.json
-      - run: npm ci
-      - run: npm run build
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: packages/stundenlauf-ts/dist
+          path: dist
 
   deploy:
     name: Deploy to GitHub Pages
@@ -192,7 +192,7 @@ jobs:
 
 | Decision | Rationale |
 |---|---|
-| `paths` filter on `packages/stundenlauf-ts/**` | Avoids deploying on Python-only changes. |
+| `paths` filter on `**` | Avoids deploying on Python-only changes. |
 | Quality gate runs before build | Fast feedback; build doesn't start unless code is clean. |
 | `deploy` only on push to `main` | PRs run quality + build but do not deploy. |
 | `concurrency: pages` with cancel-in-progress | Prevents racing deployments. |
@@ -380,7 +380,7 @@ No `gh-pages` branch is needed. The `actions/deploy-pages` action uploads the bu
 ### 10. Module Structure
 
 ```
-packages/stundenlauf-ts/
+
   public/
     icons/
       icon-192.png
@@ -422,11 +422,11 @@ packages/stundenlauf-ts/
 
 ### 13. Coexistence with Python Version
 
-The existing `windows-build.yml` fires on `v*` tags and builds the Python desktop app. The new `ts-deploy.yml` fires on pushes to `main` (filtered to `packages/stundenlauf-ts/**` paths). The two workflows are independent:
+The existing `windows-build.yml` fires on `v*` tags and builds the Python desktop app. The new `ts-deploy.yml` fires on pushes to `main` (filtered to `**` paths). The two workflows are independent:
 
 | Aspect | Python (`windows-build.yml`) | TS Port (`ts-deploy.yml`) |
 |---|---|---|
-| Trigger | Push of `v*` tag | Push to `main` (packages/stundenlauf-ts paths) |
+| Trigger | Push of `v*` tag | Push to `main` (repo-root paths) |
 | Output | Windows installer + portable ZIP | GitHub Pages deployment |
 | Artifact | GitHub Release attachments | GitHub Pages site |
 | Language | Python 3.13 | Node 22 / TypeScript |
@@ -495,16 +495,16 @@ Both can coexist in the same repository indefinitely. When the TS port reaches f
 
 ## Implementation Steps
 
-1. **Initialize Vite project** — if not already done, scaffold the `packages/stundenlauf-ts/` directory with `npm create vite@latest` (React + TypeScript template). Configure `tsconfig.json` strict mode, ESLint, Prettier.
+1. **Initialize Vite project** — if not already done, scaffold the repository root with `pnpm create vite@latest` (React + TypeScript template). Configure `tsconfig.json` strict mode, ESLint, Prettier.
 2. **Configure `vite.config.ts`** — set `base: '/stundenlauf/'`, add React plugin, add build-time version injection via `define`.
-3. **Add `vite-plugin-pwa`** — `npm install -D vite-plugin-pwa`. Configure `registerType: 'prompt'`, manifest fields, Workbox glob patterns.
+3. **Add `vite-plugin-pwa`** — `pnpm add -D vite-plugin-pwa`. Configure `registerType: 'prompt'`, manifest fields, Workbox glob patterns.
 4. **Create PWA icons** — generate 192×192, 512×512, and 512×512 maskable PNGs from the project's existing artwork or a new design. Place in `public/icons/`.
 5. **Add `<meta>` tags** to `index.html` — viewport, theme-color, description, apple-mobile-web-app tags, manifest link.
 6. **Implement `UpdatePrompt` component** — React component using `useRegisterSW` from `virtual:pwa-register/react`. German copy. Toast styling.
 7. **Configure routing** — set up hash-based routing (React Router `createHashRouter`) so all routes work on GitHub Pages without a 404 fallback hack.
 8. **Create `version.ts`** — re-export `__APP_VERSION__` and `__APP_COMMIT__` with TypeScript declarations.
-9. **Create GitHub Actions workflow** — `.github/workflows/ts-deploy.yml` with quality (lint + typecheck + test), build, and deploy jobs. Scoped to `packages/stundenlauf-ts/**` paths.
-10. **Test local production build** — `npm run build && npx serve dist` (or `npx vite preview`). Verify base path, asset loading, manifest, and SW registration.
+9. **Create GitHub Actions workflow** — `.github/workflows/ts-deploy.yml` with quality (lint + typecheck + test), build, and deploy jobs. Scoped to `**` paths.
+10. **Test local production build** — `pnpm run build && npx serve dist` (or `npx vite preview`). Verify base path, asset loading, manifest, and SW registration.
 11. **Test offline mode** — in Chrome DevTools, go offline after first load. Verify the app loads and all local operations work.
 12. **Test update flow** — make a change, rebuild, serve. Verify the update prompt appears and clicking "Aktualisieren" reloads with the new version.
 13. **Enable GitHub Pages** — configure repository Settings → Pages → Source: GitHub Actions. Push to `main` and verify deployment.
@@ -522,7 +522,7 @@ Both can coexist in the same repository indefinitely. When the TS port reaches f
   - Clicking the button calls `updateServiceWorker(true)`.
 
 - **Integration: Vite build**
-  - `npm run build` succeeds with exit code 0.
+  - `pnpm run build` succeeds with exit code 0.
   - `dist/` contains `index.html`, hashed JS/CSS bundles, `manifest.webmanifest`, icon files, and the generated service worker.
   - `index.html` references assets with the correct base path (`/stundenlauf/...`).
   - `manifest.webmanifest` contains the expected fields (`name`, `start_url`, `icons`, etc.).
@@ -533,7 +533,7 @@ Both can coexist in the same repository indefinitely. When the TS port reaches f
   - Going offline, the app reloads from cache without errors.
 
 - **Integration: GitHub Actions**
-  - A push to `main` with `packages/stundenlauf-ts/` changes triggers the workflow.
+  - A push to `main` with repo-root TS app changes triggers the workflow.
   - The quality job fails if lint, typecheck, or tests fail (verified by intentionally breaking a test).
   - The deploy job runs only on `main` (not on PRs).
   - A push to `main` with only Python-path changes does not trigger the workflow.
@@ -567,8 +567,8 @@ Both can coexist in the same repository indefinitely. When the TS port reaches f
 - [ ] Build-time version string is accessible in the app.
 - [ ] CI quality gates block deployment on failures.
 - [ ] All tests pass (Vitest).
-- [ ] Entry added to `packages/stundenlauf-ts/docs/ACCOMPLISHMENTS.md`.
-- [ ] Requirement/milestone status updated in `packages/stundenlauf-ts/PROJECT_PLAN.md`.
+- [ ] Entry added to `docs/ACCOMPLISHMENTS.md`.
+- [ ] Requirement/milestone status updated in `PROJECT_PLAN.md`.
 
 ## Links
 
