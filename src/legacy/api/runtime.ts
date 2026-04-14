@@ -179,6 +179,47 @@ function asNumber(value: unknown): number | null {
   return null;
 }
 
+function asBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
+      return true;
+    }
+    if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
+      return false;
+    }
+  }
+  return fallback;
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function sanitizeMatchingConfigPatch(
+  patch: Partial<MatchingConfig>,
+  base: MatchingConfig,
+): MatchingConfig {
+  const autoMin = clamp01(asNumber(patch.auto_min) ?? base.auto_min);
+  const reviewMin = clamp01(asNumber(patch.review_min) ?? base.review_min);
+  return {
+    ...base,
+    auto_min: autoMin,
+    review_min: Math.min(reviewMin, autoMin),
+    auto_merge_enabled: asBoolean(patch.auto_merge_enabled, base.auto_merge_enabled),
+    perfect_match_auto_merge: asBoolean(
+      patch.perfect_match_auto_merge,
+      base.perfect_match_auto_merge,
+    ),
+    strict_normalized_auto_only: asBoolean(
+      patch.strict_normalized_auto_only,
+      base.strict_normalized_auto_only,
+    ),
+  };
+}
+
 function firstQuotedValue(message: string): string | null {
   const match = message.match(/"([^"]+)"/);
   return match?.[1] ?? null;
@@ -444,10 +485,10 @@ export class LegacyApiRuntime {
   private pendingImport: PendingImportState | null = null;
   private readonly selectedFiles = new Map<string, File>();
   private readonly saveTargets = new Map<string, SaveRegistryEntry>();
-  private matchingConfig: MatchingConfig = {
-    ...defaultMatchingConfig(),
-    ...readStorageJson<Partial<MatchingConfig>>(MATCHING_STORAGE_KEY, {}),
-  };
+  private matchingConfig: MatchingConfig = sanitizeMatchingConfigPatch(
+    readStorageJson<Partial<MatchingConfig>>(MATCHING_STORAGE_KEY, {}),
+    defaultMatchingConfig(),
+  );
 
   async invoke(request: unknown): Promise<LegacyApiResponse> {
     if (!isRecord(request)) {
@@ -615,16 +656,10 @@ export class LegacyApiRuntime {
   }
 
   private setMatchingConfig(payload: Record<string, unknown>): Record<string, unknown> {
-    const autoMin = Math.max(0, Math.min(1, asNumber(payload.auto_min) ?? this.matchingConfig.auto_min));
-    const reviewMin = Math.max(0, Math.min(1, asNumber(payload.review_min) ?? this.matchingConfig.review_min));
-    this.matchingConfig = {
-      ...this.matchingConfig,
-      auto_min: autoMin,
-      review_min: Math.min(reviewMin, autoMin),
-      auto_merge_enabled: Boolean(payload.auto_merge_enabled),
-      perfect_match_auto_merge: Boolean(payload.perfect_match_auto_merge),
-      strict_normalized_auto_only: Boolean(payload.strict_normalized_auto_only),
-    };
+    this.matchingConfig = sanitizeMatchingConfigPatch(
+      payload as Partial<MatchingConfig>,
+      this.matchingConfig,
+    );
     writeStorageJson(MATCHING_STORAGE_KEY, this.matchingConfigPayload());
     return this.matchingConfigPayload();
   }
