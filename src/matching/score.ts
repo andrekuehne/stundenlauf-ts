@@ -6,7 +6,7 @@
  */
 
 import type { PersonIdentity } from "@/domain/types.ts";
-import type { MatchingConfig } from "./config.ts";
+import { effectiveAutoMin, type MatchingConfig } from "./config.ts";
 import { normalizeClub, parsePersonName } from "./normalize.ts";
 import { sequenceMatcherRatio } from "./ratcliff-obershelp.ts";
 import type { MatchingFeatures, MatchRoute, ParsedName } from "./types.ts";
@@ -110,7 +110,7 @@ export function routeFromScore(
   score: number,
   config: MatchingConfig,
 ): MatchRoute {
-  if (score >= config.auto_min) return "auto";
+  if (score >= effectiveAutoMin(config)) return "auto";
   if (score >= config.review_min) return "review";
   return "new_identity";
 }

@@ -168,26 +168,37 @@ describe("scorePersonMatch", () => {
 });
 
 describe("routeFromScore", () => {
-  const config = defaultMatchingConfig({ auto_min: 0.88, review_min: 0.72 });
+  const manualConfig = defaultMatchingConfig({
+    auto_min: 0.88,
+    review_min: 0.72,
+    auto_merge_enabled: false,
+    perfect_match_auto_merge: false,
+  });
+  const autoEnabledConfig = defaultMatchingConfig({
+    auto_min: 0.88,
+    review_min: 0.72,
+    auto_merge_enabled: true,
+    perfect_match_auto_merge: false,
+  });
 
-  it("routes auto above auto_min", () => {
-    expect(routeFromScore(0.95, config)).toBe("auto");
+  it("routes review above auto_min when auto merge is disabled", () => {
+    expect(routeFromScore(0.95, manualConfig)).toBe("review");
   });
 
   it("routes review between thresholds", () => {
-    expect(routeFromScore(0.80, config)).toBe("review");
+    expect(routeFromScore(0.80, manualConfig)).toBe("review");
   });
 
   it("routes new_identity below review_min", () => {
-    expect(routeFromScore(0.50, config)).toBe("new_identity");
+    expect(routeFromScore(0.50, manualConfig)).toBe("new_identity");
   });
 
-  it("routes auto at exact auto_min boundary", () => {
-    expect(routeFromScore(config.auto_min, config)).toBe("auto");
+  it("routes auto at exact auto_min boundary when auto merge is enabled", () => {
+    expect(routeFromScore(autoEnabledConfig.auto_min, autoEnabledConfig)).toBe("auto");
   });
 
   it("routes review at exact review_min boundary", () => {
-    expect(routeFromScore(config.review_min, config)).toBe("review");
+    expect(routeFromScore(manualConfig.review_min, manualConfig)).toBe("review");
   });
 });
 
