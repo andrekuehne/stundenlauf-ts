@@ -1,6 +1,8 @@
 import { ImportOrchestrationHarness } from "./devtools/ImportOrchestrationHarness.tsx";
 import { ImportSeasonWalkthroughHarness } from "./devtools/ImportSeasonWalkthroughHarness.tsx";
 import { LegacyLayoutParityPage } from "./devtools/LegacyLayoutParityPage.tsx";
+import { UpdatePrompt } from "./components/UpdatePrompt.tsx";
+import { APP_VERSION } from "./version.ts";
 
 function shouldShowImportHarness(): boolean {
   if (!import.meta.env.DEV) return false;
@@ -37,15 +39,21 @@ export function App() {
   const legacyUrl = `${import.meta.env.BASE_URL}legacy/index.html`;
 
   return (
-    <iframe
-      title="Stundenlauf Legacy Frontend"
-      src={legacyUrl}
-      style={{
-        width: "100vw",
-        height: "100vh",
-        border: "0",
-        display: "block",
-      }}
-    />
+    <>
+      <iframe
+        title="Stundenlauf Legacy Frontend"
+        src={legacyUrl}
+        style={{
+          width: "100vw",
+          height: "100vh",
+          border: "0",
+          display: "block",
+        }}
+      />
+      <div className="version-badge" title={`Version ${APP_VERSION}`}>
+        {APP_VERSION}
+      </div>
+      <UpdatePrompt />
+    </>
   );
 }

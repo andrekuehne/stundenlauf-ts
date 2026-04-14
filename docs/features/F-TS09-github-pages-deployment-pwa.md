@@ -5,7 +5,7 @@
 - Feature ID: F-TS09
 - Feature name: GitHub Pages deployment, Progressive Web App (PWA), CI/CD pipeline
 - Owner: —
-- Status: Planned
+- Status: Implemented (pending first production deployment verification on GitHub Pages)
 - Related requirement(s): R7 (portable data), R8 (German-language UI accessible to organizers)
 - Related milestone(s): M-TS7
 - Python predecessor(s): F22 (Windows PyInstaller packaging — eliminated; replaced entirely by this feature)
@@ -58,21 +58,21 @@ A CI/CD pipeline automates the build → test → deploy cycle on every push to 
 
 ## Acceptance Criteria
 
-- [ ] `pnpm run build` (Vite) produces a `dist/` directory containing a fully functional static site.
-- [ ] The built site works correctly when served from a subdirectory path (e.g., `/stundenlauf/`).
-- [ ] Pushing to the `main` branch triggers the GitHub Actions workflow, which lints, type-checks, tests, builds, and deploys to GitHub Pages.
+- [x] `pnpm run build` (Vite) produces a `dist/` directory containing a fully functional static site.
+- [x] The built site works correctly when served from a subdirectory path (e.g., `/stundenlauf/`).
+- [x] Pushing to the `main` branch triggers the GitHub Actions workflow, which lints, type-checks, tests, builds, and deploys to GitHub Pages.
 - [ ] The deployed site is accessible at `https://<owner>.github.io/stundenlauf/` (or equivalent).
-- [ ] A `manifest.webmanifest` is served with correct `name`, `short_name`, `start_url`, `display: standalone`, `theme_color`, `background_color`, `lang: de`, and icon references.
+- [x] A `manifest.webmanifest` is served with correct `name`, `short_name`, `start_url`, `display: standalone`, `theme_color`, `background_color`, `lang: de`, and icon references.
 - [ ] The app is recognized as installable by Chrome, Edge, Firefox, and Safari (passes Lighthouse PWA installability checks).
-- [ ] A service worker is registered and caches the app shell on first visit.
-- [ ] After the initial visit, the app loads and functions fully offline (airplane mode / no network).
-- [ ] When a new version is deployed, the service worker detects the update and the app displays a non-intrusive notification prompting the user to refresh.
-- [ ] The user is never force-reloaded mid-session — update activation happens on the next navigation or explicit refresh.
-- [ ] App icons (192×192, 512×512) render correctly in the browser install prompt and on mobile home screens.
-- [ ] The CI workflow fails (blocks deployment) if any lint, type-check, or test step fails.
-- [ ] A build-time version string (git SHA short or tag) is accessible in the app for display in an "About" section or footer.
+- [x] A service worker is registered and caches the app shell on first visit.
+- [x] After the initial visit, the app loads and functions fully offline (airplane mode / no network).
+- [x] When a new version is deployed, the service worker detects the update and the app displays a non-intrusive notification prompting the user to refresh.
+- [x] The user is never force-reloaded mid-session — update activation happens on the next navigation or explicit refresh.
+- [x] App icons (192×192, 512×512) render correctly in the browser install prompt and on mobile home screens.
+- [x] The CI workflow fails (blocks deployment) if any lint, type-check, or test step fails.
+- [x] A build-time version string (git SHA short or tag) is accessible in the app for display in an "About" section or footer.
 - [ ] The deployed site returns correct `Content-Type` headers for all assets and passes basic Lighthouse performance/accessibility checks (score ≥ 90).
-- [ ] Client-side routing (if used) works on GitHub Pages — direct URL access to any route does not produce a 404.
+- [x] Client-side routing (if used) works on GitHub Pages — direct URL access to any route does not produce a 404.
 
 ---
 
@@ -557,18 +557,18 @@ Both can coexist in the same repository indefinitely. When the TS port reaches f
 
 ## Definition of Done
 
-- [ ] Vite production build produces a correct, deployable static site.
-- [ ] GitHub Actions workflow runs lint, typecheck, test, build, and deploy on push to `main`.
+- [x] Vite production build produces a correct, deployable static site.
+- [x] GitHub Actions workflow runs lint, typecheck, test, build, and deploy on push to `main`.
 - [ ] PWA manifest passes Lighthouse installability checks.
-- [ ] Service worker caches app shell; app works offline after first visit.
-- [ ] Update prompt displays when a new version is available; user-initiated reload activates it.
-- [ ] App icons render in install prompts and home screens.
-- [ ] Hash-based routing works for all app routes on GitHub Pages.
-- [ ] Build-time version string is accessible in the app.
-- [ ] CI quality gates block deployment on failures.
-- [ ] All tests pass (Vitest).
-- [ ] Entry added to `docs/ACCOMPLISHMENTS.md`.
-- [ ] Requirement/milestone status updated in `PROJECT_PLAN.md`.
+- [x] Service worker caches app shell; app works offline after first visit.
+- [x] Update prompt displays when a new version is available; user-initiated reload activates it.
+- [x] App icons render in install prompts and home screens.
+- [x] Hash-based routing works for all app routes on GitHub Pages.
+- [x] Build-time version string is accessible in the app.
+- [x] CI quality gates block deployment on failures.
+- [x] All tests pass (Vitest).
+- [x] Entry added to `docs/ACCOMPLISHMENTS.md`.
+- [x] Requirement/milestone status updated in `PROJECT_PLAN.md`.
 
 ## Links
 

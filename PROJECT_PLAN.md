@@ -66,7 +66,7 @@ Mapped from the Python version's requirements, adapted for the static-site conte
 | M-TS4 | Ranking engine and standings computation | Done |
 | M-TS5 | German UI shell and core workflows | Planned |
 | M-TS6 | Export (PDF, Excel) and season portability | Done |
-| M-TS7 | GitHub Pages deployment, PWA, polish | Planned |
+| M-TS7 | GitHub Pages deployment, PWA, polish | Done |
 
 ## Feature Inventory
 
@@ -87,7 +87,7 @@ Features are prefixed `F-TS` to distinguish from the Python version's `F` prefix
 | F-TS06e | Legacy layout parity page (dev-only) | M-TS5 | Done |
 | F-TS07 | Season data portability (JSON/ZIP export and import) | M-TS6 | Done |
 | F-TS08 | Standings and results export (PDF, Excel) | M-TS6 | Done |
-| F-TS09 | GitHub Pages deployment and PWA | M-TS7 | Planned |
+| F-TS09 | GitHub Pages deployment and PWA | M-TS7 | Done |
 | F-TS10 | Legacy frontend API compatibility adapter | M-TS5 | Planned |
 
 ## Hardening Inventory
@@ -199,6 +199,7 @@ TS version: UI components call domain functions directly. No serialization bound
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-04-14 | F-TS09 implementation completed | Added GitHub Pages CI/CD workflow (`.github/workflows/ts-deploy.yml`), Vite base path + PWA Workbox setup, manifest/meta/install icons, prompt-based SW update UX, hash routing compatibility, and build-time git version injection for deploy-ready PWA distribution |
 | 2026-04-14 | F-TS08 Excel Gesamtwertung export implemented | Added the requested two-sheet Excel workbook (`Gesamtwertung_Einzel`, `Gesamtwertung_Paare`) with continuous section numbering, duplicated pair numerics, and legacy frontend download wiring; completes F-TS08 and M-TS6 |
 | 2026-04-14 | F-TS08 PDF first-page notice layout fix | Moved the Laufübersicht `Hinweis` block onto page 1 above the first table and removed the manual underline that rendered as a black artifact in some viewers |
 | 2026-04-14 | F-TS08 PDF export path implemented | Added config-driven browser PDF export with Python-style Laufübersicht layout, compact preset support, semantic projection metadata, and legacy adapter wiring; M-TS6/F-TS08 now in progress while Excel remains pending |

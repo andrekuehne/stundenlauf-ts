@@ -1,8 +1,69 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
+import { execSync } from "node:child_process";
 import { resolve } from "node:path";
+function readGitValue(command, fallback) {
+    try {
+        return execSync(command, { stdio: ["ignore", "pipe", "ignore"] })
+            .toString()
+            .trim();
+    }
+    catch {
+        return fallback;
+    }
+}
+const appCommit = readGitValue("git rev-parse --short HEAD", "unknown");
+const appVersion = readGitValue("git describe --tags --always --dirty", appCommit);
 export default defineConfig({
-    plugins: [react()],
+    base: "/stundenlauf/",
+    plugins: [
+        react(),
+        VitePWA({
+            registerType: "prompt",
+            includeAssets: ["icons/*.png"],
+            manifest: {
+                name: "Stundenlauf-Auswertung",
+                short_name: "Stundenlauf",
+                description: "Auswertung und Verwaltung von Stundenlauf-Rennserien - lokal im Browser, ohne Server.",
+                lang: "de",
+                start_url: "/stundenlauf/",
+                scope: "/stundenlauf/",
+                display: "standalone",
+                orientation: "any",
+                theme_color: "#1565C0",
+                background_color: "#FFFFFF",
+                categories: ["sports", "utilities"],
+                icons: [
+                    {
+                        src: "icons/icon-192.png",
+                        sizes: "192x192",
+                        type: "image/png",
+                    },
+                    {
+                        src: "icons/icon-512.png",
+                        sizes: "512x512",
+                        type: "image/png",
+                    },
+                    {
+                        src: "icons/icon-512-maskable.png",
+                        sizes: "512x512",
+                        type: "image/png",
+                        purpose: "maskable",
+                    },
+                ],
+            },
+            workbox: {
+                globPatterns: ["**/*.{js,css,html,png,svg,woff2}"],
+                cleanupOutdatedCaches: true,
+                clientsClaim: false,
+                skipWaiting: false,
+            },
+            devOptions: {
+                enabled: false,
+            },
+        }),
+    ],
     resolve: {
         alias: {
             "@": resolve(__dirname, "src"),
@@ -22,5 +83,9 @@ export default defineConfig({
                     : "assets/[name]-[hash].js",
             },
         },
+    },
+    define: {
+        __APP_VERSION__: JSON.stringify(appVersion),
+        __APP_COMMIT__: JSON.stringify(appCommit),
     },
 });
