@@ -85,8 +85,13 @@ describe("resolvePerson", () => {
   });
 
   it("routes to review for uncertain match", async () => {
-    // Use manual mode (auto_min=1.01) so fuzzy matches go to review instead of auto
-    const config = defaultMatchingConfig({ auto_min: 1.01 });
+    // Manual mode: disable auto merge behavior so fuzzy matches route to review.
+    const config = defaultMatchingConfig({
+      auto_min: 0.88,
+      review_min: 0.72,
+      auto_merge_enabled: false,
+      perfect_match_auto_merge: false,
+    });
     const stats = emptyRunStats();
     const result = await resolvePerson({
       rawName: "Anna Schmidt",

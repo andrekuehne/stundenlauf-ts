@@ -186,8 +186,12 @@ describe("processSinglesSection", () => {
         { startnr: "1", name: "Anna Schmidt", yob: 1988, club: "TSV", distance_km: 10, points: 1 },
       ],
     };
-    // Manuell mode: auto_min = 1.01 (nothing auto-links by score)
-    const config = defaultMatchingConfig({ auto_min: 1.01 });
+    const config = defaultMatchingConfig({
+      auto_min: 0.88,
+      review_min: 0.72,
+      auto_merge_enabled: false,
+      perfect_match_auto_merge: false,
+    });
     const result = await processSinglesSection(state, section, config);
     expect(result.resolved_entries[0]!.route).toBe("review");
   });
@@ -219,7 +223,12 @@ describe("processSinglesSection", () => {
         { startnr: "1", name: "Anna Schmidt", yob: 1988, club: "TSV", distance_km: 10, points: 1 },
       ],
     };
-    const config = defaultMatchingConfig({ auto_min: 1.01 });
+    const config = defaultMatchingConfig({
+      auto_min: 0.88,
+      review_min: 0.72,
+      auto_merge_enabled: false,
+      perfect_match_auto_merge: false,
+    });
     const result = await processSinglesSection(state, section, config);
     expect(result.review_items).toHaveLength(1);
     expect(result.review_items[0]!.candidates[0]!.team_id).toBe("t-anna");
