@@ -36,6 +36,8 @@
       strictNormalizedOff: "Fuzzy-Automatik gewählt – Detailstufe unten einstellbar.",
       matchingModeManualOn:
         "Manuell: Keine automatische Zuordnung per Ähnlichkeit; Sie entscheiden in der Prüfung.",
+      matchingDefaultsReset:
+        "Matching-Einstellungen wurden auf die Standardwerte zurückgesetzt.",
       autoMergeThresholdUpdated: "Ähnlichkeitsschwelle wurde aktualisiert.",
       reviewMinThresholdUpdated: "Schwelle für Prüfung (statt neue Person) wurde aktualisiert.",
       importIncomplete: "Bitte Datei, Lauftyp und Laufnummer vollständig wählen.",
@@ -263,6 +265,7 @@
       matchingModeManual: "Manuell",
       matchingFuzzySubPerfect: "Nur 100 %-Ähnlichkeit",
       matchingFuzzySubThreshold: "Ab Schwelle",
+      matchingResetDefaults: "Standard zurücksetzen",
       matchingThresholdLabel: "Ähnlichkeit ab der automatisch zugeordnet wird",
       matchingReviewThresholdLabel:
         "Mindest-Ähnlichkeit für Prüfliste",

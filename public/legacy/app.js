@@ -46,6 +46,91 @@
     }
   }
 
+  const MATCHING_DEFAULTS = {
+    strict: {
+      auto_min: 0.5,
+      review_min: 0.5,
+      auto_merge_enabled: false,
+      perfect_match_auto_merge: false,
+      strict_normalized_auto_only: true,
+    },
+    fuzzy_perfect: {
+      auto_min: 0.5,
+      review_min: 0.5,
+      auto_merge_enabled: false,
+      perfect_match_auto_merge: true,
+      strict_normalized_auto_only: false,
+    },
+    fuzzy_threshold: {
+      auto_min: 1.0,
+      review_min: 0.5,
+      auto_merge_enabled: true,
+      perfect_match_auto_merge: true,
+      strict_normalized_auto_only: false,
+    },
+    manual: {
+      auto_min: 0.5,
+      review_min: 0.5,
+      auto_merge_enabled: false,
+      perfect_match_auto_merge: false,
+      strict_normalized_auto_only: false,
+    },
+  };
+
+  function matchingDefaults(kind) {
+    return { ...MATCHING_DEFAULTS[kind] };
+  }
+
+  function matchingKindFromConfig(cfg) {
+    if (cfg.strict_normalized_auto_only) {
+      return "strict";
+    }
+    if (!cfg.auto_merge_enabled && !cfg.perfect_match_auto_merge) {
+      return "manual";
+    }
+    if (cfg.auto_merge_enabled) {
+      return "fuzzy_threshold";
+    }
+    return "fuzzy_perfect";
+  }
+
+  function normalizeMatchingConfigForKind(kind, cfg) {
+    const defaults = matchingDefaults(kind);
+    if (kind === "fuzzy_threshold") {
+      const autoMin = clampAutoMin(cfg.auto_min);
+      return {
+        ...defaults,
+        auto_min: autoMin,
+        review_min: capReviewMinForConfig(cfg.review_min, { ...defaults, auto_min: autoMin }),
+      };
+    }
+    if (kind === "fuzzy_perfect" || kind === "manual") {
+      return {
+        ...defaults,
+        review_min: clampReviewMin(cfg.review_min),
+      };
+    }
+    return defaults;
+  }
+
+  function resetMatchingCaches() {
+    state.matchingConfigByKind = {
+      strict: matchingDefaults("strict"),
+      fuzzy_perfect: matchingDefaults("fuzzy_perfect"),
+      fuzzy_threshold: matchingDefaults("fuzzy_threshold"),
+      manual: matchingDefaults("manual"),
+    };
+    state.matchingLastFuzzyKind = "fuzzy_perfect";
+  }
+
+  function syncMatchingCacheFromCurrentConfig() {
+    const kind = matchingKindFromConfig(state.matchingConfig);
+    state.matchingConfigByKind[kind] = normalizeMatchingConfigForKind(kind, state.matchingConfig);
+    if (kind === "fuzzy_perfect" || kind === "fuzzy_threshold") {
+      state.matchingLastFuzzyKind = kind;
+    }
+  }
+
   const state = {
     seriesYear: null,
     categories: [],
@@ -55,13 +140,14 @@
     reviewQueue: [],
     reviewIndex: 0,
     reviewSelections: {},
-    matchingConfig: {
-      auto_min: 0.5,
-      review_min: 0.5,
-      auto_merge_enabled: false,
-      perfect_match_auto_merge: true,
-      strict_normalized_auto_only: false,
+    matchingConfig: matchingDefaults("fuzzy_perfect"),
+    matchingConfigByKind: {
+      strict: matchingDefaults("strict"),
+      fuzzy_perfect: matchingDefaults("fuzzy_perfect"),
+      fuzzy_threshold: matchingDefaults("fuzzy_threshold"),
+      manual: matchingDefaults("manual"),
     },
+    matchingLastFuzzyKind: "fuzzy_perfect",
     importFilePath: "",
     importSourceType: "",
     importRaceNo: null,
@@ -201,6 +287,7 @@
       perfect_match_auto_merge: Boolean(response.payload.perfect_match_auto_merge),
       strict_normalized_auto_only: Boolean(response.payload.strict_normalized_auto_only),
     };
+    syncMatchingCacheFromCurrentConfig();
   }
 
   async function saveMatchingConfig(autoMin, reviewMin, autoMergeEnabled, perfectMatchAutoMerge, strictNormalizedAutoOnly) {
@@ -231,6 +318,7 @@
       perfect_match_auto_merge: Boolean(response.payload.perfect_match_auto_merge),
       strict_normalized_auto_only: Boolean(response.payload.strict_normalized_auto_only),
     };
+    syncMatchingCacheFromCurrentConfig();
     return true;
   }
 
@@ -1533,6 +1621,24 @@
     state.importRaceNo = null;
   }
 
+  async function resetMatchingDefaultsToBaseline() {
+    resetMatchingCaches();
+    const currentKind = matchingKindFromConfig(state.matchingConfig);
+    const nextConfig = state.matchingConfigByKind[currentKind];
+    const ok = await saveMatchingConfig(
+      nextConfig.auto_min,
+      nextConfig.review_min,
+      nextConfig.auto_merge_enabled,
+      nextConfig.perfect_match_auto_merge,
+      nextConfig.strict_normalized_auto_only
+    );
+    if (!ok) {
+      return;
+    }
+    setStatus(STR.status.matchingDefaultsReset);
+    await renderImportView();
+  }
+
   function basenameFromPath(path) {
     if (!path) {
       return "";
@@ -2179,6 +2285,10 @@
               <span class="matching-settings-toggle-label">${iv.matchingSettings}</span>
             </button>
             <div id="matchingSettingsBody" class="matching-settings-body"${state.matchingSettingsExpanded ? "" : " hidden"}>
+            <div class="row">
+              <button type="button" class="secondary" id="matchingResetDefaultsBtn">${iv.matchingResetDefaults}</button>
+            </div>
+            <hr class="matching-settings-divider" />
             <div class="tabs matching-mode-tabs" role="tablist" aria-label="${iv.matchingSettings}">
               <button type="button" class="tab matching-mode-tab${strictNormalizedOnly ? " active" : ""}" data-matching-primary="strict" role="tab" aria-selected="${strictNormalizedOnly}">${iv.matchingModeStrict}</button>
               <button type="button" class="tab matching-mode-tab${primaryFuzzy ? " active" : ""}" data-matching-primary="fuzzy" role="tab" aria-selected="${primaryFuzzy}">${iv.matchingModeFuzzy}</button>
@@ -2283,37 +2393,33 @@
     };
 
     const applyMatchingPrimaryMode = async (mode) => {
-      const threshold = readThresholdFromDom();
-      const reviewMin = readReviewMinFromDom();
-      let strict;
-      let auto;
-      let perfect;
-      if (mode === "strict") {
-        strict = true;
-        auto = state.matchingConfig.auto_merge_enabled;
-        perfect = state.matchingConfig.perfect_match_auto_merge;
-      } else if (mode === "manual") {
-        strict = false;
-        auto = false;
-        perfect = false;
-      } else {
-        strict = false;
-        if (!state.matchingConfig.auto_merge_enabled && !state.matchingConfig.perfect_match_auto_merge) {
-          auto = false;
-          perfect = true;
-        } else {
-          auto = state.matchingConfig.auto_merge_enabled;
-          perfect = state.matchingConfig.perfect_match_auto_merge;
-        }
-      }
+      const nextKind =
+        mode === "strict"
+          ? "strict"
+          : mode === "manual"
+            ? "manual"
+            : state.matchingLastFuzzyKind;
+      const nextConfig = state.matchingConfigByKind[nextKind] || matchingDefaults(nextKind);
       const unchanged =
-        Boolean(state.matchingConfig.strict_normalized_auto_only) === strict &&
-        Boolean(state.matchingConfig.auto_merge_enabled) === auto &&
-        Boolean(state.matchingConfig.perfect_match_auto_merge) === perfect;
+        Boolean(state.matchingConfig.strict_normalized_auto_only) ===
+          Boolean(nextConfig.strict_normalized_auto_only) &&
+        Boolean(state.matchingConfig.auto_merge_enabled) ===
+          Boolean(nextConfig.auto_merge_enabled) &&
+        Boolean(state.matchingConfig.perfect_match_auto_merge) ===
+          Boolean(nextConfig.perfect_match_auto_merge) &&
+        clampAutoMin(state.matchingConfig.auto_min) === clampAutoMin(nextConfig.auto_min) &&
+        capReviewMinForConfig(state.matchingConfig.review_min, state.matchingConfig) ===
+          capReviewMinForConfig(nextConfig.review_min, nextConfig);
       if (unchanged) {
         return;
       }
-      const ok = await saveMatchingConfig(threshold, reviewMin, auto, perfect, strict);
+      const ok = await saveMatchingConfig(
+        nextConfig.auto_min,
+        nextConfig.review_min,
+        nextConfig.auto_merge_enabled,
+        nextConfig.perfect_match_auto_merge,
+        nextConfig.strict_normalized_auto_only
+      );
       if (!ok) {
         return;
       }
@@ -2321,7 +2427,7 @@
         setStatus(STR.status.strictNormalizedOn);
       } else if (mode === "manual") {
         setStatus(STR.status.matchingModeManualOn);
-      } else if (auto) {
+      } else if (nextConfig.auto_merge_enabled) {
         setStatus(STR.status.autoMergeOn);
       } else {
         setStatus(STR.status.perfectAutoMergeOn);
@@ -2333,6 +2439,9 @@
       state.matchingSettingsExpanded = !state.matchingSettingsExpanded;
       await renderImportView();
     });
+    document.getElementById("matchingResetDefaultsBtn").addEventListener("click", async () => {
+      await resetMatchingDefaultsToBaseline();
+    });
 
     for (const btn of document.querySelectorAll("[data-matching-primary]")) {
       btn.addEventListener("click", () => {
@@ -2343,29 +2452,33 @@
     for (const btn of document.querySelectorAll("[data-matching-fuzzy-sub]")) {
       btn.addEventListener("click", async () => {
         const sub = btn.getAttribute("data-matching-fuzzy-sub");
-        const threshold = readThresholdFromDom();
-        const reviewMin = readReviewMinFromDom();
-        let auto;
-        let perfect;
-        if (sub === "perfect") {
-          auto = false;
-          perfect = true;
-        } else {
-          auto = true;
-          perfect = state.matchingConfig.perfect_match_auto_merge;
-        }
+        const nextConfig =
+          sub === "perfect"
+            ? state.matchingConfigByKind.fuzzy_perfect
+            : state.matchingConfigByKind.fuzzy_threshold;
         const unchanged =
           !state.matchingConfig.strict_normalized_auto_only &&
-          Boolean(state.matchingConfig.auto_merge_enabled) === auto &&
-          Boolean(state.matchingConfig.perfect_match_auto_merge) === perfect;
+          Boolean(state.matchingConfig.auto_merge_enabled) ===
+            Boolean(nextConfig.auto_merge_enabled) &&
+          Boolean(state.matchingConfig.perfect_match_auto_merge) ===
+            Boolean(nextConfig.perfect_match_auto_merge) &&
+          clampAutoMin(state.matchingConfig.auto_min) === clampAutoMin(nextConfig.auto_min) &&
+          capReviewMinForConfig(state.matchingConfig.review_min, state.matchingConfig) ===
+            capReviewMinForConfig(nextConfig.review_min, nextConfig);
         if (unchanged) {
           return;
         }
-        const ok = await saveMatchingConfig(threshold, reviewMin, auto, perfect, false);
+        const ok = await saveMatchingConfig(
+          nextConfig.auto_min,
+          nextConfig.review_min,
+          nextConfig.auto_merge_enabled,
+          nextConfig.perfect_match_auto_merge,
+          nextConfig.strict_normalized_auto_only
+        );
         if (!ok) {
           return;
         }
-        if (auto) {
+        if (nextConfig.auto_merge_enabled) {
           setStatus(STR.status.autoMergeOn);
         } else {
           setStatus(STR.status.perfectAutoMergeOn);

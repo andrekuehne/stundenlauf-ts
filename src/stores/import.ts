@@ -150,12 +150,10 @@ export const useImportStore = create<ImportStoreState>((set, get) => ({
   },
 
   setMatchingMode: (mode) => {
-    set((state) => ({
+    set(() => ({
       matchingMode: mode,
-      reviewThreshold:
-        mode === "fuzzy_automatik"
-          ? Math.min(state.reviewThreshold, clampThreshold(state.autoThreshold))
-          : state.reviewThreshold,
+      autoThreshold: DEFAULT_AUTO_MIN,
+      reviewThreshold: DEFAULT_REVIEW_MIN,
     }));
   },
 

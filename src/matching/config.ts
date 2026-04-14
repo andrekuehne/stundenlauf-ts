@@ -22,9 +22,8 @@ export interface MatchingConfig {
   pair_unsafe_cap: number;
 }
 
-// Keep a meaningful review band by default: review_min < auto_min.
-export const DEFAULT_AUTO_MIN = 0.88;
-export const DEFAULT_REVIEW_MIN = 0.72;
+export const DEFAULT_AUTO_MIN = 0.5;
+export const DEFAULT_REVIEW_MIN = 0.5;
 
 export function defaultMatchingConfig(
   overrides?: Partial<MatchingConfig>,
