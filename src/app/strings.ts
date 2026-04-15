@@ -277,8 +277,8 @@ export const STR = {
       rollback: "Rollback",
       noImports: "Keine Imports vorhanden.",
       noAuditRows: "Keine Korrekturen protokolliert.",
-      rollbackConfirmTitle: "Import zurückrollen?",
-      rollbackConfirmBody:
+      importRollbackConfirmTitle: "Import zurückrollen?",
+      importRollbackConfirmBody:
         "Der ausgewählte Import und zugehörige Läufe werden als zurückgerollt markiert.",
       rollbackConfirmBodyWithCount: (count: number) =>
         `Die Ergebnisse aller ${count} Läufe aus dieser Datei werden aus der Wertung entfernt und neu berechnet.`,
