@@ -41,7 +41,7 @@ export function SeasonPage() {
     () => [
       {
         key: "label",
-        header: "Name",
+        header: STR.views.season.nameHeader,
         cell: (row) => (
           <div className="season-table__name">
             <strong>{row.label}</strong>
@@ -162,7 +162,7 @@ export function SeasonPage() {
     if (!nextLabel) {
       setStatus({
         severity: "warn",
-        message: "Bitte einen Saisonnamen eingeben.",
+        message: STR.views.season.enterSeasonName,
         source: "season",
       });
       return;
@@ -193,7 +193,7 @@ export function SeasonPage() {
             <input
               type="text"
               value={seasonLabel}
-              placeholder="z. B. Stundenlauf 2027"
+              placeholder={STR.views.season.createPlaceholder}
               onChange={(event) => {
                 setSeasonLabel(event.target.value);
               }}
@@ -215,10 +215,10 @@ export function SeasonPage() {
         </section>
 
         <section className="sidebar-controls__section season-side-note">
-          <h4>Aktive Saison</h4>
-          <p>{shellData.selectedSeasonLabel ?? "Noch keine Saison geoeffnet."}</p>
+          <h4>{STR.views.season.activeSeasonTitle}</h4>
+          <p>{shellData.selectedSeasonLabel ?? STR.views.season.noActiveSeason}</p>
           <p className="surface-card__note">
-            Backup-Import und Backup-Export sind in Phase 1 bereits sichtbar, werden aber noch vom Mock-AppApi beantwortet.
+            {STR.views.season.backupNote}
           </p>
         </section>
       </div>,
@@ -244,12 +244,12 @@ export function SeasonPage() {
       <section className="surface-card">
         <div className="surface-card__header">
           <div>
-            <h2>Bestehende Saisons</h2>
-            <p>Alle vorhandenen Saisons stehen hier direkt zum Oeffnen oder Verwalten bereit.</p>
+            <h2>{STR.views.season.existingSeasonsTitle}</h2>
+            <p>{STR.views.season.existingSeasonsDescription}</p>
           </div>
         </div>
         <DataTable columns={columns} rows={seasons} emptyMessage={STR.views.season.noSeasons} />
-        {loading ? <p className="surface-card__note">Saisons werden geladen...</p> : null}
+        {loading ? <p className="surface-card__note">{STR.views.season.loading}</p> : null}
       </section>
     </div>
   );

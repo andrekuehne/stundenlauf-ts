@@ -1,4 +1,5 @@
 import type { ImportIncomingRecord, ImportReviewCandidate } from "@/api/contracts/index.ts";
+import { STR } from "@/app/strings.ts";
 
 type ImportCandidateCardProps = {
   candidate: ImportReviewCandidate;
@@ -45,11 +46,11 @@ function ComparisonRow({
       <span className={`import-candidate__status ${isMatch ? "is-match" : "is-mismatch"}`}>{isMatch ? "✅" : "❌"}</span>
       <div className="import-candidate__values">
         <div className="import-candidate__value-row">
-          <span className="import-candidate__value-label">Neu:</span>
+          <span className="import-candidate__value-label">{STR.importCandidate.incomingLabel}</span>
           <span>{incomingValue}</span>
         </div>
         <div className="import-candidate__value-row">
-          <span className="import-candidate__value-label">Bestand:</span>
+          <span className="import-candidate__value-label">{STR.importCandidate.existingLabel}</span>
           <span>{candidateValue}</span>
         </div>
       </div>
@@ -73,22 +74,22 @@ function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCan
   return (
     <div className="import-candidate__pair-grid">
       <div className="import-candidate__pair-pane">
-        <h4>{incomingLeftName === "—" ? "Teilnehmende A" : incomingLeftName}</h4>
+        <h4>{incomingLeftName === "—" ? STR.importCandidate.participantA : incomingLeftName}</h4>
         <div className="import-candidate__comparison">
           <ComparisonRow
-            label="Name"
+            label={STR.importCandidate.name}
             isMatch={Boolean(nameComparison?.isMatch)}
             incomingValue={incomingSplitLeftName}
             candidateValue={candidateSplitLeftName}
           />
           <ComparisonRow
-            label="Jahrgang"
+            label={STR.importCandidate.yob}
             isMatch={Boolean(yobComparison?.isMatch)}
             incomingValue={incomingLeftYob}
             candidateValue={candidateLeftYob}
           />
           <ComparisonRow
-            label="Verein"
+            label={STR.importCandidate.club}
             isMatch={Boolean(clubComparison?.isMatch)}
             incomingValue={incomingLeftClub}
             candidateValue={candidateLeftClub}
@@ -96,22 +97,22 @@ function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCan
         </div>
       </div>
       <div className="import-candidate__pair-pane">
-        <h4>{incomingRightName === "—" ? "Teilnehmende B" : incomingRightName}</h4>
+        <h4>{incomingRightName === "—" ? STR.importCandidate.participantB : incomingRightName}</h4>
         <div className="import-candidate__comparison">
           <ComparisonRow
-            label="Name"
+            label={STR.importCandidate.name}
             isMatch={Boolean(nameComparison?.isMatch)}
             incomingValue={incomingSplitRightName}
             candidateValue={candidateSplitRightName}
           />
           <ComparisonRow
-            label="Jahrgang"
+            label={STR.importCandidate.yob}
             isMatch={Boolean(yobComparison?.isMatch)}
             incomingValue={incomingRightYob}
             candidateValue={candidateRightYob}
           />
           <ComparisonRow
-            label="Verein"
+            label={STR.importCandidate.club}
             isMatch={Boolean(clubComparison?.isMatch)}
             incomingValue={incomingRightClub}
             candidateValue={candidateRightClub}
@@ -131,7 +132,9 @@ export function ImportCandidateCard({
   onSelect,
   recommendedLabel,
 }: ImportCandidateCardProps) {
-  const displayName = isSelected ? `${candidate.displayName} - ausgewählt` : candidate.displayName;
+  const displayName = isSelected
+    ? STR.importCandidate.selectedDisplayName(candidate.displayName, STR.views.import.selectedSuffix)
+    : candidate.displayName;
 
   return (
     <button
@@ -145,7 +148,7 @@ export function ImportCandidateCard({
         {candidate.isRecommended ? <span className="import-candidate__badge">{recommendedLabel}</span> : null}
       </div>
       <small className="import-candidate__hint">
-        Bei Auswahl werden die eingehenden Ergebnisse dieser Person bzw. diesem Team zugeordnet.
+        {STR.importCandidate.assignmentHint}
       </small>
       {isDoubles ? (
         <DoublesComparison candidate={candidate} incoming={incoming} />
@@ -163,7 +166,9 @@ export function ImportCandidateCard({
         </div>
       )}
       <div className="import-candidate__footer">
-        <span className="import-candidate__confidence">{Math.round(candidate.confidence * 100)} % Treffer</span>
+        <span className="import-candidate__confidence">
+          {STR.importCandidate.confidencePercent(Math.round(candidate.confidence * 100))}
+        </span>
       </div>
     </button>
   );

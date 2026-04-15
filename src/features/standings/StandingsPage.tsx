@@ -25,7 +25,7 @@ const CATEGORY_GROUPS: Array<{
 }> = [
   {
     key: "single",
-    title: "Einzel",
+    title: STR.views.standings.sectionSingles,
     rows: [
       ["half_hour:women", "hour:women"],
       ["half_hour:men", "hour:men"],
@@ -33,7 +33,7 @@ const CATEGORY_GROUPS: Array<{
   },
   {
     key: "couples",
-    title: "Paare",
+    title: STR.views.standings.sectionCouples,
     rows: [
       ["half_hour:couples_women", "hour:couples_women"],
       ["half_hour:couples_men", "hour:couples_men"],
@@ -158,19 +158,24 @@ export function StandingsPage() {
     () => {
       const couples = selectedCategory ? isCouplesCategory(selectedCategory.key) : false;
       return [
-        { key: "rank", header: "Platz", align: "right", cell: (row) => row.rank },
-        { key: "team", header: "Name", cell: (row) => row.team },
+        { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => row.rank },
+        { key: "team", header: STR.views.standings.headerName, cell: (row) => row.team },
         {
           key: "yob",
-          header: "Jahrgang",
+          header: STR.views.standings.headerYob,
           align: "right",
           cell: (row) => (couples ? row.yobPair ?? "—" : row.yob?.toString() ?? "—"),
         },
-        { key: "club", header: "Verein", cell: (row) => row.club || "—" },
-        { key: "distanceKm", header: "Gesamtdistanz (km)", align: "right", cell: (row) => formatKm(row.distanceKm) },
+        { key: "club", header: STR.views.standings.club, cell: (row) => row.club || "—" },
+        {
+          key: "distanceKm",
+          header: STR.views.standings.headerTotalDistanceKm,
+          align: "right",
+          cell: (row) => formatKm(row.distanceKm),
+        },
         {
           key: "points",
-          header: "Gesamtpunkte",
+          header: STR.views.standings.headerTotalPoints,
           align: "right",
           cell: (row) => row.points.toLocaleString("de-DE"),
         },
@@ -181,10 +186,10 @@ export function StandingsPage() {
 
   const detailedColumns = useMemo<DataTableColumn<StandingsViewRow>[]>(
     () => [
-      { key: "rank", header: "Platz", align: "right", cell: (row) => row.rank },
+      { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => row.rank },
       {
         key: "excluded",
-        header: "a.W.",
+        header: STR.views.standings.headerExcluded,
         align: "center",
         cell: (row) => {
           const categoryPrefix = selectedCategory?.key ?? "unknown";
@@ -197,22 +202,22 @@ export function StandingsPage() {
                 const checked = event.currentTarget.checked;
                 setExcludedRows((prev) => ({ ...prev, [exclusionKey]: checked }));
               }}
-              aria-label={`a.W. ${row.team}`}
+              aria-label={STR.views.standings.excludedAria(row.team)}
             />
           );
         },
       },
-      { key: "team", header: "Name", cell: (row) => row.team },
+      { key: "team", header: STR.views.standings.headerName, cell: (row) => row.team },
       ...Array.from({ length: maxRaceColumns }, (_, index) => ({
         key: `race_${index + 1}`,
         header: `Lauf ${index + 1}`,
         align: "right" as const,
         cell: (row: StandingsViewRow) => formatRaceCell(row.raceResults[index] ?? null),
       })),
-      { key: "distanceKm", header: "Gesamtdistanz", align: "right", cell: (row) => formatKm(row.distanceKm) },
+      { key: "distanceKm", header: STR.views.standings.headerTotalDistance, align: "right", cell: (row) => formatKm(row.distanceKm) },
       {
         key: "points",
-        header: "Gesamtpunkte",
+        header: STR.views.standings.headerTotalPoints,
         align: "right",
         cell: (row) => row.points.toLocaleString("de-DE"),
       },
@@ -250,7 +255,7 @@ export function StandingsPage() {
     setSidebarControls(
       <div className="sidebar-controls">
         <section className="sidebar-controls__section">
-          <h4>Einzel</h4>
+          <h4>{STR.views.standings.sectionSingles}</h4>
           <div className="category-matrix">
             {CATEGORY_GROUPS[0]?.rows.flat().map((categoryKey) => {
               const category = data?.categories.find((entry) => entry.key === categoryKey) ?? null;
@@ -275,7 +280,7 @@ export function StandingsPage() {
         </section>
 
         <section className="sidebar-controls__section">
-          <h4>Paare</h4>
+          <h4>{STR.views.standings.sectionCouples}</h4>
           <div className="category-matrix">
             {CATEGORY_GROUPS[1]?.rows.flat().map((categoryKey) => {
               const category = data?.categories.find((entry) => entry.key === categoryKey) ?? null;
@@ -309,7 +314,7 @@ export function StandingsPage() {
                 className={`button ${action.availability === "ready" ? "button--primary" : ""}`}
                 onClick={() => void handleExport(action)}
               >
-                {action.id === "export_pdf" ? "Wertungen als PDF speichern" : "Gesamtwertung als Excel speichern"}
+                {action.id === "export_pdf" ? STR.views.standings.exportPdfLong : STR.views.standings.exportExcelLong}
               </button>
             ))}
           </div>
@@ -330,7 +335,7 @@ export function StandingsPage() {
         <EmptyState title={STR.views.standings.title} message={STR.views.standings.noSeason} />
       ) : loading || !data ? (
         <section className="surface-card">
-          <p className="surface-card__note">Wertungen werden geladen...</p>
+          <p className="surface-card__note">{STR.views.standings.loading}</p>
         </section>
       ) : (
         <section className="surface-card">
@@ -348,7 +353,7 @@ export function StandingsPage() {
             emptyMessage={STR.views.standings.noRows}
           />
           <div className="surface-card__section">
-            <h3>Detailergebnisse</h3>
+            <h3>{STR.views.standings.detailResultsTitle}</h3>
           </div>
           <DataTable
             className="ui-table--standings ui-table--standings-detail"

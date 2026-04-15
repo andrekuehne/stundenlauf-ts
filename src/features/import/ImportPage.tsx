@@ -365,7 +365,7 @@ export function ImportPage() {
                           <input
                             value={fileName}
                             onChange={(event) => setFileName(event.target.value)}
-                            placeholder="lauf4-mw.xlsx"
+                            placeholder={STR.views.import.filePlaceholder}
                             disabled={busy}
                           />
                           <input
@@ -387,7 +387,7 @@ export function ImportPage() {
                             onClick={() => filePickerRef.current?.click()}
                             disabled={busy}
                           >
-                            Datei wählen
+                            {STR.views.import.filePickButton}
                           </button>
                         </div>
                       </label>
@@ -421,7 +421,7 @@ export function ImportPage() {
                           min={1}
                           value={raceNumber}
                           onChange={(event) => setRaceNumber(event.target.value)}
-                          placeholder="4"
+                          placeholder={STR.views.import.racePlaceholder}
                           disabled={busy}
                         />
                       </label>
@@ -439,19 +439,19 @@ export function ImportPage() {
               <SupportPanel>
                 {flowSidebar}
                 <div className="import-support__separator" />
-                <InfoCard title="Hilfe">
-                  <p>Wählen Sie Datei, Wettbewerb und Laufnummer.</p>
+                <InfoCard title={STR.views.import.helpTitle}>
+                  <p>{STR.views.import.helpDescription}</p>
                 </InfoCard>
-                <InfoCard title="Datei-Prüfung">
+                <InfoCard title={STR.views.import.fileCheckTitle}>
                   <ul className="support-list">
-                    <li>{fileSelected ? "Datei erkannt ✅" : "Datei fehlt"}</li>
-                    <li>{fileSelected ? "Excel-Datei gültig ✅" : "Dateityp wird nach Start geprüft"}</li>
-                    <li>{raceValid ? `Laufnummer ${parsedRace} gewählt` : "Laufnummer fehlt"}</li>
-                    <li>{raceValid ? (raceOccupied ? "Laufnummer bereits belegt" : "Laufnummer frei ✅") : "Laufnummer noch offen"}</li>
+                    <li>{fileSelected ? STR.views.import.fileDetected : STR.views.import.fileMissing}</li>
+                    <li>{fileSelected ? STR.views.import.fileTypeValid : STR.views.import.fileTypePending}</li>
+                    <li>{raceValid ? STR.views.import.raceSelected(parsedRace) : STR.views.import.raceMissing}</li>
+                    <li>{raceValid ? (raceOccupied ? STR.views.import.raceOccupied : STR.views.import.raceFree) : STR.views.import.racePending}</li>
                   </ul>
                 </InfoCard>
-                <InfoCard title="Nächster Schritt">
-                  <p>Danach prüfen Sie mögliche Zuordnungen.</p>
+                <InfoCard title={STR.views.import.nextStepTitle}>
+                  <p>{STR.views.import.nextStepDescription}</p>
                 </InfoCard>
               </SupportPanel>
             }
@@ -487,7 +487,7 @@ export function ImportPage() {
                       }}
                       disabled={busy || totalReviews === 0}
                     >
-                      {reviewIndex >= totalReviews - 1 ? "Zusammenfassung ➡️" : `${STR.views.import.reviewNextEntry} ➡️`}
+                      {reviewIndex >= totalReviews - 1 ? STR.views.import.summaryNext : `${STR.views.import.reviewNextEntry} ➡️`}
                     </button>
                     <button
                       type="button"
@@ -499,7 +499,7 @@ export function ImportPage() {
                           : undefined
                       }
                     >
-                      ✍️ Daten korrigieren
+                      {STR.views.import.fixData}
                     </button>
                     <button type="button" className="button button--ghost" onClick={() => setStep("select_file")} disabled={busy}>
                       ↩️ {STR.views.import.stepBackToSelection}
@@ -521,11 +521,11 @@ export function ImportPage() {
                           <dd>{activeReview.incoming.club || "—"}</dd>
                         </div>
                         <div>
-                          <dt>Startnr.</dt>
+                          <dt>{STR.views.import.incomingStartNumber}</dt>
                           <dd>{activeReview.incoming.startNumber}</dd>
                         </div>
                         <div>
-                          <dt>Wertung</dt>
+                          <dt>{STR.views.import.incomingResult}</dt>
                           <dd>{activeReview.incoming.resultLabel}</dd>
                         </div>
                       </dl>
@@ -541,7 +541,7 @@ export function ImportPage() {
                         <div className="import-candidate__head">
                           <strong>
                             {currentDecision?.action === "create_new"
-                              ? `${STR.views.import.reviewCreateNewTitle} - ausgewählt`
+                              ? `${STR.views.import.reviewCreateNewTitle} - ${STR.views.import.createNewSelected}`
                               : STR.views.import.reviewCreateNewTitle}
                           </strong>
                         </div>
@@ -564,7 +564,7 @@ export function ImportPage() {
                       })}
                       {visibleCandidates.length === 0 ? (
                         <div className="import-review__empty-candidates">
-                          Für den aktuellen Modus gibt es keine sichtbaren Kandidaten. Prüfen Sie die Matching-Optionen.
+                          {STR.views.import.noVisibleCandidates}
                         </div>
                       ) : null}
                     </div>
@@ -579,21 +579,21 @@ export function ImportPage() {
               <SupportPanel>
                 {flowSidebar}
                 <div className="import-support__separator" />
-                <InfoCard title="Fortschritt">
+                <InfoCard title={STR.views.import.progressTitle}>
                   <p>{STR.views.import.reviewProgressShort(reviewIndex + 1, totalReviews)}</p>
-                  <p>{resolvedReviews} erledigt</p>
-                  <p>{openReviews} offen</p>
+                  <p>{STR.views.import.completedCount(resolvedReviews)}</p>
+                  <p>{STR.views.import.openCount(openReviews)}</p>
                 </InfoCard>
-                <InfoCard title="Matching-Optionen">
+                <InfoCard title={STR.views.import.matchingOptionsTitle}>
                   <div className="matching-options">
-                    <div className="matching-options__modes" role="tablist" aria-label="Matching-Modus">
+                    <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeAria}>
                       <button
                         type="button"
                         className={`button button--tab ${matchingMode === "strict" ? "is-active" : ""}`}
                         onClick={() => setMatchingMode("strict")}
                         disabled={busy}
                       >
-                        Strikt
+                        {STR.views.import.matchingModeStrict}
                       </button>
                       <button
                         type="button"
@@ -601,7 +601,7 @@ export function ImportPage() {
                         onClick={() => setMatchingMode("fuzzy_automatik")}
                         disabled={busy}
                       >
-                        Fuzzy
+                        {STR.views.import.matchingModeShortFuzzy}
                       </button>
                       <button
                         type="button"
@@ -609,7 +609,7 @@ export function ImportPage() {
                         onClick={() => setMatchingMode("manuell")}
                         disabled={busy}
                       >
-                        Manuell
+                        {STR.views.import.matchingModeManual}
                       </button>
                     </div>
                     <div className="matching-options__summary">
@@ -618,7 +618,7 @@ export function ImportPage() {
                       </span>
                     </div>
                     <label className="matching-options__slider">
-                      <span>Auto-Schwelle ({thresholdLabel(activeMatchingSettings.autoThreshold)})</span>
+                      <span>{STR.views.import.autoThresholdLabel(thresholdLabel(activeMatchingSettings.autoThreshold))}</span>
                       <input
                         type="range"
                         min={MATCHING_THRESHOLD_MIN}
@@ -639,7 +639,7 @@ export function ImportPage() {
                       />
                     </label>
                     <label className="matching-options__slider">
-                      <span>Prüf-Schwelle ({thresholdLabel(activeMatchingSettings.reviewThreshold)})</span>
+                      <span>{STR.views.import.reviewThresholdLabel(thresholdLabel(activeMatchingSettings.reviewThreshold))}</span>
                       <input
                         type="range"
                         min={MATCHING_THRESHOLD_MIN}
@@ -661,23 +661,23 @@ export function ImportPage() {
                     </label>
                     <p className="matching-options__hint">
                       {matchingMode === "strict"
-                        ? "Strikt zeigt nur exakte Treffer."
+                        ? STR.views.import.matchingModeHintStrict
                         : matchingMode === "manuell"
-                          ? "Manuell zeigt alle Kandidaten ohne Auto-Zuordnung."
+                          ? STR.views.import.matchingModeHintManual
                           : modeMayAutoMerge
-                            ? "Fuzzy-Automatik: oberster Treffer liegt in der Auto-Zone."
-                            : "Fuzzy-Automatik: oberster Treffer bleibt in der Prüfliste."}
+                            ? STR.views.import.matchingModeHintAutoZone
+                            : STR.views.import.matchingModeHintReviewList}
                     </p>
                     <p className="matching-options__hint">
-                      Sichtbare Kandidaten: {visibleCandidates.length} von {orderedCandidates.length}
+                      {STR.views.import.visibleCandidatesCount(visibleCandidates.length, orderedCandidates.length)}
                     </p>
                   </div>
                 </InfoCard>
-                <InfoCard title="Hinweise">
+                <InfoCard title={STR.views.import.hintsTitle}>
                   <ul className="support-list">
-                    <li>Prüfen Sie Jahrgang bei Unsicherheit.</li>
-                    <li>Verein kann sich geändert haben.</li>
-                    <li>Der nächste offene Fall wird danach geladen.</li>
+                    <li>{STR.views.import.hintCheckYob}</li>
+                    <li>{STR.views.import.hintClubChanged}</li>
+                    <li>{STR.views.import.hintNextCase}</li>
                   </ul>
                 </InfoCard>
               </SupportPanel>
@@ -737,11 +737,11 @@ export function ImportPage() {
               <SupportPanel>
                 {flowSidebar}
                 <div className="import-support__separator" />
-                <InfoCard title="Ergebnis">
-                  <p>Nach dem Abschluss wird die Saisonwertung aktualisiert.</p>
+                <InfoCard title={STR.views.import.resultTitle}>
+                  <p>{STR.views.import.resultDescription}</p>
                 </InfoCard>
-                <InfoCard title="Hinweis">
-                  <p>Alle Änderungen erscheinen in der Historie.</p>
+                <InfoCard title={STR.views.import.noteTitle}>
+                  <p>{STR.views.import.noteDescription}</p>
                 </InfoCard>
               </SupportPanel>
             }

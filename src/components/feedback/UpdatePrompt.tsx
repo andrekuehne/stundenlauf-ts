@@ -1,4 +1,5 @@
 import { useRegisterSW } from "virtual:pwa-register/react";
+import { STR } from "@/app/strings.ts";
 
 export function UpdatePrompt() {
   const {
@@ -12,7 +13,7 @@ export function UpdatePrompt() {
 
   return (
     <div className="update-toast" role="alert" aria-live="polite">
-      <span>Neue Version verfuegbar.</span>
+      <span>{STR.update.available}</span>
       <button
         type="button"
         className="button button--primary"
@@ -20,7 +21,7 @@ export function UpdatePrompt() {
           void updateServiceWorker(true);
         }}
       >
-        Aktualisieren
+        {STR.update.refresh}
       </button>
     </div>
   );

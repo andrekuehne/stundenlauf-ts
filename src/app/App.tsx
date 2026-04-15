@@ -123,7 +123,7 @@ function Phase1App() {
     () => (
       <>
         <span className="status-bar__prefix">{STR.status.prefix}</span>
-        <span>{currentStatus?.message ?? (loading ? "Oberflaeche wird geladen..." : STR.status.defaultReady)}</span>
+        <span>{currentStatus?.message ?? (loading ? STR.status.appLoading : STR.status.defaultReady)}</span>
       </>
     ),
     [currentStatus?.message, loading],
@@ -140,7 +140,7 @@ function Phase1App() {
       >
         {error ? (
           <div className="page-stack">
-            <EmptyState title="App-Fehler" message={error} />
+            <EmptyState title={STR.app.errorTitle} message={error} />
           </div>
         ) : (
           <Outlet context={{ shellData, refreshShellData, setSidebarControls }} />

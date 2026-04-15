@@ -15,13 +15,7 @@ interface AppShellProps {
 
 const NAV_ITEMS: AppRoute[] = ["season", "standings", "import", "corrections", "history"];
 
-const DEFAULT_CONTROL_HINT: Record<AppRoute, string> = {
-  season: "Bereichsspezifische Saison-Steuerungen erscheinen hier.",
-  standings: "Steuerungen fuer die Auswertung werden geladen.",
-  import: "Bereichsspezifische Import-Steuerungen erscheinen hier.",
-  corrections: "Bereichsspezifische Korrektur-Steuerungen erscheinen hier.",
-  history: "Bereichsspezifische Historie-Steuerungen erscheinen hier.",
-};
+const DEFAULT_CONTROL_HINT: Record<AppRoute, string> = STR.shell.defaultControlHint;
 
 export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarControls, children, footer }: AppShellProps) {
   return (
@@ -41,7 +35,7 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
                 }
               }}
             >
-              <option value="">Keine Saison</option>
+              <option value="">{STR.shell.noSeasonOption}</option>
               {shellData.availableSeasons.map((season) => (
                 <option key={season.seasonId} value={season.seasonId}>
                   {season.label}
@@ -59,7 +53,7 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
       <div className="shell-body">
         <aside className="shell-sidebar">
           <div className="shell-sidebar__nav">
-            <h2>Bereiche</h2>
+            <h2>{STR.shell.sectionsTitle}</h2>
             <nav>
               {NAV_ITEMS.map((route) => (
                 <NavLink
