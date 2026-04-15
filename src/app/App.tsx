@@ -112,7 +112,7 @@ function Phase1App() {
         targetRoute = "/import";
       }
       await refreshShellData();
-      navigate(targetRoute);
+      void navigate(targetRoute);
       if (selected) {
         setStatus({
           severity: "info",

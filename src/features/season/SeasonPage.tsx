@@ -118,7 +118,7 @@ export function SeasonPage() {
         message: STR.views.season.openedDone(row.label),
         source: "season",
       });
-      navigate(row.importedEvents > 0 ? "/standings" : "/import");
+      void navigate(row.importedEvents > 0 ? "/standings" : "/import");
     } finally {
       setActionSeasonId(null);
     }
@@ -181,7 +181,7 @@ export function SeasonPage() {
         message: STR.views.season.createdDone(created.label),
         source: "season",
       });
-      navigate("/import");
+      void navigate("/import");
     } finally {
       setCreating(false);
     }

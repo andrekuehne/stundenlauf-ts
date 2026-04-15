@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppApi, ShellData, StandingsData } from "@/api/contracts/index.ts";
+import type { AppApi, AppCommandResult, ShellData, StandingsData } from "@/api/contracts/index.ts";
 import { StandingsPage } from "@/features/standings/StandingsPage.tsx";
 
 const setSidebarControls = vi.fn();
@@ -25,8 +25,12 @@ const standingsData: StandingsData = {
     "half_hour:women": [{ rank: 1, team: "Anna Team", yob: 1990, club: "SV", distanceKm: 10, points: 20, races: 2 }],
   },
   importedRuns: [],
-  exportActions: [{ id: "export_pdf", label: "PDF", availability: "ready" }],
+  exportActions: [{ id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" }],
 };
+
+function buildCommandResult(message: string): AppCommandResult {
+  return { severity: "success", message };
+}
 
 let apiMock: AppApi;
 vi.mock("@/api/provider.tsx", () => ({ useAppApi: () => apiMock }));
@@ -60,9 +64,9 @@ beforeEach(() => {
     }),
     openSeason: vi.fn(async () => {}),
     deleteSeason: vi.fn(async () => {}),
-    runSeasonCommand: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => standingsData),
-    runExportAction: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runExportAction: vi.fn(async () => buildCommandResult("ok")),
     createImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
@@ -72,15 +76,15 @@ beforeEach(() => {
     setImportReviewDecision: vi.fn(async () => {
       throw new Error("not used");
     }),
-    finalizeImportDraft: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    finalizeImportDraft: vi.fn(async () => buildCommandResult("ok")),
     getHistory: vi.fn(async () => {
       throw new Error("not used");
     }),
     previewHistoryState: vi.fn(async () => {
       throw new Error("not used");
     }),
-    rollbackHistory: vi.fn(async () => ({ severity: "success", message: "ok" })),
-    hardResetHistoryToSeq: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    rollbackHistory: vi.fn(async () => buildCommandResult("ok")),
+    hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("ok")),
   };
 });
 
@@ -93,25 +97,25 @@ describe("StandingsPage", () => {
 
   it("selects first category when current selection is missing", async () => {
     render(<StandingsPage />);
-    await waitFor(() => expect(apiMock.getStandings).toHaveBeenCalledWith("season-1"));
-    await waitFor(() => expect(selectCategory).toHaveBeenCalledWith("half_hour:women"));
+    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledWith("season-1"); });
+    await waitFor(() => { expect(selectCategory).toHaveBeenCalledWith("half_hour:women"); });
   });
 
   it("runs PDF export with compact preset by default and emits status", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0); });
 
-    await waitFor(() => expect(setSidebarControls).toHaveBeenCalled());
+    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
     const latestSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
     render(<>{latestSidebar}</>);
     const exportButton = screen.getByRole("button", { name: /PDF/i });
     fireEvent.click(exportButton);
 
     await waitFor(() =>
-      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
+      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
         pdfLayoutPreset: "compact",
-      }),
+      }); },
     );
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
   });
@@ -119,23 +123,23 @@ describe("StandingsPage", () => {
   it("runs PDF export with normal preset when selected", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0); });
 
-    await waitFor(() => expect(setSidebarControls).toHaveBeenCalled());
+    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
     const firstSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
     render(<>{firstSidebar}</>);
 
     fireEvent.change(screen.getByLabelText("PDF-Stil"), { target: { value: "default" } });
 
-    await waitFor(() => expect(setSidebarControls.mock.calls.length).toBeGreaterThan(1));
+    await waitFor(() => { expect(setSidebarControls.mock.calls.length).toBeGreaterThan(1); });
     const updatedSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
     render(<>{updatedSidebar}</>);
     fireEvent.click(screen.getAllByRole("button", { name: /PDF/i }).at(-1)!);
 
     await waitFor(() =>
-      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
+      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
         pdfLayoutPreset: "default",
-      }),
+      }); },
     );
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
   });

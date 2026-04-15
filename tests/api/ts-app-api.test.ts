@@ -72,10 +72,10 @@ class InMemorySeasonRepository implements SeasonRepository {
 }
 
 function buildSinglesImportFile(
-  rows: unknown[][],
+  rows: ReadonlyArray<ReadonlyArray<unknown>>,
   name = "Ergebnisliste MW Lauf 2.xlsx",
 ): File {
-  const buffer = buildXlsx(rows);
+  const buffer = buildXlsx(rows.map((row) => [...row]));
   const file = new File([buffer], name, {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
@@ -86,10 +86,10 @@ function buildSinglesImportFile(
 }
 
 function buildCouplesImportFile(
-  rows: unknown[][],
+  rows: ReadonlyArray<ReadonlyArray<unknown>>,
   name = "Ergebnisliste MW_Paare Lauf 2.xlsx",
 ): File {
-  const buffer = buildXlsx(rows);
+  const buffer = buildXlsx(rows.map((row) => [...row]));
   const file = new File([buffer], name, {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
@@ -481,5 +481,87 @@ describe("TsAppApi import workflows", () => {
     }
     const yobComparison = firstCandidate.fieldComparisons.find((item) => item.fieldKey === "yob");
     expect(yobComparison?.candidateValue).toBe("1992 / 1990");
+  });
+
+  it("aligns doubles comparison values when stored team member order is swapped", async () => {
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Stundenlauf 2034" });
+    await api.openSeason(created.seasonId);
+    const repo = await getSeasonRepository();
+    await repo.saveImportedSeason(
+      {
+        season_id: created.seasonId,
+        label: created.label,
+        created_at: new Date().toISOString(),
+      },
+      [
+        personRegistered({
+          person_id: "person-swapped-a",
+          given_name: "Tom",
+          family_name: "Beispiel",
+          display_name: "Tom Beispiel",
+          name_normalized: "tom beispiel",
+          yob: 1990,
+          gender: "M",
+          club: "Club B",
+          club_normalized: "club b",
+        }),
+        personRegistered({
+          person_id: "person-swapped-b",
+          given_name: "Lea",
+          family_name: "Beispiel",
+          display_name: "Lea Beispiel",
+          name_normalized: "lea beispiel",
+          yob: 1992,
+          gender: "F",
+          club: "Club A",
+          club_normalized: "club a",
+        }),
+        teamRegistered({
+          team_id: "team-couple-swapped",
+          member_person_ids: ["person-swapped-a", "person-swapped-b"],
+          team_kind: "couple",
+        }),
+      ],
+    );
+
+    const file = buildCouplesImportFile([
+      EXPECTED_HEADER_COUPLES,
+      ["h-Lauf", "", "", "", "", "", "", "", "", "", ""],
+      ["Paare Mix", "", "", "", "", "", "", "", "", "", ""],
+      [1, "14", "Lea Beispel", 1992, "Club A", "Tom Beispiel", 1990, "Club B", "8,3", "", "20"],
+    ]);
+    rememberImportFile(file);
+
+    const draft = await api.createImportDraft({
+      seasonId: created.seasonId,
+      fileName: file.name,
+      category: "doubles",
+      raceNumber: 3,
+      matchingConfig: {
+        autoMin: 0.5,
+        reviewMin: 0.5,
+        autoMergeEnabled: false,
+        perfectMatchAutoMerge: false,
+        strictNormalizedAutoOnly: false,
+      },
+    });
+
+    expect(draft.reviewItems.length).toBe(1);
+    const firstReview = draft.reviewItems[0];
+    if (!firstReview) {
+      throw new Error("Expected doubles review item.");
+    }
+    const firstCandidate = firstReview.candidates[0];
+    if (!firstCandidate) {
+      throw new Error("Expected doubles candidate.");
+    }
+
+    const nameComparison = firstCandidate.fieldComparisons.find((item) => item.fieldKey === "name");
+    const yobComparison = firstCandidate.fieldComparisons.find((item) => item.fieldKey === "yob");
+    const clubComparison = firstCandidate.fieldComparisons.find((item) => item.fieldKey === "club");
+    expect(nameComparison?.candidateValue).toBe("Lea Beispiel / Tom Beispiel");
+    expect(yobComparison?.candidateValue).toBe("1992 / 1990");
+    expect(clubComparison?.candidateValue).toBe("Club A / Club B");
   });
 });

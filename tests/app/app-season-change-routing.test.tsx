@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppApi, ShellData, StandingsData } from "@/api/contracts/index.ts";
+import type { AppApi, AppCommandResult, ShellData, StandingsData } from "@/api/contracts/index.ts";
 import { App } from "@/app/App.tsx";
 
 const navigateMock = vi.fn();
@@ -27,6 +27,10 @@ const standingsWithRuns: StandingsData = {
 };
 
 let apiMock: AppApi;
+
+function buildCommandResult(message: string): AppCommandResult {
+  return { severity: "success", message };
+}
 
 vi.mock("react-router-dom", () => ({
   useLocation: () => ({ pathname: "/season" }),
@@ -75,9 +79,9 @@ beforeEach(() => {
     }),
     openSeason: vi.fn(async () => {}),
     deleteSeason: vi.fn(async () => {}),
-    runSeasonCommand: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => standingsWithRuns),
-    runExportAction: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runExportAction: vi.fn(async () => buildCommandResult("ok")),
     createImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
@@ -87,15 +91,15 @@ beforeEach(() => {
     setImportReviewDecision: vi.fn(async () => {
       throw new Error("not used");
     }),
-    finalizeImportDraft: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    finalizeImportDraft: vi.fn(async () => buildCommandResult("ok")),
     getHistory: vi.fn(async () => {
       throw new Error("not used");
     }),
     previewHistoryState: vi.fn(async () => {
       throw new Error("not used");
     }),
-    rollbackHistory: vi.fn(async () => ({ severity: "success", message: "ok" })),
-    hardResetHistoryToSeq: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    rollbackHistory: vi.fn(async () => buildCommandResult("ok")),
+    hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("ok")),
   };
 });
 
@@ -105,8 +109,8 @@ describe("App season selector routing", () => {
     const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");
     fireEvent.change(seasonSelect, { target: { value: "season-2" } });
 
-    await waitFor(() => expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"));
-    await waitFor(() => expect(apiMock.getStandings).toHaveBeenCalledWith("season-2"));
+    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
+    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledWith("season-2"); });
     expect(navigateMock).toHaveBeenCalledWith("/standings");
   });
 
@@ -119,8 +123,8 @@ describe("App season selector routing", () => {
     const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");
     fireEvent.change(seasonSelect, { target: { value: "season-2" } });
 
-    await waitFor(() => expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"));
-    await waitFor(() => expect(apiMock.getStandings).toHaveBeenCalledWith("season-2"));
+    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
+    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledWith("season-2"); });
     expect(navigateMock).toHaveBeenCalledWith("/import");
   });
 });

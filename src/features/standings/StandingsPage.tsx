@@ -317,7 +317,7 @@ export function StandingsPage() {
               <select
                 aria-label={STR.views.standings.pdfStyleLabel}
                 value={pdfLayoutPreset}
-                onChange={(event) => setPdfLayoutPreset(event.currentTarget.value as PdfLayoutPreset)}
+                onChange={(event) => { setPdfLayoutPreset(event.currentTarget.value as PdfLayoutPreset); }}
               >
                 <option value="default">{STR.views.standings.pdfStyleNormal}</option>
                 <option value="compact">{STR.views.standings.pdfStyleCompact}</option>

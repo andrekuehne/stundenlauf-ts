@@ -209,7 +209,9 @@ beforeEach(() => {
     getImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
-    setImportReviewDecision: vi.fn(async (_draftId: string, _decision: ImportReviewDecision) => {
+    setImportReviewDecision: vi.fn(async (draftId: string, decision: ImportReviewDecision) => {
+      void draftId;
+      void decision;
       throw new Error("not used");
     }),
     finalizeImportDraft: vi.fn(async () => buildCommandResult("Import abgeschlossen")),

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-const createHashRouterMock = vi.fn(() => ({}) as never);
-const routerProviderMock = vi.fn(() => null);
+const createHashRouterMock = vi.fn((..._args: unknown[]) => ({}));
+const routerProviderMock = vi.fn((_props: unknown) => null);
 
 vi.mock("react-router-dom", () => ({
   createHashRouter: (...args: unknown[]) => createHashRouterMock(...args),
@@ -19,7 +19,8 @@ describe("router config", () => {
   it("declares main routes and wildcard redirect", async () => {
     const mod = await import("@/app/router.tsx");
     expect(createHashRouterMock).toHaveBeenCalledTimes(1);
-    const routes = createHashRouterMock.mock.calls[0]?.[0] as Array<{ path?: string; children?: Array<{ path?: string }> }>;
+    const firstCall = createHashRouterMock.mock.calls[0];
+    const routes = (firstCall?.[0] ?? []) as Array<{ path?: string; children?: Array<{ path?: string }> }>;
     expect(routes[0]?.path).toBe("/");
     expect(routes[0]?.children?.map((r) => r.path)).toEqual([undefined, "season", "standings", "import", "corrections", "history"]);
     expect(routes[1]?.path).toBe("*");

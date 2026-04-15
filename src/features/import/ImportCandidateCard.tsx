@@ -29,6 +29,17 @@ function splitPairToken(value: string | null | undefined): [string, string] {
   return [normalized, "—"];
 }
 
+function normalizeForMatch(value: string): string {
+  if (value === "—") {
+    return "";
+  }
+  return value.trim().toLowerCase();
+}
+
+function pairValueMatches(incomingValue: string, candidateValue: string): boolean {
+  return normalizeForMatch(incomingValue) === normalizeForMatch(candidateValue);
+}
+
 function ComparisonRow({
   label,
   isMatch,
@@ -70,6 +81,12 @@ function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCan
   const [candidateLeftYob, candidateRightYob] = splitPairToken(yobComparison?.candidateValue);
   const [incomingLeftClub, incomingRightClub] = splitPairToken(clubComparison?.incomingValue);
   const [candidateLeftClub, candidateRightClub] = splitPairToken(clubComparison?.candidateValue);
+  const leftNameMatch = pairValueMatches(incomingSplitLeftName, candidateSplitLeftName);
+  const rightNameMatch = pairValueMatches(incomingSplitRightName, candidateSplitRightName);
+  const leftYobMatch = pairValueMatches(incomingLeftYob, candidateLeftYob);
+  const rightYobMatch = pairValueMatches(incomingRightYob, candidateRightYob);
+  const leftClubMatch = pairValueMatches(incomingLeftClub, candidateLeftClub);
+  const rightClubMatch = pairValueMatches(incomingRightClub, candidateRightClub);
 
   return (
     <div className="import-candidate__pair-grid">
@@ -78,19 +95,19 @@ function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCan
         <div className="import-candidate__comparison">
           <ComparisonRow
             label={STR.importCandidate.name}
-            isMatch={Boolean(nameComparison?.isMatch)}
+            isMatch={leftNameMatch}
             incomingValue={incomingSplitLeftName}
             candidateValue={candidateSplitLeftName}
           />
           <ComparisonRow
             label={STR.importCandidate.yob}
-            isMatch={Boolean(yobComparison?.isMatch)}
+            isMatch={leftYobMatch}
             incomingValue={incomingLeftYob}
             candidateValue={candidateLeftYob}
           />
           <ComparisonRow
             label={STR.importCandidate.club}
-            isMatch={Boolean(clubComparison?.isMatch)}
+            isMatch={leftClubMatch}
             incomingValue={incomingLeftClub}
             candidateValue={candidateLeftClub}
           />
@@ -101,19 +118,19 @@ function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCan
         <div className="import-candidate__comparison">
           <ComparisonRow
             label={STR.importCandidate.name}
-            isMatch={Boolean(nameComparison?.isMatch)}
+            isMatch={rightNameMatch}
             incomingValue={incomingSplitRightName}
             candidateValue={candidateSplitRightName}
           />
           <ComparisonRow
             label={STR.importCandidate.yob}
-            isMatch={Boolean(yobComparison?.isMatch)}
+            isMatch={rightYobMatch}
             incomingValue={incomingRightYob}
             candidateValue={candidateRightYob}
           />
           <ComparisonRow
             label={STR.importCandidate.club}
-            isMatch={Boolean(clubComparison?.isMatch)}
+            isMatch={rightClubMatch}
             incomingValue={incomingRightClub}
             candidateValue={candidateRightClub}
           />

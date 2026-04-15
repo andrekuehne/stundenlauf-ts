@@ -11,7 +11,7 @@ interface AppApiProviderProps {
 }
 
 function resolveApiMode(): "mock" | "live" {
-  const envMode = import.meta.env.VITE_APP_API_MODE;
+  const envMode = (import.meta.env as Record<string, unknown>)["VITE_APP_API_MODE"];
   if (envMode === "mock" || envMode === "live") {
     return envMode;
   }

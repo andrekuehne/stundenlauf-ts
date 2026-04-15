@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppApi, HistoryData, ShellData, StandingsData } from "@/api/contracts/index.ts";
+import type { AppApi, AppCommandResult, HistoryData, ShellData, StandingsData } from "@/api/contracts/index.ts";
 import { HistoryPage } from "@/features/history/HistoryPage.tsx";
 
 const setSidebarControls = vi.fn();
@@ -16,7 +16,7 @@ const shellData: ShellData = {
 const historyData: HistoryData = {
   seasonId: "season-1",
   seasonLabel: "Saison 1",
-  raceContext: { raceLabel: "Lauf 1", categoryLabel: "Frauen", raceDateLabel: "2026-01-01" },
+  raceContext: { raceEventId: "race-1", raceLabel: "Lauf 1", categoryLabel: "Frauen", raceDateLabel: "2026-01-01" },
   rows: [
     {
       seq: 10,
@@ -28,6 +28,7 @@ const historyData: HistoryData = {
       isEffectiveChange: true,
       raceEventId: "race-1",
       importBatchId: "batch-1",
+      groupKey: "batch:batch-1",
       actionability: {
         canPreviewRollbackAtomic: true,
         canPreviewRollbackGroup: true,
@@ -45,6 +46,10 @@ const emptyStandings: StandingsData = {
   importedRuns: [],
   exportActions: [],
 };
+
+function buildCommandResult(message: string): AppCommandResult {
+  return { severity: "success", message };
+}
 
 let apiMock: AppApi;
 vi.mock("@/api/provider.tsx", () => ({ useAppApi: () => apiMock }));
@@ -66,9 +71,9 @@ beforeEach(() => {
     }),
     openSeason: vi.fn(async () => {}),
     deleteSeason: vi.fn(async () => {}),
-    runSeasonCommand: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => emptyStandings),
-    runExportAction: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runExportAction: vi.fn(async () => buildCommandResult("ok")),
     createImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
@@ -78,11 +83,11 @@ beforeEach(() => {
     setImportReviewDecision: vi.fn(async () => {
       throw new Error("not used");
     }),
-    finalizeImportDraft: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    finalizeImportDraft: vi.fn(async () => buildCommandResult("ok")),
     getHistory: vi.fn(async () => historyData),
-    previewHistoryState: vi.fn(async () => ({ anchorSeq: 10, derivedStateLabel: "Vorschau", blockedReason: "eingefroren" })),
-    rollbackHistory: vi.fn(async () => ({ severity: "success", message: "Rollback ok" })),
-    hardResetHistoryToSeq: vi.fn(async () => ({ severity: "success", message: "Reset ok" })),
+    previewHistoryState: vi.fn(async () => ({ anchorSeq: 10, isFrozen: true, derivedStateLabel: "Vorschau", blockedReason: "eingefroren" })),
+    rollbackHistory: vi.fn(async () => buildCommandResult("Rollback ok")),
+    hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("Reset ok")),
   };
 });
 
@@ -91,7 +96,7 @@ describe("HistoryPage", () => {
     render(<HistoryPage />);
     await waitFor(() => expect(screen.getByText("Import")).toBeInTheDocument());
     fireEvent.click(screen.getAllByRole("button")[0] as HTMLButtonElement);
-    await waitFor(() => expect(apiMock.previewHistoryState).toHaveBeenCalledWith("season-1", { anchorSeq: 10 }));
+    await waitFor(() => { expect(apiMock.previewHistoryState).toHaveBeenCalledWith("season-1", { anchorSeq: 10 }); });
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ severity: "info", source: "history" }));
   });
 
@@ -100,7 +105,7 @@ describe("HistoryPage", () => {
     await waitFor(() => expect(screen.getByText("Import")).toBeInTheDocument());
     fireEvent.click(screen.getAllByRole("button")[1] as HTMLButtonElement);
     fireEvent.click(screen.getByRole("button", { name: /Bestätigen/i }));
-    await waitFor(() => expect(apiMock.rollbackHistory).toHaveBeenCalledWith("season-1", expect.objectContaining({ mode: "atomic" })));
+    await waitFor(() => { expect(apiMock.rollbackHistory).toHaveBeenCalledWith("season-1", expect.objectContaining({ mode: "atomic" })); });
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "history" }));
   });
 
@@ -109,6 +114,6 @@ describe("HistoryPage", () => {
     await waitFor(() => expect(screen.getByText("Import")).toBeInTheDocument());
     fireEvent.click(screen.getAllByRole("button")[3] as HTMLButtonElement);
     fireEvent.click(screen.getByRole("button", { name: /Bestätigen/i }));
-    await waitFor(() => expect(apiMock.hardResetHistoryToSeq).toHaveBeenCalledWith("season-1", expect.objectContaining({ anchorSeq: 10 })));
+    await waitFor(() => { expect(apiMock.hardResetHistoryToSeq).toHaveBeenCalledWith("season-1", expect.objectContaining({ anchorSeq: 10 })); });
   });
 });

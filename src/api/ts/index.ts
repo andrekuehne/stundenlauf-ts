@@ -6,6 +6,7 @@ import { categoryKey, isEffectiveRace, projectState } from "@/domain/projection.
 import type { DomainEvent } from "@/domain/events.ts";
 import type {
   IncomingRowData,
+  PersonIdentity,
   RaceCategory,
   RaceEvent,
   SeasonDescriptor,
@@ -22,6 +23,7 @@ import {
   type ImportSession,
 } from "@/import/orchestrator.ts";
 import { defaultMatchingConfig } from "@/matching/config.ts";
+import { alignCoupleMembersForDisplay } from "@/matching/review-display.ts";
 import { importSeason, exportSeason } from "@/portability/index.ts";
 import { triggerDownload } from "@/portability/download.ts";
 import { computeStandings } from "@/ranking/index.ts";
@@ -203,10 +205,12 @@ function teamLabel(team: Team, state: SeasonState): { name: string; yob?: number
       yob: person?.yob && person.yob > 0 ? person.yob : undefined,
     };
   }
-  const members = team.member_person_ids.map((personId) => state.persons.get(personId)).filter(Boolean);
-  const names = members.map((person) => person!.display_name);
-  const yobPair = members.map((person) => String(person!.yob)).join(" / ");
-  const clubs = [...new Set(members.map((person) => person!.club).filter(Boolean))].join(" / ");
+  const members = team.member_person_ids
+    .map((personId) => state.persons.get(personId))
+    .filter((person): person is PersonIdentity => person != null);
+  const names = members.map((person) => person.display_name);
+  const yobPair = members.map((person) => String(person.yob)).join(" / ");
+  const clubs = [...new Set(members.map((person) => person.club).filter(Boolean))].join(" / ");
   return {
     name: names.join(" + ") || team.team_id,
     yobPair: yobPair || undefined,
@@ -248,9 +252,9 @@ function toMatchingConfig(input: ImportMatchingConfigInput | undefined) {
     });
   }
   const normalized = {
-    auto_merge_enabled: Boolean(input.autoMergeEnabled),
-    perfect_match_auto_merge: Boolean(input.perfectMatchAutoMerge),
-    strict_normalized_auto_only: Boolean(input.strictNormalizedAutoOnly),
+    auto_merge_enabled: input.autoMergeEnabled,
+    perfect_match_auto_merge: input.perfectMatchAutoMerge,
+    strict_normalized_auto_only: input.strictNormalizedAutoOnly,
     auto_min: clamp01(input.autoMin),
     review_min: clamp01(input.reviewMin),
   };
@@ -281,6 +285,100 @@ function comparisonRow(label: string, incomingValue: string, candidateValue: str
   };
 }
 
+function splitCompositePair(value: string | null | undefined): [string, string] {
+  if (!value) {
+    return ["", ""];
+  }
+  const parts = value.split(" / ").map((part) => part.trim());
+  return [parts[0] ?? "", parts[1] ?? ""];
+}
+
+function parseCompositeYobPair(yob: string | null | undefined): [number, number] {
+  const [leftRaw, rightRaw] = splitCompositePair(yob);
+  const parsePart = (raw: string): number => {
+    if (!raw || raw === "—" || raw === "-") return 0;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  return [parsePart(leftRaw), parsePart(rightRaw)];
+}
+
+function toDisplayPair(left: string, right: string): string {
+  const leftSafe = left.trim() || "—";
+  const rightSafe = right.trim() || "—";
+  return `${leftSafe} / ${rightSafe}`;
+}
+
+function toDisplayYobPair(left: number, right: number): string {
+  const leftSafe = left > 0 ? String(left) : "—";
+  const rightSafe = right > 0 ? String(right) : "—";
+  return `${leftSafe} / ${rightSafe}`;
+}
+
+function alignDoublesCandidateDisplay(
+  incoming: IncomingRowData,
+  candidate: {
+    display_name: string;
+    yob: number;
+    yob_text?: string | null;
+    club: string | null;
+  },
+): {
+  displayName: string;
+  yobText: string;
+  clubText: string;
+} {
+  const [nameA, nameB] = splitCompositePair(candidate.display_name);
+  const [clubA, clubB] = splitCompositePair(candidate.club);
+  const [yobA, yobB] = parseCompositeYobPair(candidate.yob_text ?? null);
+  if (!nameA || !nameB) {
+    return {
+      displayName: candidate.display_name,
+      yobText: candidate.yob_text?.trim() || (candidate.yob > 0 ? String(candidate.yob) : "—"),
+      clubText: candidate.club ?? "—",
+    };
+  }
+
+  const memberA: PersonIdentity = {
+    person_id: "candidate-member-a",
+    given_name: "",
+    family_name: "",
+    display_name: nameA,
+    name_normalized: "",
+    yob: yobA,
+    gender: "X",
+    club: clubA || null,
+    club_normalized: "",
+  };
+  const memberB: PersonIdentity = {
+    person_id: "candidate-member-b",
+    given_name: "",
+    family_name: "",
+    display_name: nameB,
+    name_normalized: "",
+    yob: yobB,
+    gender: "X",
+    club: clubB || null,
+    club_normalized: "",
+  };
+
+  const [, aligned] = alignCoupleMembersForDisplay(
+    {
+      display_name: incoming.display_name,
+      yob: incoming.yob_text ?? incoming.yob ?? null,
+      club: incoming.club ?? null,
+    },
+    memberA,
+    memberB,
+  );
+  const [first, second] = aligned;
+  return {
+    displayName: toDisplayPair(first.display_name, second.display_name),
+    yobText: toDisplayYobPair(first.yob, second.yob),
+    clubText: toDisplayPair(first.club ?? "", second.club ?? ""),
+  };
+}
+
 function incomingYobLabel(incoming: IncomingRowData): string {
   if (incoming.yob_text?.trim()) {
     return incoming.yob_text.trim();
@@ -303,20 +401,26 @@ function buildReviewCandidate(
   },
 ): ImportReviewCandidate {
   const incomingClub = incoming.club ?? "—";
-  const candidateClub = candidate.club ?? "—";
+  const isDoublesIncoming = incoming.row_kind === "team";
+  const alignedDoubles = isDoublesIncoming
+    ? alignDoublesCandidateDisplay(incoming, candidate)
+    : null;
+  const candidateClub = alignedDoubles?.clubText ?? candidate.club ?? "—";
   const incomingYob = incomingYobLabel(incoming);
-  const candidateYob = candidate.yob_text?.trim()
-    ? candidate.yob_text.trim()
-    : candidate.yob > 0
-      ? String(candidate.yob)
-      : "—";
+  const candidateYob = alignedDoubles?.yobText
+    ?? (candidate.yob_text?.trim()
+      ? candidate.yob_text.trim()
+      : candidate.yob > 0
+        ? String(candidate.yob)
+        : "—");
+  const candidateName = alignedDoubles?.displayName ?? candidate.display_name;
   return {
     candidateId: candidate.team_id,
-    displayName: candidate.display_name,
+    displayName: candidateName,
     confidence: candidate.score,
     isRecommended: false,
     fieldComparisons: [
-      comparisonRow("Name", incoming.display_name, candidate.display_name),
+      comparisonRow("Name", incoming.display_name, candidateName),
       comparisonRow("Jahrgang", incomingYob, candidateYob),
       comparisonRow("Verein", incomingClub, candidateClub),
     ],
@@ -399,7 +503,11 @@ class TsAppApi implements AppApi {
   private toDecisionArray(record: ImportDraftRecord): ImportReviewDecision[] {
     return [...record.decisionByReviewId.values()]
       .sort((a, b) => a.updatedAt - b.updatedAt)
-      .map(({ updatedAt: _updatedAt, ...decision }) => decision);
+      .map((decision) => ({
+        reviewId: decision.reviewId,
+        action: decision.action,
+        candidateId: decision.candidateId,
+      }));
   }
 
   private toDraftSummary(record: ImportDraftRecord) {
@@ -709,15 +817,15 @@ class TsAppApi implements AppApi {
     return this.toImportDraftState(record);
   }
 
-  async getImportDraft(draftId: string) {
+  getImportDraft(draftId: string) {
     const draft = this.importDrafts.get(draftId);
     if (!draft) {
       throw new Error("Der Import-Entwurf wurde nicht gefunden.");
     }
-    return this.toImportDraftState(draft);
+    return Promise.resolve(this.toImportDraftState(draft));
   }
 
-  async setImportReviewDecision(draftId: string, decision: ImportReviewDecision) {
+  setImportReviewDecision(draftId: string, decision: ImportReviewDecision) {
     const draft = this.importDrafts.get(draftId);
     if (!draft) {
       throw new Error("Der Import-Entwurf wurde nicht gefunden.");
@@ -747,7 +855,7 @@ class TsAppApi implements AppApi {
       }
     }
     draft.decisionByReviewId.set(decision.reviewId, { ...decision, updatedAt: Date.now() });
-    return this.toImportDraftState(draft);
+    return Promise.resolve(this.toImportDraftState(draft));
   }
 
   async finalizeImportDraft(draftId: string) {

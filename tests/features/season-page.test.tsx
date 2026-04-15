@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppApi, SeasonListItem, ShellData, StandingsData } from "@/api/contracts/index.ts";
+import type { AppApi, AppCommandResult, SeasonListItem, ShellData, StandingsData } from "@/api/contracts/index.ts";
 import { SeasonPage } from "@/features/season/SeasonPage.tsx";
 
 const setSidebarControls = vi.fn();
@@ -48,6 +48,10 @@ const emptyStandings: StandingsData = {
   exportActions: [],
 };
 
+function buildCommandResult(message: string): AppCommandResult {
+  return { severity: "success", message };
+}
+
 let apiMock: AppApi;
 
 vi.mock("@/api/provider.tsx", () => ({ useAppApi: () => apiMock }));
@@ -74,12 +78,18 @@ beforeEach(() => {
   apiMock = {
     getShellData: vi.fn(async () => shellData),
     listSeasons: vi.fn(async () => seasons),
-    createSeason: vi.fn(async ({ label }) => ({ ...seasons[0], seasonId: "season-x", label })),
+    createSeason: vi.fn(async ({ label }) => ({
+      seasonId: "season-x",
+      label,
+      isActive: true,
+      importedEvents: 0,
+      lastModifiedAt: new Date().toISOString(),
+    })),
     openSeason: vi.fn(async () => {}),
     deleteSeason: vi.fn(async () => {}),
-    runSeasonCommand: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => emptyStandings),
-    runExportAction: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    runExportAction: vi.fn(async () => buildCommandResult("ok")),
     createImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
@@ -89,15 +99,15 @@ beforeEach(() => {
     setImportReviewDecision: vi.fn(async () => {
       throw new Error("not used");
     }),
-    finalizeImportDraft: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    finalizeImportDraft: vi.fn(async () => buildCommandResult("ok")),
     getHistory: vi.fn(async () => {
       throw new Error("not used");
     }),
     previewHistoryState: vi.fn(async () => {
       throw new Error("not used");
     }),
-    rollbackHistory: vi.fn(async () => ({ severity: "success", message: "ok" })),
-    hardResetHistoryToSeq: vi.fn(async () => ({ severity: "success", message: "ok" })),
+    rollbackHistory: vi.fn(async () => buildCommandResult("ok")),
+    hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("ok")),
   };
 });
 
@@ -108,7 +118,7 @@ describe("SeasonPage", () => {
 
   it("provides sidebar controls through shell context", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(setSidebarControls).toHaveBeenCalled());
+    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
     const latestSidebar = latestNonNullSidebar();
     render(<>{latestSidebar}</>);
     expect(screen.getByText("Aktive Saison")).toBeInTheDocument();
@@ -121,7 +131,7 @@ describe("SeasonPage", () => {
 
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[1] as HTMLButtonElement);
-    await waitFor(() => expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"));
+    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
     expect(refreshShellData).toHaveBeenCalled();
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season", severity: "info" }));
   });
@@ -133,7 +143,7 @@ describe("SeasonPage", () => {
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[0] as HTMLButtonElement);
 
-    await waitFor(() => expect(apiMock.openSeason).toHaveBeenCalledWith("season-1"));
+    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-1"); });
     expect(navigateMock).toHaveBeenCalledWith("/standings");
   });
 
@@ -144,7 +154,7 @@ describe("SeasonPage", () => {
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[2] as HTMLButtonElement);
 
-    await waitFor(() => expect(apiMock.openSeason).toHaveBeenCalledWith("season-3"));
+    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-3"); });
     expect(navigateMock).toHaveBeenCalledWith("/standings");
   });
 
@@ -155,7 +165,7 @@ describe("SeasonPage", () => {
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[1] as HTMLButtonElement);
 
-    await waitFor(() => expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"));
+    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
     expect(navigateMock).toHaveBeenCalledWith("/import");
   });
 
@@ -167,26 +177,26 @@ describe("SeasonPage", () => {
     const deleteButtons = screen.getAllByRole("button", { name: /Löschen/i });
     fireEvent.click(deleteButtons[1] as HTMLButtonElement);
 
-    await waitFor(() => expect(apiMock.deleteSeason).toHaveBeenCalledWith("season-2"));
+    await waitFor(() => { expect(apiMock.deleteSeason).toHaveBeenCalledWith("season-2"); });
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ severity: "success", source: "season" }));
   });
 
   it("navigates to import after creating a season", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(setSidebarControls).toHaveBeenCalled());
+    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
     const initialSidebar = latestNonNullSidebar();
     render(<>{initialSidebar}</>);
 
     const input = screen.getByRole("textbox", { name: /Saisonname/i });
     const sidebarCallsBeforeChange = setSidebarControls.mock.calls.length;
     fireEvent.change(input, { target: { value: "Neue Saison" } });
-    await waitFor(() => expect(setSidebarControls.mock.calls.length).toBeGreaterThan(sidebarCallsBeforeChange));
+    await waitFor(() => { expect(setSidebarControls.mock.calls.length).toBeGreaterThan(sidebarCallsBeforeChange); });
 
     const updatedSidebar = latestNonNullSidebar();
     render(<>{updatedSidebar}</>);
     fireEvent.click(screen.getAllByRole("button", { name: /Neue Saison erstellen/i }).at(-1)!);
 
-    await waitFor(() => expect(apiMock.createSeason).toHaveBeenCalledWith({ label: "Neue Saison" }));
+    await waitFor(() => { expect(apiMock.createSeason).toHaveBeenCalledWith({ label: "Neue Saison" }); });
     expect(navigateMock).toHaveBeenCalledWith("/import");
   });
 });

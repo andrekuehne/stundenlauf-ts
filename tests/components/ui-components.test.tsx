@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { DataTable, type DataTableColumn } from "@/components/tables/DataTable.tsx";
 import { AppShell } from "@/components/layout/AppShell.tsx";
@@ -6,7 +7,7 @@ vi.mock("react-router-dom", async () => {
   const mod = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return {
     ...mod,
-    NavLink: ({ to, className, children }: { to: string; className: ({ isActive }: { isActive: boolean }) => string; children: unknown }) => (
+    NavLink: ({ to, className, children }: { to: string; className: ({ isActive }: { isActive: boolean }) => string; children: ReactNode }) => (
       <a href={to} className={className({ isActive: to === "/season" })}>
         {children}
       </a>

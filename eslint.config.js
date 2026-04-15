@@ -20,5 +20,9 @@ export default tseslint.config({ ignores: ["dist/"] }, js.configs.recommended, .
     files: ["tests/**/*.ts", "tests/**/*.tsx"],
     rules: {
         "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/require-await": "off",
+        "@typescript-eslint/unbound-method": "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-return": "off",
     },
 });
