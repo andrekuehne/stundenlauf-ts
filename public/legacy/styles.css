@@ -518,6 +518,23 @@ th {
   line-height: 1.15;
 }
 
+.season-row--corrupt td {
+  background: rgba(220, 53, 69, 0.06);
+}
+
+.season-data-corrupt-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: var(--font-small);
+  font-weight: 600;
+  color: var(--danger);
+  border: 1px solid rgba(220, 53, 69, 0.35);
+  border-radius: 4px;
+  cursor: help;
+  vertical-align: middle;
+}
+
 .incoming-row td {
   background: #eef6ff;
   font-weight: 600;

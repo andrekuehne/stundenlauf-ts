@@ -382,18 +382,37 @@
       const pad2 = (num) => String(num).padStart(2, "0");
       return `${pad2(parsed.getHours())}:${pad2(parsed.getMinutes())} ${pad2(parsed.getDate())}.${pad2(parsed.getMonth() + 1)}.${parsed.getFullYear()}`;
     };
+    const isCorrupt = (item) => item.data_health === "corrupt";
     const rows = items
       .map(
         (item) =>
-          `<tr>
-            <td>${escapeHtml(item.display_name || String(item.series_year))}</td>
+          `<tr class="${isCorrupt(item) ? "season-row--corrupt" : ""}">
+            <td>${escapeHtml(item.display_name || String(item.series_year))}${
+              isCorrupt(item)
+                ? ` <span class="season-data-corrupt-badge" title="${escapeHtml(
+                    String(item.data_error || "").slice(0, 500)
+                  )}">${se.seasonDataCorrupt}</span>`
+                : ""
+            }</td>
             <td>${item.review_queue_count}</td>
             <td>${formatSeasonTimestamp(item.latest_imported_at)}</td>
             <td class="season-coverage-col">${renderImportedRunsMatrix(normalizeCoverage(item.race_coverage), { compact: true })}</td>
             <td>
               <div class="row">
-                <button class="secondary" data-open-year="${item.series_year}">${se.openSeason}</button>
-                <button class="secondary" data-export-year="${item.series_year}" data-season-name="${escapeHtml(item.display_name || String(item.series_year))}">⇪ ${se.exportSeason}</button>
+                ${
+                  isCorrupt(item)
+                    ? `<button class="secondary" type="button" disabled title="${escapeHtml(
+                        se.corruptSeasonOpenBlocked
+                      )}">${se.openSeason}</button>`
+                    : `<button class="secondary" data-open-year="${item.series_year}">${se.openSeason}</button>`
+                }
+                ${
+                  isCorrupt(item)
+                    ? `<button class="secondary" type="button" disabled title="${escapeHtml(
+                        se.corruptSeasonExportBlocked
+                      )}">⇪ ${se.exportSeason}</button>`
+                    : `<button class="secondary" data-export-year="${item.series_year}" data-season-name="${escapeHtml(item.display_name || String(item.series_year))}">⇪ ${se.exportSeason}</button>`
+                }
                 <button class="secondary" data-reset-year="${item.series_year}" data-season-name="${escapeHtml(item.display_name || String(item.series_year))}" title="${se.resetSeasonTitle}">↺ ${se.resetSeason}</button>
                 <button class="danger" data-delete-year="${item.series_year}" data-season-name="${escapeHtml(item.display_name || String(item.series_year))}" title="${se.deleteSeasonTitle}">🗑 ${se.deleteSeason}</button>
               </div>
@@ -639,22 +658,33 @@
     try {
       const response = await api("list_series_years", {});
       if (response.status === "error") {
-        seasonEntryView.innerHTML = `
-          <h2>${se.pageTitle}</h2>
-          <p class="danger-text">${se.listLoadFailed}</p>
-          <p class="hint">${se.listLoadHint}</p>
-        `;
-        setStatus(se.listLoadFailed, true);
+        renderSeasonEntry([]);
+        const warn = document.createElement("p");
+        warn.className = "danger-text";
+        warn.textContent = `${getApiErrorMessage(response.error, se.listLoadFailed)} ${se.listLoadHintWithCreate}`;
+        const layout = seasonEntryView.querySelector(".season-entry-layout");
+        if (layout) {
+          seasonEntryView.insertBefore(warn, layout);
+        } else {
+          seasonEntryView.insertBefore(warn, seasonEntryView.firstChild);
+        }
+        setStatus(getApiErrorMessage(response.error, se.listLoadFailed), true);
         return;
       }
       renderSeasonEntry(response.payload.items || []);
     } catch (error) {
-      seasonEntryView.innerHTML = `
-        <h2>${se.pageTitle}</h2>
-        <p class="danger-text">${se.apiNotReady}</p>
-        <p class="hint">${se.apiNotReadyHint}</p>
-      `;
-      setStatus(error.message || STR.errors.desktopApiUnavailable, true);
+      renderSeasonEntry([]);
+      const warn = document.createElement("p");
+      warn.className = "danger-text";
+      const detail = error instanceof Error ? error.message : String(error);
+      warn.textContent = `${se.apiNotReady}${detail ? ` (${detail})` : ""} ${se.listLoadHintWithCreate}`;
+      const layout = seasonEntryView.querySelector(".season-entry-layout");
+      if (layout) {
+        seasonEntryView.insertBefore(warn, layout);
+      } else {
+        seasonEntryView.insertBefore(warn, seasonEntryView.firstChild);
+      }
+      setStatus(detail || STR.errors.desktopApiUnavailable, true);
     }
   }
 

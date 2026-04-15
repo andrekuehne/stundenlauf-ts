@@ -708,41 +708,60 @@ export class LegacyApiRuntime {
 
     const items = await Promise.all(
       seasons.map(async (season) => {
-        const eventLog = await repo.getEventLog(season.season_id);
-        const state = projectState(season.season_id, eventLog);
-        const activeRaces = [...state.race_events.values()].filter((race) =>
-          isEffectiveRace(state, race.race_event_id),
-        );
-        const singlesRaceNumbers = [...new Set(
-          activeRaces
-            .filter((race) => !race.category.division.startsWith("couples_"))
-            .map((race) => race.race_no),
-        )].sort((a, b) => a - b);
-        const couplesRaceNumbers = [...new Set(
-          activeRaces
-            .filter((race) => race.category.division.startsWith("couples_"))
-            .map((race) => race.race_no),
-        )].sort((a, b) => a - b);
-        const maxRaceNo = Math.max(5, ...singlesRaceNumbers, ...couplesRaceNumbers, 0);
-        const reviewQueueCount =
-          this.pendingImport?.seasonId === season.season_id
-            ? getReviewQueue(this.pendingImport.session).length
-            : 0;
-        const latestImportedAt =
-          activeRaces
-            .map((race) => race.imported_at)
-            .sort((a, b) => b.localeCompare(a))[0] ?? null;
-        return {
-          series_year: aliases[season.season_id],
-          display_name: season.label,
-          review_queue_count: reviewQueueCount,
-          latest_imported_at: latestImportedAt,
-          race_coverage: {
-            singles_race_numbers: singlesRaceNumbers,
-            couples_race_numbers: couplesRaceNumbers,
-            race_columns: Array.from({ length: maxRaceNo }, (_, index) => index + 1),
-          },
-        };
+        const seriesYear = aliases[season.season_id];
+        try {
+          const eventLog = await repo.getEventLog(season.season_id);
+          const state = projectState(season.season_id, eventLog);
+          const activeRaces = [...state.race_events.values()].filter((race) =>
+            isEffectiveRace(state, race.race_event_id),
+          );
+          const singlesRaceNumbers = [...new Set(
+            activeRaces
+              .filter((race) => !race.category.division.startsWith("couples_"))
+              .map((race) => race.race_no),
+          )].sort((a, b) => a - b);
+          const couplesRaceNumbers = [...new Set(
+            activeRaces
+              .filter((race) => race.category.division.startsWith("couples_"))
+              .map((race) => race.race_no),
+          )].sort((a, b) => a - b);
+          const maxRaceNo = Math.max(5, ...singlesRaceNumbers, ...couplesRaceNumbers, 0);
+          const reviewQueueCount =
+            this.pendingImport?.seasonId === season.season_id
+              ? getReviewQueue(this.pendingImport.session).length
+              : 0;
+          const latestImportedAt =
+            activeRaces
+              .map((race) => race.imported_at)
+              .sort((a, b) => b.localeCompare(a))[0] ?? null;
+          return {
+            series_year: seriesYear,
+            display_name: season.label,
+            data_health: "ok",
+            review_queue_count: reviewQueueCount,
+            latest_imported_at: latestImportedAt,
+            race_coverage: {
+              singles_race_numbers: singlesRaceNumbers,
+              couples_race_numbers: couplesRaceNumbers,
+              race_columns: Array.from({ length: maxRaceNo }, (_, index) => index + 1),
+            },
+          };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          return {
+            series_year: seriesYear,
+            display_name: season.label,
+            data_health: "corrupt",
+            data_error: message,
+            review_queue_count: 0,
+            latest_imported_at: null,
+            race_coverage: {
+              singles_race_numbers: [],
+              couples_race_numbers: [],
+              race_columns: [1, 2, 3, 4, 5],
+            },
+          };
+        }
       }),
     );
 

@@ -94,13 +94,25 @@ async function reloadWorkspaceAndSeason(
     return;
   }
 
-  const snapshot = await loadSnapshot(desired);
-  set({
-    seasons,
-    activeSeasonId: desired,
-    eventLog: snapshot.eventLog,
-    seasonState: snapshot.seasonState,
-  });
+  try {
+    const snapshot = await loadSnapshot(desired);
+    set({
+      seasons,
+      activeSeasonId: desired,
+      eventLog: snapshot.eventLog,
+      seasonState: snapshot.seasonState,
+      error: null,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    set({
+      seasons,
+      activeSeasonId: null,
+      eventLog: [],
+      seasonState: emptySeasonState("no-season"),
+      error: message,
+    });
+  }
 }
 
 export const useSeasonStore = create<SeasonStoreState>((set, get) => ({

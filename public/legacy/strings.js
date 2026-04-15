@@ -87,6 +87,11 @@
       loading: "Lädt...",
       listLoadFailed: "Saisonliste konnte nicht geladen werden.",
       listLoadHint: "Bitte starten Sie die Anwendung neu.",
+      listLoadHintWithCreate: "Sie können dennoch unten eine neue Saison anlegen.",
+      seasonDataCorrupt: "Datenfehler",
+      corruptSeasonOpenBlocked:
+        "Öffnen nicht möglich: Ereignisprotokoll dieser Saison ist beschädigt oder inkompatibel.",
+      corruptSeasonExportBlocked: "Export nicht möglich bei beschädigter Saison.",
       apiNotReady: "Verbindung zur Desktop-API ist noch nicht bereit.",
       apiNotReadyHint: "Bitte warten Sie kurz oder starten Sie die Anwendung neu.",
       deleteConfirm: (seasonName) =>

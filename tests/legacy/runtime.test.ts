@@ -70,6 +70,11 @@ class InMemorySeasonRepository implements SeasonRepository {
     this.eventLogs.set(season.season_id, [...events]);
     return Promise.resolve();
   }
+
+  /** Bypass validation to simulate corrupted IndexedDB payloads. */
+  seedRawEventLog(seasonId: string, events: DomainEvent[]): void {
+    this.eventLogs.set(seasonId, [...events]);
+  }
 }
 
 function request(method: string, payload: Record<string, unknown> = {}): LegacyApiRequest {
@@ -198,6 +203,45 @@ describe("LegacyApiRuntime season and overview flows", () => {
     const items = listed.items as Array<Record<string, unknown>>;
     expect(items).toHaveLength(1);
     expect(items[0]?.display_name).toBe("Sommerlauf-Block A");
+  });
+
+  it("lists seasons when one event log fails projection, marking that row corrupt", async () => {
+    const runtime = new LegacyApiRuntime();
+    expectOk(
+      await invoke(runtime, "create_series_year", {
+        display_name: "Saison A",
+      }),
+    );
+    expectOk(
+      await invoke(runtime, "create_series_year", {
+        display_name: "Saison B",
+      }),
+    );
+    const repo = await getSeasonRepository();
+    const seasons = await repo.listSeasons();
+    const bad = seasons.find((s) => s.label === "Saison B");
+    expect(bad).toBeDefined();
+    const mem = repo as unknown as InMemorySeasonRepository;
+    mem.seedRawEventLog(bad!.season_id, [
+      {
+        event_id: "bad-evt",
+        seq: 0,
+        recorded_at: "2026-01-01T00:00:00.000Z",
+        type: "totally.unknown.event",
+        schema_version: 1,
+        payload: {},
+        metadata: {},
+      } as unknown as DomainEvent,
+    ]);
+
+    const listed = expectOk(await invoke(runtime, "list_series_years"));
+    const items = listed.items as Array<Record<string, unknown>>;
+    expect(items).toHaveLength(2);
+    const rowA = items.find((i) => i.display_name === "Saison A");
+    const rowB = items.find((i) => i.display_name === "Saison B");
+    expect(rowA?.data_health).toBe("ok");
+    expect(rowB?.data_health).toBe("corrupt");
+    expect(String(rowB?.data_error || "")).toContain("Unknown event type");
   });
 });
 
