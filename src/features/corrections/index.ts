@@ -1,1 +1,1 @@
-// Placeholder for the corrections feature route.
+export { CorrectionsPage } from "./CorrectionsPage.tsx";

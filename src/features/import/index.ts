@@ -1,1 +1,1 @@
-// Placeholder for the import feature route.
+export { ImportPage } from "./ImportPage.tsx";

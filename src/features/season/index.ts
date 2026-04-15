@@ -1,1 +1,1 @@
-// Placeholder for the season feature route.
+export { SeasonPage } from "./SeasonPage.tsx";

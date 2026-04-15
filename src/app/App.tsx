@@ -1,8 +1,17 @@
-import { UpdatePrompt } from "../components/feedback/UpdatePrompt.tsx";
-import { ImportOrchestrationHarness } from "../devtools/ImportOrchestrationHarness.tsx";
-import { ImportSeasonWalkthroughHarness } from "../devtools/ImportSeasonWalkthroughHarness.tsx";
-import { LegacyLayoutParityPage } from "../devtools/LegacyLayoutParityPage.tsx";
-import { APP_VERSION } from "../version.ts";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import type { ShellData } from "@/api/contracts/index.ts";
+import { AppApiProvider, useAppApi } from "@/api/provider.tsx";
+import { isAppRoute, type AppRoute } from "@/app/routes.ts";
+import { STR } from "@/app/strings.ts";
+import { EmptyState } from "@/components/feedback/EmptyState.tsx";
+import { UpdatePrompt } from "@/components/feedback/UpdatePrompt.tsx";
+import { AppShell } from "@/components/layout/AppShell.tsx";
+import { ImportOrchestrationHarness } from "@/devtools/ImportOrchestrationHarness.tsx";
+import { ImportSeasonWalkthroughHarness } from "@/devtools/ImportSeasonWalkthroughHarness.tsx";
+import { LegacyLayoutParityPage } from "@/devtools/LegacyLayoutParityPage.tsx";
+import { useStatusStore } from "@/stores/status.ts";
+import { APP_VERSION } from "@/version.ts";
 
 function shouldShowImportHarness(): boolean {
   if (!import.meta.env.DEV) return false;
@@ -36,20 +45,96 @@ export function App() {
   if (showLegacyLayoutHarness) {
     return <LegacyLayoutParityPage />;
   }
-  const legacyUrl = `${import.meta.env.BASE_URL}legacy/index.html`;
+
+  return (
+    <AppApiProvider>
+      <Phase1App />
+    </AppApiProvider>
+  );
+}
+
+const EMPTY_SHELL_DATA: ShellData = {
+  selectedSeasonId: null,
+  selectedSeasonLabel: null,
+  unresolvedReviews: 0,
+  availableSeasons: [],
+};
+
+function activeRouteFromPath(pathname: string): AppRoute {
+  const candidate = pathname.split("/").filter(Boolean)[0] ?? "season";
+  return isAppRoute(candidate) ? candidate : "season";
+}
+
+function Phase1App() {
+  const api = useAppApi();
+  const location = useLocation();
+  const setStatus = useStatusStore((state) => state.setStatus);
+  const currentStatus = useStatusStore((state) => state.current);
+  const [shellData, setShellData] = useState<ShellData>(EMPTY_SHELL_DATA);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const activeRoute = activeRouteFromPath(location.pathname);
+
+  const refreshShellData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const next = await api.getShellData();
+      setShellData(next);
+      setError(null);
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : String(reason);
+      setError(message);
+      setStatus({
+        severity: "error",
+        message,
+        source: "app",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, setStatus]);
+
+  useEffect(() => {
+    void refreshShellData();
+  }, [refreshShellData]);
+
+  const handleSeasonChange = useCallback(
+    async (seasonId: string) => {
+      const selected = shellData.availableSeasons.find((season) => season.seasonId === seasonId);
+      await api.openSeason(seasonId);
+      await refreshShellData();
+      if (selected) {
+        setStatus({
+          severity: "info",
+          message: `Saison "${selected.label}" geoeffnet.`,
+          source: "shell",
+        });
+      }
+    },
+    [api, refreshShellData, setStatus, shellData.availableSeasons],
+  );
+
+  const footer = useMemo(
+    () => (
+      <>
+        <span className="status-bar__prefix">{STR.status.prefix}</span>
+        <span>{currentStatus?.message ?? (loading ? "Oberflaeche wird geladen..." : STR.status.defaultReady)}</span>
+      </>
+    ),
+    [currentStatus?.message, loading],
+  );
 
   return (
     <>
-      <iframe
-        title="Stundenlauf Legacy Frontend"
-        src={legacyUrl}
-        style={{
-          width: "100vw",
-          height: "100vh",
-          border: "0",
-          display: "block",
-        }}
-      />
+      <AppShell activeRoute={activeRoute} shellData={shellData} onSeasonChange={handleSeasonChange} footer={footer}>
+        {error ? (
+          <div className="page-stack">
+            <EmptyState title="App-Fehler" message={error} />
+          </div>
+        ) : (
+          <Outlet context={{ shellData, refreshShellData }} />
+        )}
+      </AppShell>
       <div className="version-badge" title={`Version ${APP_VERSION}`}>
         {APP_VERSION}
       </div>

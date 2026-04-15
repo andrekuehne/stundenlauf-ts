@@ -5,20 +5,24 @@
  * Reference: F-TS06 §7 (German String Catalog)
  */
 
-export const SHELL_TABS = ["standings", "import", "history", "season"] as const;
+export const SHELL_TABS = ["season", "standings", "import", "corrections", "history"] as const;
 export type ShellTab = (typeof SHELL_TABS)[number];
 
 export const STR = {
   shell: {
-    appTitle: "HSG Uni Greifswald Triathlon Laufgruppe - Stundenlauf-Auswertung",
+    appTitle: "Stundenlauf-Auswertung",
     tabs: {
-      standings: "Aktuelle Wertung",
-      import: "Lauf Importieren",
-      history: "Historie & Korrektur",
-      season: "Saison wechseln",
+      season: "Saison",
+      standings: "Auswertung",
+      import: "Import",
+      corrections: "Korrekturen",
+      history: "Historie",
     } as Record<ShellTab, string>,
     seasonLabelPlaceholder: "Saison: -",
-    reviewLabelPlaceholder: "Prüfungen offen: 0",
+    reviewLabelPlaceholder: "Offene Prüfungen: 0",
+    seasonSelectLabel: "Aktuelle Saison:",
+    reviewLabel: "Offene Prüfungen:",
+    contextTitle: "Nächster Schritt",
   },
   status: {
     prefix: "Status:",
@@ -32,7 +36,12 @@ export const STR = {
   views: {
     standings: {
       title: "Aktuelle Wertung",
+      subtitle: "Wählen Sie eine Kategorie aus und prüfen Sie die aktuellen Tabellenstände.",
       placeholder: "Noch keine Daten in dieser Kategorie.",
+      noSeason: "Bitte zuerst eine Saison auswählen.",
+      categoriesTitle: "Kategorien",
+      summaryTitle: "Übersicht",
+      exportTitle: "Exporte",
       modeOverview: "Übersicht",
       modeCorrectIdentity: "Identität korrigieren",
       modeMergeDuplicates: "Duplikate zusammenführen",
@@ -41,6 +50,7 @@ export const STR = {
       raceOverviewTitle: "Laufübersicht",
       overallTitle: "Gesamtwertung",
       importedRunsTitle: "Importierte Läufe",
+      importedRunsSubtitle: "Diese Liste zeigt die zuletzt berücksichtigten Läufe der Saison.",
       importedRunsRowSingles: "Einzel",
       importedRunsRowCouples: "Paare",
       importedRunsRaceCol: "Lauf",
@@ -52,9 +62,15 @@ export const STR = {
       noRows: "Noch keine Wertungsdaten vorhanden.",
       rank: "Rang",
       team: "Team",
+      club: "Verein",
       points: "Punkte",
       distance: "Distanz (km)",
       races: "Läufe",
+      participants: "Teilnehmende",
+      totalTeams: "Teams",
+      totalRuns: "Läufe gesamt",
+      lastUpdated: "Letzte Aktualisierung",
+      note: "Hinweis",
       statusExcluded: "außer Wertung",
       selectPerson: "Person auswählen",
       identitySaved: "Identität gespeichert.",
@@ -62,6 +78,7 @@ export const STR = {
     },
     import: {
       title: "Lauf Importieren",
+      subtitle: "Phase 2 bringt den vollständigen Import- und Prüfablauf in die neue Oberfläche.",
       pickFile: "Datei auswählen",
       noFilePlaceholder: "Keine Datei",
       singles: "Einzel",
@@ -118,7 +135,8 @@ export const STR = {
       reviewNoCandidates: "Keine Kandidaten vorhanden",
     },
     history: {
-      title: "Historie & Korrektur",
+      title: "Historie",
+      subtitle: "Die Historienansicht folgt in Phase 3 der Migration.",
       placeholder: "Noch keine Historie vorhanden.",
       importHistoryTitle: "Import-Historie",
       auditTrailTitle: "Audit-Protokoll",
@@ -139,11 +157,12 @@ export const STR = {
       active: "aktiv",
     },
     season: {
-      title: "Saison wechseln",
+      title: "Saison verwalten",
+      subtitle: "Wählen Sie eine bestehende Saison aus oder legen Sie eine neue Saison an.",
       placeholder: "Bitte Saison auswählen oder neu anlegen.",
       createTitle: "Neue Saison",
       createLabel: "Saisonname",
-      createAction: "Saison anlegen",
+      createAction: "Neue Saison erstellen",
       openAction: "Öffnen",
       deleteAction: "Löschen",
       resetAction: "Zurücksetzen",
@@ -151,6 +170,9 @@ export const STR = {
       exportAction: "Saison exportieren",
       noSeasons: "Noch keine Saisons vorhanden.",
       activeTag: "Aktiv",
+      importedEvents: "Importierte Läufe",
+      lastModified: "Zuletzt geändert",
+      actions: "Aktionen",
       deleteConfirmTitle: "Saison löschen?",
       deleteConfirmBody: "Diese Saison wird dauerhaft entfernt.",
       resetConfirmTitle: "Saison zurücksetzen?",
@@ -160,6 +182,12 @@ export const STR = {
       createdDone: (label: string) => `Saison "${label}" angelegt.`,
       deletedDone: "Saison gelöscht.",
       resetDone: "Saison wurde zurückgesetzt.",
+      openedDone: (label: string) => `Saison "${label}" geöffnet.`,
+    },
+    corrections: {
+      title: "Korrekturen",
+      subtitle: "Echte Korrekturabläufe folgen in einer späteren Migrationsphase.",
+      placeholder: "Für Phase 1 bleibt dieser Bereich bewusst als Platzhalter bestehen.",
     },
   },
   category: {

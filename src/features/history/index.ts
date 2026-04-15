@@ -1,1 +1,1 @@
-// Placeholder for the history feature route.
+export { HistoryPage } from "./HistoryPage.tsx";

@@ -1,0 +1,245 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { SeasonListItem } from "@/api/contracts/index.ts";
+import { useAppApi } from "@/api/provider.tsx";
+import { useAppShellContext } from "@/app/shell-context.ts";
+import { STR } from "@/app/strings.ts";
+import { PageHeader } from "@/components/layout/PageHeader.tsx";
+import { DataTable, type DataTableColumn } from "@/components/tables/DataTable.tsx";
+import { useStatusStore } from "@/stores/status.ts";
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+export function SeasonPage() {
+  const api = useAppApi();
+  const { shellData, refreshShellData } = useAppShellContext();
+  const setStatus = useStatusStore((state) => state.setStatus);
+  const [seasons, setSeasons] = useState<SeasonListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [actionSeasonId, setActionSeasonId] = useState<string | null>(null);
+  const [seasonLabel, setSeasonLabel] = useState("");
+
+  const loadSeasons = useCallback(async () => {
+    setLoading(true);
+    try {
+      setSeasons(await api.listSeasons());
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    void loadSeasons();
+  }, [loadSeasons]);
+
+  const columns = useMemo<DataTableColumn<SeasonListItem>[]>(
+    () => [
+      {
+        key: "label",
+        header: "Name",
+        cell: (row) => (
+          <div className="season-table__name">
+            <strong>{row.label}</strong>
+            {row.isActive ? <span className="season-pill">{STR.views.season.activeTag}</span> : null}
+          </div>
+        ),
+      },
+      {
+        key: "importedEvents",
+        header: STR.views.season.importedEvents,
+        cell: (row) => row.importedEvents,
+      },
+      {
+        key: "lastModifiedAt",
+        header: STR.views.season.lastModified,
+        cell: (row) => formatDateTime(row.lastModifiedAt),
+      },
+      {
+        key: "actions",
+        header: STR.views.season.actions,
+        cell: (row) => (
+          <div className="inline-actions">
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={row.isActive || actionSeasonId === row.seasonId}
+              onClick={() => {
+                void handleOpen(row);
+              }}
+            >
+              {STR.views.season.openAction}
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={actionSeasonId === row.seasonId}
+              onClick={() => {
+                void handleSeasonCommand("export_backup", row);
+              }}
+            >
+              {STR.views.season.exportAction}
+            </button>
+            <button
+              type="button"
+              className="button button--ghost"
+              disabled={actionSeasonId === row.seasonId}
+              onClick={() => {
+                void handleDelete(row);
+              }}
+            >
+              {STR.views.season.deleteAction}
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  async function refreshAll() {
+    await refreshShellData();
+    await loadSeasons();
+  }
+
+  async function handleOpen(row: SeasonListItem) {
+    setActionSeasonId(row.seasonId);
+    try {
+      await api.openSeason(row.seasonId);
+      await refreshAll();
+      setStatus({
+        severity: "info",
+        message: STR.views.season.openedDone(row.label),
+        source: "season",
+      });
+    } finally {
+      setActionSeasonId(null);
+    }
+  }
+
+  async function handleDelete(row: SeasonListItem) {
+    if (!window.confirm(`${STR.views.season.deleteConfirmTitle}\n\n${STR.views.season.deleteConfirmBody}`)) {
+      return;
+    }
+
+    setActionSeasonId(row.seasonId);
+    try {
+      await api.deleteSeason(row.seasonId);
+      await refreshAll();
+      setStatus({
+        severity: "success",
+        message: STR.views.season.deletedDone,
+        source: "season",
+      });
+    } finally {
+      setActionSeasonId(null);
+    }
+  }
+
+  async function handleSeasonCommand(command: "import_backup" | "export_backup", row?: SeasonListItem) {
+    setActionSeasonId(row?.seasonId ?? "global");
+    try {
+      const result = await api.runSeasonCommand(command, row?.seasonId ?? shellData.selectedSeasonId ?? undefined);
+      setStatus({
+        severity: result.severity,
+        message: result.message,
+        source: "season",
+      });
+    } finally {
+      setActionSeasonId(null);
+    }
+  }
+
+  async function handleCreate() {
+    const nextLabel = seasonLabel.trim();
+    if (!nextLabel) {
+      setStatus({
+        severity: "warn",
+        message: "Bitte einen Saisonnamen eingeben.",
+        source: "season",
+      });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const created = await api.createSeason({ label: nextLabel });
+      setSeasonLabel("");
+      await refreshAll();
+      setStatus({
+        severity: "success",
+        message: STR.views.season.createdDone(created.label),
+        source: "season",
+      });
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div className="page-stack">
+      <PageHeader title={STR.views.season.title} description={STR.views.season.subtitle} />
+
+      <div className="page-grid page-grid--season">
+        <section className="surface-card">
+          <div className="surface-card__header">
+            <div>
+              <h2>Bestehende Saisons</h2>
+              <p>Alle vorhandenen Saisons stehen hier direkt zum Oeffnen oder Verwalten bereit.</p>
+            </div>
+          </div>
+          <DataTable columns={columns} rows={seasons} emptyMessage={STR.views.season.noSeasons} />
+          {loading ? <p className="surface-card__note">Saisons werden geladen...</p> : null}
+        </section>
+
+        <section className="surface-card">
+          <div className="surface-card__header">
+            <div>
+              <h2>{STR.views.season.createTitle}</h2>
+              <p>{STR.views.season.subtitle}</p>
+            </div>
+          </div>
+
+          <label className="field-stack">
+            <span>{STR.views.season.createLabel}</span>
+            <input
+              type="text"
+              value={seasonLabel}
+              placeholder="z. B. Stundenlauf 2027"
+              onChange={(event) => {
+                setSeasonLabel(event.target.value);
+              }}
+            />
+          </label>
+
+          <div className="inline-actions">
+            <button type="button" className="button button--primary" disabled={creating} onClick={() => void handleCreate()}>
+              {STR.views.season.createAction}
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={actionSeasonId === "global"}
+              onClick={() => void handleSeasonCommand("import_backup")}
+            >
+              {STR.views.season.importAction}
+            </button>
+          </div>
+
+          <div className="season-side-note">
+            <h3>Aktive Saison</h3>
+            <p>{shellData.selectedSeasonLabel ?? "Noch keine Saison geoeffnet."}</p>
+            <p className="surface-card__note">
+              Backup-Import und Backup-Export sind in Phase 1 bereits sichtbar, werden aber noch vom
+              Mock-AppApi beantwortet.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

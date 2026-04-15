@@ -241,7 +241,9 @@ describe("LegacyApiRuntime season and overview flows", () => {
     const rowB = items.find((i) => i.display_name === "Saison B");
     expect(rowA?.data_health).toBe("ok");
     expect(rowB?.data_health).toBe("corrupt");
-    expect(String(rowB?.data_error || "")).toContain("Unknown event type");
+    const rowBError =
+      typeof rowB?.data_error === "string" ? rowB.data_error : JSON.stringify(rowB?.data_error ?? "");
+    expect(rowBError).toContain("Unknown event type");
   });
 });
 

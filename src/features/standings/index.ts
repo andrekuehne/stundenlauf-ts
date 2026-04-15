@@ -1,1 +1,1 @@
-// Placeholder for the standings feature route.
+export { StandingsPage } from "./StandingsPage.tsx";
