@@ -48,8 +48,9 @@ export interface StandingsSummary {
 }
 
 export interface StandingsRow {
-  rank: number;
+  rank: number | null;
   team: string;
+  teamId?: string;
   club: string;
   yob?: number;
   yobPair?: string;
@@ -57,6 +58,7 @@ export interface StandingsRow {
   distanceKm: number;
   races: number;
   note?: string;
+  excluded?: boolean;
 }
 
 export interface ImportedRunRow {
@@ -239,6 +241,10 @@ export interface AppApi {
     actionId: ExportActionDescriptor["id"],
     options?: { pdfLayoutPreset?: "default" | "compact" },
   ): Promise<AppCommandResult>;
+  setStandingsRowExcluded(
+    seasonId: string,
+    input: { categoryKey: string; teamId: string; excluded: boolean },
+  ): Promise<void>;
   createImportDraft(input: ImportDraftInput): Promise<ImportDraftState>;
   getImportDraft(draftId: string): Promise<ImportDraftState>;
   setImportReviewDecision(draftId: string, decision: ImportReviewDecision): Promise<ImportDraftState>;

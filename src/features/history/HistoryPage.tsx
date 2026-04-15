@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { HistoryData, HistoryRow, HistoryRollbackMode } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
@@ -188,7 +188,7 @@ export function HistoryPage() {
     [busySeq, frozenSeq, previewSeq],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setSidebarControls(
       <div className="sidebar-controls">
         <section className="sidebar-controls__section">

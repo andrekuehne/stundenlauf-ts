@@ -96,8 +96,7 @@ textarea {
   gap: var(--spacing-xs);
 }
 
-.shell-inline-field,
-.shell-inline-count {
+.shell-inline-field {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -255,6 +254,7 @@ textarea {
 }
 
 .page-header__actions,
+.surface-card__actions,
 .surface-card__header,
 .inline-actions,
 .stack-actions {
@@ -1152,6 +1152,16 @@ textarea {
 .import-candidate__value-label {
   color: var(--color-text-muted);
   font-weight: 600;
+}
+
+.import-candidate__diff-part {
+  background: #fff0f0;
+  color: #c0392b;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  font-weight: 600;
+  padding: 0 2px;
 }
 
 .import-candidate__footer {

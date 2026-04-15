@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ImportDraftState, ImportReviewAction, ImportedRunRow } from "@/api/contracts/index.ts";
 import { rememberImportFile } from "@/api/import-file-registry.ts";
 import { useAppApi } from "@/api/provider.tsx";
@@ -132,7 +132,7 @@ export function ImportPage() {
     };
   }, [api, shellData.selectedSeasonId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setSidebarControls(null);
     return () => {
       setSidebarControls(null);

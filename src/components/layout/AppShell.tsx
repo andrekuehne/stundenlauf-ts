@@ -43,10 +43,6 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
               ))}
             </select>
           </label>
-          <div className="shell-inline-count">
-            <span>{STR.shell.reviewLabel}</span>
-            <strong>{shellData.unresolvedReviews}</strong>
-          </div>
         </div>
       </header>
 

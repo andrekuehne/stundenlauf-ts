@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppApi, AppCommandResult, ShellData, StandingsData } from "@/api/contracts/index.ts";
 import { StandingsPage } from "@/features/standings/StandingsPage.tsx";
@@ -17,12 +17,46 @@ let shellData: ShellData = {
 
 const standingsData: StandingsData = {
   seasonId: "season-1",
-  summary: { seasonLabel: "Saison 1", totalTeams: 1, totalParticipants: 1, totalRuns: 2, lastUpdatedAt: new Date().toISOString() },
+  summary: { seasonLabel: "Saison 1", totalTeams: 2, totalParticipants: 2, totalRuns: 2, lastUpdatedAt: new Date().toISOString() },
   categories: [
-    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 1, importedRuns: 2 },
+    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 2, importedRuns: 2 },
   ],
   rowsByCategory: {
-    "half_hour:women": [{ rank: 1, team: "Anna Team", yob: 1990, club: "SV", distanceKm: 10, points: 20, races: 2 }],
+    "half_hour:women": [
+      {
+        rank: 1,
+        team: "Bea Team",
+        teamId: "team-bea",
+        yob: 1991,
+        club: "SV",
+        distanceKm: 9,
+        points: 18,
+        races: 2,
+        excluded: false,
+      },
+      {
+        rank: null,
+        team: "Anna Team",
+        teamId: "team-anna",
+        yob: 1990,
+        club: "SV",
+        distanceKm: 10,
+        points: 20,
+        races: 2,
+        excluded: true,
+      },
+      {
+        rank: 2,
+        team: "Clara Team",
+        teamId: "team-clara",
+        yob: 1992,
+        club: "SV",
+        distanceKm: 8,
+        points: 16,
+        races: 2,
+        excluded: false,
+      },
+    ],
   },
   importedRuns: [],
   exportActions: [{ id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" }],
@@ -67,6 +101,7 @@ beforeEach(() => {
     runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => standingsData),
     runExportAction: vi.fn(async () => buildCommandResult("ok")),
+    setStandingsRowExcluded: vi.fn(async () => {}),
     createImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
@@ -142,5 +177,87 @@ describe("StandingsPage", () => {
       }); },
     );
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+  });
+
+  it("renders exclusion state and persists checkbox changes", async () => {
+    selectedCategoryKey = "half_hour:women";
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0); });
+
+    const checkbox = screen.getByRole("checkbox", { name: "a.W. Anna Team" });
+    expect(checkbox).toBeChecked();
+
+    fireEvent.click(checkbox);
+
+    await waitFor(() => {
+      expect(apiMock.setStandingsRowExcluded).toHaveBeenCalledWith("season-1", {
+        categoryKey: "half_hour:women",
+        teamId: "team-anna",
+        excluded: false,
+      });
+    });
+  });
+
+  it("keeps the standings tables visible while exclusion refresh is pending", async () => {
+    selectedCategoryKey = "half_hour:women";
+    let resolveReload: ((value: StandingsData) => void) | null = null;
+    apiMock = {
+      ...apiMock,
+      getStandings: vi
+        .fn()
+        .mockResolvedValueOnce(standingsData)
+        .mockImplementationOnce(
+          () =>
+            new Promise<StandingsData>((resolve) => {
+              resolveReload = resolve;
+            }),
+        ),
+    };
+
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByText("Detailergebnisse")).toBeInTheDocument(); });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "a.W. Anna Team" }));
+
+    await waitFor(() => {
+      expect(apiMock.setStandingsRowExcluded).toHaveBeenCalledWith("season-1", {
+        categoryKey: "half_hour:women",
+        teamId: "team-anna",
+        excluded: false,
+      });
+    });
+
+    expect(screen.getAllByRole("table")).toHaveLength(2);
+    expect(screen.getByText("Detailergebnisse")).toBeInTheDocument();
+    expect(screen.getByText("Anna Team")).toBeInTheDocument();
+    expect(screen.queryByText("Wertungen werden geladen...")).not.toBeInTheDocument();
+
+    resolveReload?.(standingsData);
+    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledTimes(2); });
+  });
+
+  it("removes excluded rows from overview rankings but keeps them in details", async () => {
+    selectedCategoryKey = "half_hour:women";
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByText("Detailergebnisse")).toBeInTheDocument(); });
+
+    const tables = screen.getAllByRole("table");
+    const overviewTable = tables[0] as HTMLTableElement;
+    const detailTable = tables[1] as HTMLTableElement;
+
+    expect(within(overviewTable).queryByText("Anna Team")).not.toBeInTheDocument();
+    expect(within(overviewTable).getByText("Bea Team")).toBeInTheDocument();
+    expect(within(overviewTable).getByText("Clara Team")).toBeInTheDocument();
+    expect(within(detailTable).getByText("Anna Team")).toBeInTheDocument();
+    expect(within(detailTable).getByText("Bea Team")).toBeInTheDocument();
+    expect(within(detailTable).getByText("Clara Team")).toBeInTheDocument();
+
+    const detailRows = within(detailTable).getAllByRole("row").slice(1);
+    expect(detailRows.map((row) => within(row).getAllByRole("cell")[2]?.textContent)).toEqual([
+      "Bea Team",
+      "Anna Team",
+      "Clara Team",
+    ]);
+    expect(within(detailRows[1]!).getAllByRole("cell")[0]?.textContent).toBe("—");
   });
 });

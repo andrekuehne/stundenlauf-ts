@@ -46,6 +46,7 @@ describe("shared UI components", () => {
     );
 
     expect(screen.getByText("Child")).toBeInTheDocument();
+    expect(screen.queryByText("Offene Prüfungen:")).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "s2" } });
     expect(onSeasonChange).toHaveBeenCalledWith("s2");
   });

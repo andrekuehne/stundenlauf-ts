@@ -48,4 +48,37 @@ describe("MockAppApi", () => {
     expect(standings.categories.length).toBeGreaterThan(0);
     expect(exportResult.message).toContain("Mock-Modus");
   });
+
+  it("re-ranks eligible rows when exclusion toggles", async () => {
+    const api = createMockAppApi();
+    const shell = await api.getShellData();
+    if (!shell.selectedSeasonId) {
+      throw new Error("Expected initial active season.");
+    }
+
+    const seasonId = shell.selectedSeasonId;
+    const categoryKey = "hour:men";
+    const before = await api.getStandings(seasonId);
+    const rowsBefore = before.rowsByCategory[categoryKey];
+    expect(rowsBefore).toBeDefined();
+    const target = rowsBefore?.[0];
+    const next = rowsBefore?.[1];
+    if (!target || !next) {
+      throw new Error("Expected fixture rows for hour:men.");
+    }
+
+    await api.setStandingsRowExcluded(seasonId, {
+      categoryKey,
+      teamId: target.teamId ?? target.team,
+      excluded: true,
+    });
+
+    const after = await api.getStandings(seasonId);
+    const rowsAfter = after.rowsByCategory[categoryKey] ?? [];
+    const targetAfter = rowsAfter.find((row) => row.team === target.team);
+    const nextAfter = rowsAfter.find((row) => row.team === next.team);
+    expect(targetAfter?.excluded).toBe(true);
+    expect(targetAfter?.rank).toBeNull();
+    expect(nextAfter?.rank).toBe(1);
+  });
 });

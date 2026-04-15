@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { ExportActionDescriptor, StandingsData, StandingsRow } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { formatKm } from "@/app/format.ts";
@@ -87,8 +87,18 @@ export function StandingsPage() {
   const selectCategory = useStandingsStore((state) => state.selectCategory);
   const [data, setData] = useState<StandingsData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [excludedRows, setExcludedRows] = useState<Record<string, boolean>>({});
+  const [pendingExcludedRows, setPendingExcludedRows] = useState<Record<string, boolean>>({});
   const [pdfLayoutPreset, setPdfLayoutPreset] = useState<PdfLayoutPreset>("compact");
+
+  const loadStandings = useCallback(async (seasonId: string) => {
+    setLoading(true);
+    try {
+      const next = await api.getStandings(seasonId);
+      setData(next);
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
 
   useEffect(() => {
     const seasonId = shellData.selectedSeasonId;
@@ -96,31 +106,8 @@ export function StandingsPage() {
       setData(null);
       return;
     }
-
-    let cancelled = false;
-
-    async function load() {
-      if (!seasonId) {
-        return;
-      }
-      setLoading(true);
-      try {
-        const next = await api.getStandings(seasonId);
-        if (!cancelled) {
-          setData(next);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [api, shellData.selectedSeasonId]);
+    void loadStandings(seasonId);
+  }, [loadStandings, shellData.selectedSeasonId]);
 
   useEffect(() => {
     if (!data || data.categories.length === 0) {
@@ -138,7 +125,7 @@ export function StandingsPage() {
 
   const selectedCategory = data?.categories.find((entry) => entry.key === selectedCategoryKey) ?? null;
   const selectedRows = useMemo(
-    () => (selectedCategory ? [...(data?.rowsByCategory[selectedCategory.key] ?? [])].sort((a, b) => a.rank - b.rank) : []),
+    () => (selectedCategory ? [...(data?.rowsByCategory[selectedCategory.key] ?? [])] : []),
     [data, selectedCategory],
   );
 
@@ -151,6 +138,11 @@ export function StandingsPage() {
     [selectedRows],
   );
 
+  const summaryViewRows = useMemo<StandingsViewRow[]>(
+    () => selectedViewRows.filter((row) => !row.excluded),
+    [selectedViewRows],
+  );
+
   const maxRaceColumns = useMemo(
     () => selectedCategory?.importedRuns ?? Math.max(0, ...selectedViewRows.map((row) => row.raceResults.length)),
     [selectedCategory?.importedRuns, selectedViewRows],
@@ -160,7 +152,7 @@ export function StandingsPage() {
     () => {
       const couples = selectedCategory ? isCouplesCategory(selectedCategory.key) : false;
       return [
-        { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => row.rank },
+        { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => row.rank ?? "—" },
         { key: "team", header: STR.views.standings.headerName, cell: (row) => row.team },
         {
           key: "yob",
@@ -186,25 +178,61 @@ export function StandingsPage() {
     [selectedCategory],
   );
 
+  const handleExcludedChange = useCallback(
+    async (row: StandingsViewRow, excluded: boolean) => {
+      const seasonId = shellData.selectedSeasonId;
+      const categoryKey = selectedCategory?.key;
+      const teamId = row.teamId;
+      if (!seasonId || !categoryKey || !teamId) {
+        return;
+      }
+      const exclusionKey = `${categoryKey}:${teamId}`;
+      setPendingExcludedRows((prev) => ({ ...prev, [exclusionKey]: true }));
+      try {
+        await api.setStandingsRowExcluded(seasonId, { categoryKey, teamId, excluded });
+        await loadStandings(seasonId);
+        setStatus({
+          severity: "success",
+          message: excluded ? STR.views.standings.statusExcluded : STR.views.standings.statusIncluded,
+          source: "standings",
+        });
+      } catch (error) {
+        setStatus({
+          severity: "error",
+          message: error instanceof Error ? error.message : "Änderung konnte nicht gespeichert werden.",
+          source: "standings",
+        });
+      } finally {
+        setPendingExcludedRows((prev) => {
+          const next = { ...prev };
+          delete next[exclusionKey];
+          return next;
+        });
+      }
+    },
+    [api, loadStandings, selectedCategory?.key, setStatus, shellData.selectedSeasonId],
+  );
+
   const detailedColumns = useMemo<DataTableColumn<StandingsViewRow>[]>(
     () => [
-      { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => row.rank },
+      { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => (row.excluded ? "—" : row.rank) },
       {
         key: "excluded",
         header: STR.views.standings.headerExcluded,
         align: "center",
         cell: (row) => {
           const categoryPrefix = selectedCategory?.key ?? "unknown";
-          const exclusionKey = `${categoryPrefix}:${row.team}`;
+          const exclusionKey = `${categoryPrefix}:${row.teamId ?? row.team}`;
           return (
             <input
               type="checkbox"
-              checked={Boolean(excludedRows[exclusionKey])}
+              checked={Boolean(row.excluded)}
               onChange={(event) => {
                 const checked = event.currentTarget.checked;
-                setExcludedRows((prev) => ({ ...prev, [exclusionKey]: checked }));
+                void handleExcludedChange(row, checked);
               }}
               aria-label={STR.views.standings.excludedAria(row.team)}
+              disabled={Boolean(pendingExcludedRows[exclusionKey])}
             />
           );
         },
@@ -224,7 +252,7 @@ export function StandingsPage() {
         cell: (row) => row.points.toLocaleString("de-DE"),
       },
     ],
-    [excludedRows, maxRaceColumns, selectedCategory?.key],
+    [handleExcludedChange, pendingExcludedRows, maxRaceColumns, selectedCategory?.key],
   );
 
   const handleExport = useCallback(
@@ -251,7 +279,7 @@ export function StandingsPage() {
     [api, pdfLayoutPreset, setStatus, shellData.selectedSeasonId],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!shellData.selectedSeasonId) {
       setSidebarControls(null);
       return;
@@ -351,7 +379,7 @@ export function StandingsPage() {
 
       {!shellData.selectedSeasonId ? (
         <EmptyState title={STR.views.standings.title} message={STR.views.standings.noSeason} />
-      ) : loading || !data ? (
+      ) : !data ? (
         <section className="surface-card">
           <p className="surface-card__note">{STR.views.standings.loading}</p>
         </section>
@@ -366,8 +394,8 @@ export function StandingsPage() {
           <DataTable
             className="ui-table--standings"
             columns={summaryColumns}
-            rows={selectedViewRows}
-            rowKey={(row) => `${row.rank}-${row.team}`}
+            rows={summaryViewRows}
+            rowKey={(row) => row.teamId ?? row.team}
             emptyMessage={STR.views.standings.noRows}
           />
           <div className="surface-card__section">
@@ -377,7 +405,7 @@ export function StandingsPage() {
             className="ui-table--standings ui-table--standings-detail"
             columns={detailedColumns}
             rows={selectedViewRows}
-            rowKey={(row) => `${row.rank}-${row.team}-detail`}
+            rowKey={(row) => `${row.teamId ?? row.team}-detail`}
             emptyMessage={STR.views.standings.noRows}
           />
         </section>

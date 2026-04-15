@@ -59,3 +59,56 @@ describe("ImportCandidateCard doubles comparison", () => {
     expect(screen.getAllByText("❌")).toHaveLength(2);
   });
 });
+
+describe("ImportCandidateCard mismatch highlighting", () => {
+  it("highlights mismatching words for incoming and existing values", () => {
+    const incoming: ImportIncomingRecord = {
+      displayName: "John Doe",
+      yob: 1993,
+      club: "Club Alpha",
+      startNumber: 44,
+      resultLabel: "7,2 km / 20 P",
+    };
+
+    const candidate: ImportReviewCandidate = {
+      candidateId: "single-1",
+      displayName: "Jon Doe",
+      confidence: 0.84,
+      isRecommended: false,
+      fieldComparisons: [
+        {
+          fieldKey: "name",
+          label: "Name",
+          incomingValue: "John Doe",
+          candidateValue: "Jon Doe",
+          isMatch: false,
+        },
+        {
+          fieldKey: "yob",
+          label: "Jahrgang",
+          incomingValue: "1993",
+          candidateValue: "1993",
+          isMatch: true,
+        },
+      ],
+    };
+
+    const { container } = render(
+      <ImportCandidateCard
+        candidate={candidate}
+        incoming={incoming}
+        isSelected={false}
+        isDoubles={false}
+        disabled={false}
+        onSelect={() => {}}
+        recommendedLabel="Empfohlen"
+      />,
+    );
+
+    const highlightedParts = container.querySelectorAll(".import-candidate__diff-part");
+    expect(highlightedParts).toHaveLength(2);
+    expect(highlightedParts[0]?.textContent).toBe("John");
+    expect(highlightedParts[1]?.textContent).toBe("Jon");
+    expect(screen.getAllByText("Doe")).toHaveLength(2);
+  });
+});

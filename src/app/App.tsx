@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { ShellData } from "@/api/contracts/index.ts";
 import { AppApiProvider, useAppApi } from "@/api/provider.tsx";
@@ -124,7 +124,7 @@ function Phase1App() {
     [api, navigate, refreshShellData, setStatus, shellData.availableSeasons],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setSidebarControls(null);
   }, [activeRoute]);
 

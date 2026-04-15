@@ -27,6 +27,7 @@ import { alignCoupleMembersForDisplay } from "@/matching/review-display.ts";
 import { importSeason, exportSeason } from "@/portability/index.ts";
 import { triggerDownload } from "@/portability/download.ts";
 import { computeStandings } from "@/ranking/index.ts";
+import { exclusionsForCategory, markExclusions } from "@/ranking/exclusions.ts";
 import { getSeasonRepository, type SeasonRepository } from "@/services/season-repository.ts";
 import type {
   AppApi,
@@ -694,7 +695,9 @@ class TsAppApi implements AppApi {
 
     const rowsByCategory = Object.fromEntries(
       standings.category_tables.map((table) => {
-        const rows: StandingsRow[] = table.rows.map((row) => {
+        const excludedTeamIds = exclusionsForCategory(snapshot.state, table.category_key);
+        const marked = markExclusions(table, excludedTeamIds);
+        const rows: StandingsRow[] = marked.rows.map((row) => {
           const team = snapshot.state.teams.get(row.team_id);
           const label = team
             ? teamLabel(team, snapshot.state)
@@ -702,12 +705,14 @@ class TsAppApi implements AppApi {
           return {
             rank: row.rank,
             team: label.name,
+            teamId: row.team_id,
             club: label.club,
             ...(label.yob ? { yob: label.yob } : {}),
             ...(label.yobPair ? { yobPair: label.yobPair } : {}),
             points: row.total_points,
             distanceKm: Math.round((row.total_distance_m / 1000) * 1000) / 1000,
             races: row.race_contributions.filter((entry) => entry.counts_toward_total).length,
+            excluded: row.excluded,
           };
         });
         return [table.category_key, rows];
@@ -780,6 +785,55 @@ class TsAppApi implements AppApi {
     });
     triggerDownload(artifact.blob, artifact.filename);
     return asSuccess(`Excel-Export "${artifact.filename}" wurde erstellt.`);
+  }
+
+  async setStandingsRowExcluded(
+    seasonId: string,
+    input: { categoryKey: string; teamId: string; excluded: boolean },
+  ): Promise<void> {
+    const snapshot = await this.loadSnapshot(seasonId);
+    if (!snapshot.state.teams.has(input.teamId)) {
+      throw new Error("Der gewählte Wertungseintrag wurde nicht gefunden.");
+    }
+
+    const table = computeStandings(snapshot.state).category_tables.find(
+      (entry) => entry.category_key === input.categoryKey,
+    );
+    const teamInCategory = table?.rows.some((row) => row.team_id === input.teamId) ?? false;
+    if (!teamInCategory) {
+      throw new Error("Der gewählte Wertungseintrag passt nicht zur Kategorie.");
+    }
+
+    const [duration, division] = input.categoryKey.split(":");
+    if (
+      (duration !== "half_hour" && duration !== "hour") ||
+      (
+        division !== "men" &&
+        division !== "women" &&
+        division !== "couples_men" &&
+        division !== "couples_women" &&
+        division !== "couples_mixed"
+      )
+    ) {
+      throw new Error("Ungültige Kategorie.");
+    }
+
+    const repo = await this.repo();
+    await repo.appendEvents(seasonId, [{
+      event_id: crypto.randomUUID(),
+      seq: snapshot.eventLog.length,
+      recorded_at: new Date().toISOString(),
+      type: "ranking.eligibility_set",
+      schema_version: 1,
+      payload: {
+        category: { duration, division },
+        team_id: input.teamId,
+        eligible: !input.excluded,
+      },
+      metadata: {
+        app_version: APP_VERSION,
+      },
+    }]);
   }
 
   async createImportDraft(input: ImportDraftInput) {

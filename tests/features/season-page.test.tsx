@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppApi, AppCommandResult, SeasonListItem, ShellData, StandingsData } from "@/api/contracts/index.ts";
 import { SeasonPage } from "@/features/season/SeasonPage.tsx";
@@ -181,21 +181,38 @@ describe("SeasonPage", () => {
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ severity: "success", source: "season" }));
   });
 
-  it("navigates to import after creating a season", async () => {
+  it("renders create and import actions in the existing seasons header", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
-    const initialSidebar = latestNonNullSidebar();
-    render(<>{initialSidebar}</>);
+    await waitFor(() => expect(screen.getByText("Bestehende Saisons")).toBeInTheDocument());
 
-    const input = screen.getByRole("textbox", { name: /Saisonname/i });
-    const sidebarCallsBeforeChange = setSidebarControls.mock.calls.length;
+    const header = screen.getByText("Bestehende Saisons").closest(".surface-card__header");
+    expect(header).not.toBeNull();
+    const headerScope = within(header as HTMLElement);
+    expect(headerScope.getByRole("button", { name: /Saison anlegen/i })).toBeInTheDocument();
+    expect(headerScope.getByRole("button", { name: /Saison importieren/i })).toBeInTheDocument();
+  });
+
+  it("requires a season label in the create modal before creating", async () => {
+    render(<SeasonPage />);
+    await waitFor(() => expect(screen.getByText("Bestehende Saisons")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: /Saison anlegen/i }));
+    const dialog = screen.getByRole("dialog", { name: /Neue Saison/i });
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /Neue Saison erstellen/i }));
+    expect(apiMock.createSeason).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: /Neue Saison/i })).toBeInTheDocument();
+  });
+
+  it("navigates to import after creating a season from modal", async () => {
+    render(<SeasonPage />);
+    await waitFor(() => expect(screen.getByText("Bestehende Saisons")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: /Saison anlegen/i }));
+    const dialog = screen.getByRole("dialog", { name: /Neue Saison/i });
+    const input = within(dialog).getByRole("textbox", { name: /Saisonname/i });
     fireEvent.change(input, { target: { value: "Neue Saison" } });
-    await waitFor(() => { expect(setSidebarControls.mock.calls.length).toBeGreaterThan(sidebarCallsBeforeChange); });
-
-    const updatedSidebar = latestNonNullSidebar();
-    render(<>{updatedSidebar}</>);
-    fireEvent.click(screen.getAllByRole("button", { name: /Neue Saison erstellen/i }).at(-1)!);
-
+    fireEvent.click(within(dialog).getByRole("button", { name: /Neue Saison erstellen/i }));
     await waitFor(() => { expect(apiMock.createSeason).toHaveBeenCalledWith({ label: "Neue Saison" }); });
     expect(navigateMock).toHaveBeenCalledWith("/import");
   });

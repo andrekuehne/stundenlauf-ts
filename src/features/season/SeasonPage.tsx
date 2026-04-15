@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { SeasonListItem } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
@@ -24,7 +24,8 @@ export function SeasonPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [actionSeasonId, setActionSeasonId] = useState<string | null>(null);
-  const [seasonLabel, setSeasonLabel] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newSeasonLabel, setNewSeasonLabel] = useState("");
 
   const loadSeasons = useCallback(async () => {
     setLoading(true);
@@ -161,7 +162,7 @@ export function SeasonPage() {
   );
 
   const handleCreate = useCallback(async () => {
-    const nextLabel = seasonLabel.trim();
+    const nextLabel = newSeasonLabel.trim();
     if (!nextLabel) {
       setStatus({
         severity: "warn",
@@ -174,7 +175,8 @@ export function SeasonPage() {
     setCreating(true);
     try {
       const created = await api.createSeason({ label: nextLabel });
-      setSeasonLabel("");
+      setNewSeasonLabel("");
+      setIsCreateModalOpen(false);
       await refreshAll();
       setStatus({
         severity: "success",
@@ -185,39 +187,11 @@ export function SeasonPage() {
     } finally {
       setCreating(false);
     }
-  }, [api, navigate, seasonLabel, setStatus]);
+  }, [api, navigate, newSeasonLabel, setStatus]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setSidebarControls(
       <div className="sidebar-controls">
-        <section className="sidebar-controls__section">
-          <h4>{STR.views.season.createTitle}</h4>
-          <label className="field-stack">
-            <span>{STR.views.season.createLabel}</span>
-            <input
-              type="text"
-              value={seasonLabel}
-              placeholder={STR.views.season.createPlaceholder}
-              onChange={(event) => {
-                setSeasonLabel(event.target.value);
-              }}
-            />
-          </label>
-          <div className="stack-actions">
-            <button type="button" className="button button--primary" disabled={creating} onClick={() => void handleCreate()}>
-              {STR.views.season.createAction}
-            </button>
-            <button
-              type="button"
-              className="button"
-              disabled={actionSeasonId === "global"}
-              onClick={() => void handleSeasonCommand("import_backup")}
-            >
-              {STR.views.season.importAction}
-            </button>
-          </div>
-        </section>
-
         <section className="sidebar-controls__section season-side-note">
           <h4>{STR.views.season.activeSeasonTitle}</h4>
           <p>{shellData.selectedSeasonLabel ?? STR.views.season.noActiveSeason}</p>
@@ -231,15 +205,7 @@ export function SeasonPage() {
     return () => {
       setSidebarControls(null);
     };
-  }, [
-    actionSeasonId,
-    creating,
-    handleCreate,
-    handleSeasonCommand,
-    seasonLabel,
-    setSidebarControls,
-    shellData.selectedSeasonLabel,
-  ]);
+  }, [setSidebarControls, shellData.selectedSeasonLabel]);
 
   return (
     <div className="page-stack">
@@ -251,10 +217,79 @@ export function SeasonPage() {
             <h2>{STR.views.season.existingSeasonsTitle}</h2>
             <p>{STR.views.season.existingSeasonsDescription}</p>
           </div>
+          <div className="surface-card__actions">
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={creating}
+              onClick={() => {
+                setNewSeasonLabel("");
+                setIsCreateModalOpen(true);
+              }}
+            >
+              {STR.views.season.createOpenAction}
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={actionSeasonId === "global"}
+              onClick={() => void handleSeasonCommand("import_backup")}
+            >
+              {STR.views.season.importAction}
+            </button>
+          </div>
         </div>
         <DataTable columns={columns} rows={seasons} emptyMessage={STR.views.season.noSeasons} />
         {loading ? <p className="surface-card__note">{STR.views.season.loading}</p> : null}
       </section>
+
+      {isCreateModalOpen ? (
+        <div className="confirm-modal__backdrop" role="presentation">
+          <form
+            className="confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={STR.views.season.createTitle}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleCreate();
+            }}
+          >
+            <div className="confirm-modal__header">
+              <h2>{STR.views.season.createTitle}</h2>
+            </div>
+            <div className="confirm-modal__body">
+              <label className="field-stack">
+                <span>{STR.views.season.createLabel}</span>
+                <input
+                  autoFocus
+                  required
+                  type="text"
+                  value={newSeasonLabel}
+                  placeholder={STR.views.season.createPlaceholder}
+                  onChange={(event) => {
+                    setNewSeasonLabel(event.target.value);
+                  }}
+                />
+              </label>
+            </div>
+            <div className="confirm-modal__actions">
+              <button
+                type="button"
+                className="button"
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                }}
+              >
+                {STR.confirmModal.cancel}
+              </button>
+              <button type="submit" className="button button--primary" disabled={creating}>
+                {STR.views.season.createAction}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }

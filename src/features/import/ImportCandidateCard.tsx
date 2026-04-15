@@ -40,6 +40,49 @@ function pairValueMatches(incomingValue: string, candidateValue: string): boolea
   return normalizeForMatch(incomingValue) === normalizeForMatch(candidateValue);
 }
 
+function splitIntoWords(value: string): string[] {
+  return value.split(/\s+/).filter((part) => part.length > 0);
+}
+
+function normalizeWord(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function buildMismatchMask(value: string, otherValue: string): boolean[] {
+  const words = splitIntoWords(value);
+  const otherWords = splitIntoWords(otherValue);
+  return words.map((word, index) => normalizeWord(word) !== normalizeWord(otherWords[index] ?? ""));
+}
+
+function renderWordDiff(value: string, otherValue: string) {
+  if (!value.trim()) {
+    return value;
+  }
+
+  const parts = value.split(/(\s+)/);
+  const mismatchMask = buildMismatchMask(value, otherValue);
+  let wordIndex = 0;
+
+  return parts.map((part, index) => {
+    if (!part.length || /^\s+$/.test(part)) {
+      return <span key={`ws-${index}`}>{part}</span>;
+    }
+
+    const isMismatch = mismatchMask[wordIndex] ?? false;
+    wordIndex += 1;
+
+    if (!isMismatch) {
+      return <span key={`word-${index}`}>{part}</span>;
+    }
+
+    return (
+      <span key={`word-${index}`} className="import-candidate__diff-part">
+        {part}
+      </span>
+    );
+  });
+}
+
 function ComparisonRow({
   label,
   isMatch,
@@ -58,11 +101,11 @@ function ComparisonRow({
       <div className="import-candidate__values">
         <div className="import-candidate__value-row">
           <span className="import-candidate__value-label">{STR.importCandidate.incomingLabel}</span>
-          <span>{incomingValue}</span>
+          <span>{isMatch ? incomingValue : renderWordDiff(incomingValue, candidateValue)}</span>
         </div>
         <div className="import-candidate__value-row">
           <span className="import-candidate__value-label">{STR.importCandidate.existingLabel}</span>
-          <span>{candidateValue}</span>
+          <span>{isMatch ? candidateValue : renderWordDiff(candidateValue, incomingValue)}</span>
         </div>
       </div>
     </div>

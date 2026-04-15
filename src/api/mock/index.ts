@@ -756,6 +756,35 @@ class MockAppApi implements AppApi {
     } satisfies AppCommandResult);
   }
 
+  setStandingsRowExcluded(
+    seasonId: string,
+    input: { categoryKey: string; teamId: string; excluded: boolean },
+  ) {
+    const season = this.seasons.find((entry) => entry.seasonId === seasonId);
+    if (!season) {
+      throw new Error("Bitte zuerst eine Saison auswählen.");
+    }
+    const rows = season.standings.rowsByCategory[input.categoryKey];
+    if (!rows) {
+      throw new Error("Die ausgewählte Kategorie wurde nicht gefunden.");
+    }
+    const row = rows.find((entry) => (entry.teamId ?? entry.team) === input.teamId);
+    if (!row) {
+      throw new Error("Der gewählte Wertungseintrag wurde nicht gefunden.");
+    }
+    row.excluded = input.excluded;
+    let eligibleRank = 0;
+    for (const candidate of rows) {
+      if (candidate.excluded) {
+        candidate.rank = null;
+        continue;
+      }
+      eligibleRank += 1;
+      candidate.rank = eligibleRank;
+    }
+    return Promise.resolve();
+  }
+
   createImportDraft(input: ImportDraftInput) {
     const season = this.seasons.find((entry) => entry.seasonId === input.seasonId);
     if (!season) {
