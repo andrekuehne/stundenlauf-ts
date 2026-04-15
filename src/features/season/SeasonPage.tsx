@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { SeasonListItem } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
@@ -16,6 +17,7 @@ function formatDateTime(value: string): string {
 
 export function SeasonPage() {
   const api = useAppApi();
+  const navigate = useNavigate();
   const { shellData, refreshShellData, setSidebarControls } = useAppShellContext();
   const setStatus = useStatusStore((state) => state.setStatus);
   const [seasons, setSeasons] = useState<SeasonListItem[]>([]);
@@ -67,7 +69,7 @@ export function SeasonPage() {
             <button
               type="button"
               className="button button--primary"
-              disabled={row.isActive || actionSeasonId === row.seasonId}
+              disabled={actionSeasonId === row.seasonId}
               onClick={() => {
                 void handleOpen(row);
               }}
@@ -116,6 +118,7 @@ export function SeasonPage() {
         message: STR.views.season.openedDone(row.label),
         source: "season",
       });
+      navigate(row.importedEvents > 0 ? "/standings" : "/import");
     } finally {
       setActionSeasonId(null);
     }
@@ -178,10 +181,11 @@ export function SeasonPage() {
         message: STR.views.season.createdDone(created.label),
         source: "season",
       });
+      navigate("/import");
     } finally {
       setCreating(false);
     }
-  }, [api, seasonLabel, setStatus]);
+  }, [api, navigate, seasonLabel, setStatus]);
 
   useEffect(() => {
     setSidebarControls(

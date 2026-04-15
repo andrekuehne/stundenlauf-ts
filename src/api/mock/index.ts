@@ -737,16 +737,22 @@ class MockAppApi implements AppApi {
     return Promise.resolve(cloneSeason(season).standings);
   }
 
-  runExportAction(seasonId: string, actionId: "export_pdf" | "export_excel") {
+  runExportAction(
+    seasonId: string,
+    actionId: "export_pdf" | "export_excel",
+    options?: { pdfLayoutPreset?: "default" | "compact" },
+  ) {
     const season = this.seasons.find((entry) => entry.seasonId === seasonId);
     if (!season) {
       throw new Error("Bitte zuerst eine Saison auswählen.");
     }
 
     const label = actionId === "export_pdf" ? "PDF-Export" : "Excel-Export";
+    const layoutSuffix =
+      actionId === "export_pdf" ? ` (${options?.pdfLayoutPreset ?? "compact"})` : "";
     return Promise.resolve({
       severity: "success",
-      message: `${label} für "${season.label}" wurde im Mock-Modus ausgelöst.`,
+      message: `${label}${layoutSuffix} für "${season.label}" wurde im Mock-Modus ausgelöst.`,
     } satisfies AppCommandResult);
   }
 

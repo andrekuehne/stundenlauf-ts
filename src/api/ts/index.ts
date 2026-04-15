@@ -293,12 +293,23 @@ function incomingYobLabel(incoming: IncomingRowData): string {
 
 function buildReviewCandidate(
   incoming: IncomingRowData,
-  candidate: { team_id: string; display_name: string; score: number; yob: number; club: string | null },
+  candidate: {
+    team_id: string;
+    display_name: string;
+    score: number;
+    yob: number;
+    yob_text?: string | null;
+    club: string | null;
+  },
 ): ImportReviewCandidate {
   const incomingClub = incoming.club ?? "—";
   const candidateClub = candidate.club ?? "—";
   const incomingYob = incomingYobLabel(incoming);
-  const candidateYob = candidate.yob > 0 ? String(candidate.yob) : "—";
+  const candidateYob = candidate.yob_text?.trim()
+    ? candidate.yob_text.trim()
+    : candidate.yob > 0
+      ? String(candidate.yob)
+      : "—";
   return {
     candidateId: candidate.team_id,
     displayName: candidate.display_name,
@@ -635,13 +646,19 @@ class TsAppApi implements AppApi {
     };
   }
 
-  async runExportAction(seasonId: string, actionId: "export_pdf" | "export_excel") {
+  async runExportAction(
+    seasonId: string,
+    actionId: "export_pdf" | "export_excel",
+    options?: { pdfLayoutPreset?: "default" | "compact" },
+  ) {
     const snapshot = await this.loadSnapshot(seasonId);
     const seasonYear = extractSeasonYear(snapshot.descriptor.label, snapshot.descriptor.created_at);
     if (actionId === "export_pdf") {
+      const layoutPreset = options?.pdfLayoutPreset ?? "compact";
       const artifacts = exportLaufuebersichtDualPdfs(snapshot.state, {
         seasonYear,
         filenameBase: `stundenlauf-${seasonYear}-laufuebersicht`,
+        layoutPreset,
       });
       for (const artifact of artifacts) {
         triggerDownload(artifact.blob, artifact.filename);

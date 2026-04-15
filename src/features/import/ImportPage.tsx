@@ -9,6 +9,7 @@ import { InfoCard } from "@/components/layout/InfoCard.tsx";
 import { PageHeader } from "@/components/layout/PageHeader.tsx";
 import { SupportPanel } from "@/components/layout/SupportPanel.tsx";
 import { ImportCandidateCard } from "@/features/import/ImportCandidateCard.tsx";
+import { detectSourceType, parseRaceNo } from "@/ingestion/helpers.ts";
 import { DEFAULT_AUTO_MIN, DEFAULT_REVIEW_MIN } from "@/matching/config.ts";
 import { useStatusStore } from "@/stores/status.ts";
 
@@ -26,7 +27,7 @@ const MATCHING_MODE_DEFAULTS: Record<MatchingMode, MatchingModeSettings> = {
   fuzzy_automatik: { autoThreshold: DEFAULT_AUTO_MIN, reviewThreshold: DEFAULT_REVIEW_MIN },
   manuell: { autoThreshold: DEFAULT_AUTO_MIN, reviewThreshold: DEFAULT_REVIEW_MIN },
 };
-const MATCHING_THRESHOLD_MIN = 0.5;
+const MATCHING_THRESHOLD_MIN = 0;
 const MATCHING_THRESHOLD_MAX = 1;
 const MATCHING_THRESHOLD_STEP = 0.01;
 
@@ -312,6 +313,13 @@ export function ImportPage() {
     }
   }
 
+  function applyFileNameAutodetect(nextFileName: string) {
+    const inferredCategory = detectSourceType(nextFileName) === "couples" ? "doubles" : "singles";
+    const inferredRace = parseRaceNo(nextFileName);
+    setCategory(inferredCategory);
+    setRaceNumber(inferredRace > 0 ? String(inferredRace) : "");
+  }
+
   function stageReviewDecision(action: ImportReviewAction, candidateId: string | null) {
     if (!draft || !activeReview) {
       return;
@@ -450,7 +458,9 @@ export function ImportPage() {
                           <input
                             value={fileName}
                             onChange={(event) => {
-                              setFileName(event.target.value);
+                              const nextFileName = event.target.value;
+                              setFileName(nextFileName);
+                              applyFileNameAutodetect(nextFileName);
                               setSelectedFile(null);
                             }}
                             placeholder={STR.views.import.filePlaceholder}
@@ -466,6 +476,7 @@ export function ImportPage() {
                               if (selectedFile) {
                                 setSelectedFile(selectedFile);
                                 setFileName(selectedFile.name);
+                                applyFileNameAutodetect(selectedFile.name);
                                 rememberImportFile(selectedFile);
                               }
                             }}

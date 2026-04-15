@@ -45,7 +45,7 @@ interface CycleResult {
 }
 
 const HARNESS_SEASON_ID = "f-ts05-harness";
-const SLIDER_MIN = 0.5;
+const SLIDER_MIN = 0;
 const SLIDER_MAX = 1;
 const SLIDER_STEP = 0.01;
 

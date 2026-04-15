@@ -57,9 +57,15 @@ describe("frontend stores", () => {
   it("clamps thresholds for fuzzy mode", () => {
     const store = useImportStore.getState();
     store.setMatchingMode("fuzzy_automatik");
+    store.setAutoThreshold(-0.2);
+    store.setReviewThreshold(-0.3);
+    let state = useImportStore.getState();
+    expect(state.autoThreshold).toBe(0);
+    expect(state.reviewThreshold).toBe(0);
+
     store.setAutoThreshold(0.6);
     store.setReviewThreshold(0.9);
-    const state = useImportStore.getState();
+    state = useImportStore.getState();
     expect(state.autoThreshold).toBe(0.6);
     expect(state.reviewThreshold).toBe(0.6);
   });

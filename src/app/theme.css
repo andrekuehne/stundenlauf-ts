@@ -1025,8 +1025,10 @@ textarea {
 }
 
 .import-review__cards {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-sm);
+  align-items: stretch;
 }
 
 .import-review--cards-scroll .import-review__cards {
@@ -1051,6 +1053,8 @@ textarea {
   text-align: left;
   padding: var(--spacing-md);
   cursor: pointer;
+  align-self: flex-start;
+  width: 100%;
 }
 
 .import-candidate.is-selected {

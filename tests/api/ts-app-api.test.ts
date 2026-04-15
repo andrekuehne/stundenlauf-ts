@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rememberImportFile } from "@/api/import-file-registry.ts";
 import { createTsAppApi } from "@/api/ts/index.ts";
-import { EXPECTED_HEADER_SINGLES } from "@/ingestion/constants";
+import { EXPECTED_HEADER_COUPLES, EXPECTED_HEADER_SINGLES } from "@/ingestion/constants";
 import type { DomainEvent } from "@/domain/events.ts";
 import type { SeasonDescriptor } from "@/domain/types.ts";
 import {
@@ -74,6 +74,20 @@ class InMemorySeasonRepository implements SeasonRepository {
 function buildSinglesImportFile(
   rows: unknown[][],
   name = "Ergebnisliste MW Lauf 2.xlsx",
+): File {
+  const buffer = buildXlsx(rows);
+  const file = new File([buffer], name, {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  Object.defineProperty(file, "arrayBuffer", {
+    value: () => Promise.resolve(buffer.slice(0)),
+  });
+  return file;
+}
+
+function buildCouplesImportFile(
+  rows: unknown[][],
+  name = "Ergebnisliste MW_Paare Lauf 2.xlsx",
 ): File {
   const buffer = buildXlsx(rows);
   const file = new File([buffer], name, {
@@ -390,5 +404,82 @@ describe("TsAppApi import workflows", () => {
 
     const shell = await api.getShellData();
     expect(shell.unresolvedReviews).toBe(0);
+  });
+
+  it("preserves candidate YOB pair text for doubles review items", async () => {
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Stundenlauf 2033" });
+    await api.openSeason(created.seasonId);
+    const repo = await getSeasonRepository();
+    await repo.saveImportedSeason(
+      {
+        season_id: created.seasonId,
+        label: created.label,
+        created_at: new Date().toISOString(),
+      },
+      [
+        personRegistered({
+          person_id: "person-couple-a",
+          given_name: "Lea",
+          family_name: "Beispiel",
+          display_name: "Lea Beispiel",
+          name_normalized: "lea beispiel",
+          yob: 1992,
+          gender: "F",
+          club: "Club A",
+          club_normalized: "club a",
+        }),
+        personRegistered({
+          person_id: "person-couple-b",
+          given_name: "Tom",
+          family_name: "Beispiel",
+          display_name: "Tom Beispiel",
+          name_normalized: "tom beispiel",
+          yob: 1990,
+          gender: "M",
+          club: "Club B",
+          club_normalized: "club b",
+        }),
+        teamRegistered({
+          team_id: "team-couple-existing",
+          member_person_ids: ["person-couple-a", "person-couple-b"],
+          team_kind: "couple",
+        }),
+      ],
+    );
+
+    const file = buildCouplesImportFile([
+      EXPECTED_HEADER_COUPLES,
+      ["h-Lauf", "", "", "", "", "", "", "", "", "", ""],
+      ["Paare Mix", "", "", "", "", "", "", "", "", "", ""],
+      [1, "12", "Lea Beispel", 1992, "Club A", "Tom Beispiel", 1990, "Club B", "8,0", "", "23"],
+    ]);
+    rememberImportFile(file);
+
+    const draft = await api.createImportDraft({
+      seasonId: created.seasonId,
+      fileName: file.name,
+      category: "doubles",
+      raceNumber: 2,
+      matchingConfig: {
+        autoMin: 0.5,
+        reviewMin: 0.5,
+        autoMergeEnabled: false,
+        perfectMatchAutoMerge: false,
+        strictNormalizedAutoOnly: false,
+      },
+    });
+
+    expect(draft.reviewItems.length).toBe(1);
+    const firstReview = draft.reviewItems[0];
+    if (!firstReview) {
+      throw new Error("Expected doubles review item.");
+    }
+    const firstCandidate = firstReview.candidates[0];
+    if (!firstCandidate) {
+      throw new Error("Expected doubles candidate.");
+    }
+    const yobComparison = firstCandidate.fieldComparisons.find((item) => item.fieldKey === "yob");
+    expect(yobComparison?.candidateValue).toBe("1992 / 1990");
   });
 });

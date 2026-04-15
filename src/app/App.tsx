@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { ShellData } from "@/api/contracts/index.ts";
 import { AppApiProvider, useAppApi } from "@/api/provider.tsx";
 import { isAppRoute, type AppRoute } from "@/app/routes.ts";
@@ -68,6 +68,7 @@ function activeRouteFromPath(pathname: string): AppRoute {
 function Phase1App() {
   const api = useAppApi();
   const location = useLocation();
+  const navigate = useNavigate();
   const setStatus = useStatusStore((state) => state.setStatus);
   const currentStatus = useStatusStore((state) => state.current);
   const [shellData, setShellData] = useState<ShellData>(EMPTY_SHELL_DATA);
@@ -103,7 +104,15 @@ function Phase1App() {
     async (seasonId: string) => {
       const selected = shellData.availableSeasons.find((season) => season.seasonId === seasonId);
       await api.openSeason(seasonId);
+      let targetRoute = "/import";
+      try {
+        const standings = await api.getStandings(seasonId);
+        targetRoute = standings.summary.totalRuns > 0 ? "/standings" : "/import";
+      } catch {
+        targetRoute = "/import";
+      }
       await refreshShellData();
+      navigate(targetRoute);
       if (selected) {
         setStatus({
           severity: "info",
@@ -112,7 +121,7 @@ function Phase1App() {
         });
       }
     },
-    [api, refreshShellData, setStatus, shellData.availableSeasons],
+    [api, navigate, refreshShellData, setStatus, shellData.availableSeasons],
   );
 
   useEffect(() => {

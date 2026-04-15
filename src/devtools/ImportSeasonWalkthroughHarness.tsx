@@ -64,7 +64,7 @@ const HARNESS_SEASON_ID = "f-ts05-season-walkthrough";
 const NEW_IDENTITY_OPTION = "__create_new_identity__";
 
 function clampThreshold(value: number): number {
-  return Math.min(1, Math.max(0.5, value));
+  return Math.min(1, Math.max(0, value));
 }
 
 function modeLabel(mode: HarnessMatchingMode): string {
@@ -364,7 +364,7 @@ export function ImportSeasonWalkthroughHarness() {
             Auto-Schwelle ({thresholdLabel(autoThreshold)})
             <input
               type="range"
-              min={0.5}
+              min={0}
               max={1}
               step={0.01}
               disabled={
@@ -382,7 +382,7 @@ export function ImportSeasonWalkthroughHarness() {
             Mindest-Ähnlichkeit Prüfliste ({thresholdLabel(reviewThreshold)})
             <input
               type="range"
-              min={0.5}
+              min={0}
               max={1}
               step={0.01}
               disabled={busy || activeSession?.phase === "reviewing"}

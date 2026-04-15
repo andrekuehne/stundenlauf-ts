@@ -229,6 +229,34 @@ beforeEach(() => {
 });
 
 describe("ImportPage", () => {
+  it("auto-detects race number and pairs category from typed filename", () => {
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW_Paare Lauf 2.xlsx" },
+    });
+
+    expect(screen.getByPlaceholderText("4")).toHaveValue(2);
+    expect(screen.getByRole("button", { name: "Paare" })).toHaveClass("is-active");
+    expect(screen.getByRole("button", { name: "Einzel" })).not.toHaveClass("is-active");
+  });
+
+  it("auto-detects race number and singles category from picked filename", () => {
+    render(<ImportPage />);
+
+    const fileInput = document.querySelector<HTMLInputElement>("input[type='file']");
+    expect(fileInput).not.toBeNull();
+    const file = new File(["excel"], "Ergebnisliste MW Lauf 5.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    fireEvent.change(fileInput!, { target: { files: [file] } });
+
+    expect(screen.getByPlaceholderText("lauf4-mw.xlsx")).toHaveValue("Ergebnisliste MW Lauf 5.xlsx");
+    expect(screen.getByPlaceholderText("4")).toHaveValue(5);
+    expect(screen.getByRole("button", { name: "Einzel" })).toHaveClass("is-active");
+    expect(screen.getByRole("button", { name: "Paare" })).not.toHaveClass("is-active");
+  });
+
   it("jumps directly to summary when draft has no review items", async () => {
     render(<ImportPage />);
 
@@ -319,6 +347,36 @@ describe("ImportPage", () => {
       name: /Kathi Moller - ausgewählt/i,
     });
     expect(selectedBestCandidate).toBeInTheDocument();
+  });
+
+  it("uses 0 as slider minimum for matching thresholds", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("4"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
+    });
+
+    const sliders = screen.getAllByRole("slider");
+    expect(sliders.length).toBeGreaterThanOrEqual(2);
+    for (const slider of sliders) {
+      expect(slider).toHaveAttribute("min", "0");
+    }
   });
 
   it("shows status when no season is selected", async () => {

@@ -56,7 +56,7 @@ interface DomainFinalizeResult {
   events: ReturnType<typeof finalizeImport>;
 }
 
-const MIN_THRESHOLD = 0.5;
+const MIN_THRESHOLD = 0;
 const MAX_THRESHOLD = 1;
 
 function clampThreshold(value: number): number {

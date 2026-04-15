@@ -11,6 +11,7 @@ import { useStandingsStore } from "@/stores/standings.ts";
 import { useStatusStore } from "@/stores/status.ts";
 
 type CategoryGroupKey = "single" | "couples";
+type PdfLayoutPreset = "default" | "compact";
 type RaceResult = { distanceKm: number; points: number } | null;
 type StandingsViewRow = StandingsRow & {
   yob?: number;
@@ -87,6 +88,7 @@ export function StandingsPage() {
   const [data, setData] = useState<StandingsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [excludedRows, setExcludedRows] = useState<Record<string, boolean>>({});
+  const [pdfLayoutPreset, setPdfLayoutPreset] = useState<PdfLayoutPreset>("compact");
 
   useEffect(() => {
     const seasonId = shellData.selectedSeasonId;
@@ -236,14 +238,17 @@ export function StandingsPage() {
         return;
       }
 
-      const result = await api.runExportAction(shellData.selectedSeasonId, action.id);
+      const result =
+        action.id === "export_pdf"
+          ? await api.runExportAction(shellData.selectedSeasonId, action.id, { pdfLayoutPreset })
+          : await api.runExportAction(shellData.selectedSeasonId, action.id);
       setStatus({
         severity: result.severity,
         message: result.message,
         source: "standings",
       });
     },
-    [api, setStatus, shellData.selectedSeasonId],
+    [api, pdfLayoutPreset, setStatus, shellData.selectedSeasonId],
   );
 
   useEffect(() => {
@@ -306,6 +311,19 @@ export function StandingsPage() {
 
         <section className="sidebar-controls__section">
           <h4>{STR.views.standings.exportTitle}</h4>
+          {data?.exportActions.some((action) => action.id === "export_pdf") ? (
+            <label className="field-stack">
+              <span>{STR.views.standings.pdfStyleLabel}</span>
+              <select
+                aria-label={STR.views.standings.pdfStyleLabel}
+                value={pdfLayoutPreset}
+                onChange={(event) => setPdfLayoutPreset(event.currentTarget.value as PdfLayoutPreset)}
+              >
+                <option value="default">{STR.views.standings.pdfStyleNormal}</option>
+                <option value="compact">{STR.views.standings.pdfStyleCompact}</option>
+              </select>
+            </label>
+          ) : null}
           <div className="stack-actions">
             {data?.exportActions.map((action) => (
               <button

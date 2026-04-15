@@ -234,7 +234,11 @@ export interface AppApi {
   deleteSeason(seasonId: string): Promise<void>;
   runSeasonCommand(command: SeasonCommand, seasonId?: string): Promise<AppCommandResult>;
   getStandings(seasonId: string): Promise<StandingsData>;
-  runExportAction(seasonId: string, actionId: ExportActionDescriptor["id"]): Promise<AppCommandResult>;
+  runExportAction(
+    seasonId: string,
+    actionId: ExportActionDescriptor["id"],
+    options?: { pdfLayoutPreset?: "default" | "compact" },
+  ): Promise<AppCommandResult>;
   createImportDraft(input: ImportDraftInput): Promise<ImportDraftState>;
   getImportDraft(draftId: string): Promise<ImportDraftState>;
   setImportReviewDecision(draftId: string, decision: ImportReviewDecision): Promise<ImportDraftState>;
