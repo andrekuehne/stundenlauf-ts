@@ -2,6 +2,11 @@ import type {
   AppApi,
   AppCommandResult,
   CreateSeasonInput,
+  ImportCategory,
+  ImportDraftInput,
+  ImportDraftState,
+  ImportReviewDecision,
+  ImportReviewItem,
   SeasonCommand,
   SeasonListItem,
   StandingsData,
@@ -10,6 +15,8 @@ import type {
 type MockSeasonRecord = SeasonListItem & {
   standings: StandingsData;
 };
+
+type ImportDraftRecord = ImportDraftState;
 
 function isoDate(value: string): string {
   return new Date(value).toISOString();
@@ -248,10 +255,179 @@ function toSeasonSummary(record: MockSeasonRecord): SeasonListItem {
   };
 }
 
+function buildReviewItems(category: ImportCategory): ImportReviewItem[] {
+  const base: ImportReviewItem[] = [
+    {
+      reviewId: "review-1",
+      incoming: {
+        displayName: "Katharina Moeller",
+        yob: 1993,
+        club: "",
+        startNumber: 40,
+        resultLabel: "7,041 km / 30 P",
+      },
+      candidates: [
+        {
+          candidateId: "team-102",
+          displayName: "Katharina Moller",
+          confidence: 0.95,
+          isRecommended: true,
+          fieldComparisons: [
+            { fieldKey: "name", label: "Name", incomingValue: "Katharina Moeller", candidateValue: "Katharina Moller", isMatch: false },
+            { fieldKey: "yob", label: "Jahrgang", incomingValue: "1993", candidateValue: "1993", isMatch: true },
+            { fieldKey: "club", label: "Verein", incomingValue: "—", candidateValue: "HSG Uni Greifswald", isMatch: false },
+          ],
+        },
+        {
+          candidateId: "team-204",
+          displayName: "Katrin Moeller",
+          confidence: 0.72,
+          isRecommended: false,
+          fieldComparisons: [
+            { fieldKey: "name", label: "Name", incomingValue: "Katharina Moeller", candidateValue: "Katrin Moeller", isMatch: false },
+            { fieldKey: "yob", label: "Jahrgang", incomingValue: "1993", candidateValue: "1991", isMatch: false },
+            { fieldKey: "club", label: "Verein", incomingValue: "—", candidateValue: "HSG Uni Greifswald", isMatch: false },
+          ],
+        },
+      ],
+    },
+    {
+      reviewId: "review-2",
+      incoming: {
+        displayName: "Max Mustermann",
+        yob: 1989,
+        club: "SV Nord",
+        startNumber: 12,
+        resultLabel: "15,223 km / 40 P",
+      },
+      candidates: [
+        {
+          candidateId: "team-001",
+          displayName: "Max Mustermann",
+          confidence: 0.99,
+          isRecommended: true,
+          fieldComparisons: [
+            { fieldKey: "name", label: "Name", incomingValue: "Max Mustermann", candidateValue: "Max Mustermann", isMatch: true },
+            { fieldKey: "yob", label: "Jahrgang", incomingValue: "1989", candidateValue: "1989", isMatch: true },
+            { fieldKey: "club", label: "Verein", incomingValue: "SV Nord", candidateValue: "SV Nord", isMatch: true },
+          ],
+        },
+      ],
+    },
+  ];
+
+  if (category === "doubles") {
+    return [
+      {
+        reviewId: "review-1",
+        incoming: {
+          displayName: "Lea + Tom",
+          yob: 1992,
+          club: "Greifswald Laufteam",
+          startNumber: 7,
+          resultLabel: "6,122 km / 24 P",
+        },
+        candidates: [
+          {
+            candidateId: "team-c-7",
+            displayName: "Lea + Thom",
+            confidence: 0.91,
+            isRecommended: true,
+            fieldComparisons: [
+              { fieldKey: "name", label: "Name", incomingValue: "Lea + Tom", candidateValue: "Lea + Thom", isMatch: false },
+              { fieldKey: "yob", label: "Jahrgang", incomingValue: "1992", candidateValue: "1992", isMatch: true },
+              { fieldKey: "club", label: "Verein", incomingValue: "Greifswald Laufteam", candidateValue: "Greifswald Laufteam", isMatch: true },
+            ],
+          },
+        ],
+      },
+      ...base.slice(1),
+    ];
+  }
+
+  return base;
+}
+
+function buildDraftSummary(decisions: ImportReviewDecision[]): ImportDraftState["summary"] {
+  let mergedEntries = 0;
+  let newPersonsCreated = 0;
+  let typoCorrections = 0;
+
+  for (const decision of decisions) {
+    if (decision.action === "create_new") {
+      newPersonsCreated += 1;
+      continue;
+    }
+    mergedEntries += 1;
+    if (decision.action === "merge_with_typo_fix") {
+      typoCorrections += 1;
+    }
+  }
+
+  return {
+    importedEntries: decisions.length,
+    mergedEntries,
+    newPersonsCreated,
+    typoCorrections,
+    warnings: [],
+  };
+}
+
+function cloneImportDraft(record: ImportDraftRecord): ImportDraftState {
+  return {
+    ...record,
+    reviewItems: record.reviewItems.map((item) => ({
+      ...item,
+      incoming: { ...item.incoming },
+      candidates: item.candidates.map((candidate) => ({
+        ...candidate,
+        fieldComparisons: candidate.fieldComparisons.map((comparison) => ({ ...comparison })),
+      })),
+    })),
+    decisions: record.decisions.map((decision) => ({ ...decision })),
+    summary: {
+      ...record.summary,
+      warnings: [...record.summary.warnings],
+    },
+  };
+}
+
+function upsertImportedRun(record: MockSeasonRecord, fileName: string, category: ImportCategory, raceNumber: number) {
+  const raceLabel = `Lauf ${raceNumber}`;
+  const existing = record.standings.importedRuns.find((entry) => entry.raceLabel === raceLabel);
+  const categoryLabel = category === "doubles" ? "30 Minuten Paare" : "60 Minuten Herren/Damen";
+  const nextEntry = {
+    raceLabel,
+    categoryLabel,
+    dateLabel: new Date().toLocaleDateString("de-DE"),
+    sourceLabel: fileName,
+    entries: 24,
+  };
+  if (existing) {
+    Object.assign(existing, nextEntry);
+  } else {
+    record.standings.importedRuns.push(nextEntry);
+  }
+
+  record.importedEvents = Math.max(record.importedEvents, raceNumber);
+  record.lastModifiedAt = new Date().toISOString();
+  record.standings.summary.totalRuns = Math.max(record.standings.summary.totalRuns, raceNumber);
+  record.standings.summary.lastUpdatedAt = record.lastModifiedAt;
+
+  record.standings.categories = record.standings.categories.map((cat) => {
+    const isCouple = cat.label.includes("Paare");
+    if ((category === "doubles" && isCouple) || (category === "singles" && !isCouple)) {
+      return { ...cat, importedRuns: Math.max(cat.importedRuns, raceNumber) };
+    }
+    return cat;
+  });
+}
+
 class MockAppApi implements AppApi {
   private seasons: MockSeasonRecord[] = createInitialSeasons();
 
   private unresolvedReviews = 2;
+  private importDrafts = new Map<string, ImportDraftRecord>();
 
   getShellData() {
     const active = this.seasons.find((season) => season.isActive) ?? null;
@@ -387,6 +563,96 @@ class MockAppApi implements AppApi {
     return Promise.resolve({
       severity: "success",
       message: `${label} für "${season.label}" wurde im Mock-Modus ausgelöst.`,
+    } satisfies AppCommandResult);
+  }
+
+  createImportDraft(input: ImportDraftInput) {
+    const season = this.seasons.find((entry) => entry.seasonId === input.seasonId);
+    if (!season) {
+      throw new Error("Bitte zuerst eine Saison auswählen.");
+    }
+
+    const fileName = input.fileName.trim();
+    if (!fileName) {
+      throw new Error("Bitte eine Datei auswählen.");
+    }
+    if (!Number.isInteger(input.raceNumber) || input.raceNumber < 1) {
+      throw new Error("Bitte eine gültige Laufnummer wählen.");
+    }
+
+    const reviewItems = buildReviewItems(input.category);
+    const decisions: ImportReviewDecision[] = reviewItems.map((item) => ({
+      reviewId: item.reviewId,
+      candidateId: item.candidates[0]?.candidateId ?? null,
+      action: item.candidates.length > 0 ? "merge" : "create_new",
+    }));
+    const draftId = `import-draft-${Math.random().toString(36).slice(2, 10)}`;
+    const draft: ImportDraftRecord = {
+      draftId,
+      seasonId: input.seasonId,
+      fileName,
+      category: input.category,
+      raceNumber: input.raceNumber,
+      step: "review_matches",
+      reviewItems,
+      decisions,
+      summary: buildDraftSummary(decisions),
+    };
+    this.importDrafts.set(draftId, draft);
+    return Promise.resolve(cloneImportDraft(draft));
+  }
+
+  getImportDraft(draftId: string) {
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    return Promise.resolve(cloneImportDraft(draft));
+  }
+
+  setImportReviewDecision(draftId: string, decision: ImportReviewDecision) {
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    const hasReview = draft.reviewItems.some((item) => item.reviewId === decision.reviewId);
+    if (!hasReview) {
+      throw new Error("Die ausgewählte Prüfung wurde nicht gefunden.");
+    }
+
+    const current = draft.decisions.filter((entry) => entry.reviewId !== decision.reviewId);
+    current.push({ ...decision });
+    current.sort((a, b) => a.reviewId.localeCompare(b.reviewId));
+    draft.decisions = current;
+    draft.summary = buildDraftSummary(draft.decisions);
+
+    return Promise.resolve(cloneImportDraft(draft));
+  }
+
+  finalizeImportDraft(draftId: string) {
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    const allResolved = draft.reviewItems.every((item) =>
+      draft.decisions.some((decision) => decision.reviewId === item.reviewId),
+    );
+    if (!allResolved) {
+      throw new Error("Bitte erst alle offenen Zuordnungen abschließen.");
+    }
+
+    const season = this.seasons.find((entry) => entry.seasonId === draft.seasonId);
+    if (!season) {
+      throw new Error("Die Saison für den Import wurde nicht gefunden.");
+    }
+
+    upsertImportedRun(season, draft.fileName, draft.category, draft.raceNumber);
+    this.unresolvedReviews = Math.max(0, this.unresolvedReviews - draft.reviewItems.length);
+    this.importDrafts.delete(draftId);
+
+    return Promise.resolve({
+      severity: "success",
+      message: `Import erfolgreich abgeschlossen: ${draft.fileName} (${draft.summary.importedEntries} Einträge).`,
     } satisfies AppCommandResult);
   }
 }

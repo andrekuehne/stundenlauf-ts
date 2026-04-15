@@ -81,6 +81,73 @@ export interface StandingsData {
   exportActions: ExportActionDescriptor[];
 }
 
+export type ImportCategory = "singles" | "doubles";
+export type ImportWizardStep = "select_file" | "review_matches" | "summary";
+export type ImportReviewAction = "merge" | "merge_with_typo_fix" | "create_new";
+
+export interface ImportDraftInput {
+  seasonId: string;
+  fileName: string;
+  category: ImportCategory;
+  raceNumber: number;
+}
+
+export interface ImportIncomingRecord {
+  displayName: string;
+  yob: number;
+  club: string | null;
+  startNumber: number;
+  resultLabel: string;
+}
+
+export interface ImportFieldComparison {
+  fieldKey: "name" | "yob" | "club";
+  label: string;
+  incomingValue: string;
+  candidateValue: string;
+  isMatch: boolean;
+}
+
+export interface ImportReviewCandidate {
+  candidateId: string;
+  displayName: string;
+  confidence: number;
+  isRecommended: boolean;
+  fieldComparisons: ImportFieldComparison[];
+}
+
+export interface ImportReviewItem {
+  reviewId: string;
+  incoming: ImportIncomingRecord;
+  candidates: ImportReviewCandidate[];
+}
+
+export interface ImportReviewDecision {
+  reviewId: string;
+  candidateId: string | null;
+  action: ImportReviewAction;
+}
+
+export interface ImportDraftSummary {
+  importedEntries: number;
+  mergedEntries: number;
+  newPersonsCreated: number;
+  typoCorrections: number;
+  warnings: string[];
+}
+
+export interface ImportDraftState {
+  draftId: string;
+  seasonId: string;
+  fileName: string;
+  category: ImportCategory;
+  raceNumber: number;
+  step: ImportWizardStep;
+  reviewItems: ImportReviewItem[];
+  decisions: ImportReviewDecision[];
+  summary: ImportDraftSummary;
+}
+
 export interface AppApi {
   getShellData(): Promise<ShellData>;
   listSeasons(): Promise<SeasonListItem[]>;
@@ -90,4 +157,8 @@ export interface AppApi {
   runSeasonCommand(command: SeasonCommand, seasonId?: string): Promise<AppCommandResult>;
   getStandings(seasonId: string): Promise<StandingsData>;
   runExportAction(seasonId: string, actionId: ExportActionDescriptor["id"]): Promise<AppCommandResult>;
+  createImportDraft(input: ImportDraftInput): Promise<ImportDraftState>;
+  getImportDraft(draftId: string): Promise<ImportDraftState>;
+  setImportReviewDecision(draftId: string, decision: ImportReviewDecision): Promise<ImportDraftState>;
+  finalizeImportDraft(draftId: string): Promise<AppCommandResult>;
 }
