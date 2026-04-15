@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ExportActionDescriptor, StandingsData } from "@/api/contracts/index.ts";
+import type { ExportActionDescriptor, StandingsData, StandingsRow } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { formatKm } from "@/app/format.ts";
 import { useAppShellContext } from "@/app/shell-context.ts";
@@ -11,6 +11,12 @@ import { useStandingsStore } from "@/stores/standings.ts";
 import { useStatusStore } from "@/stores/status.ts";
 
 type CategoryGroupKey = "single" | "couples";
+type RaceResult = { distanceKm: number; points: number } | null;
+type StandingsViewRow = StandingsRow & {
+  yob?: number;
+  yobPair?: string;
+  raceResults: RaceResult[];
+};
 
 const CATEGORY_GROUPS: Array<{
   key: CategoryGroupKey;
@@ -45,6 +51,33 @@ function categoryButtonLabel(key: string): string {
   return `${durationLabel} - ${divisionLabel}`;
 }
 
+function isCouplesCategory(categoryKey: string): boolean {
+  return categoryKey.includes("couples_");
+}
+
+function formatRaceCell(result: RaceResult): string {
+  if (!result) {
+    return "—";
+  }
+  return `${formatKm(result.distanceKm)} km / ${result.points.toLocaleString("de-DE")} P`;
+}
+
+function buildRaceResults(row: StandingsRow): RaceResult[] {
+  const totalRaces = Math.max(0, row.races);
+  if (totalRaces === 0) {
+    return [];
+  }
+
+  const evenlyDistributedDistance = row.distanceKm / totalRaces;
+  const evenlyDistributedPoints = Math.floor(row.points / totalRaces);
+  const remainderPoints = row.points - evenlyDistributedPoints * totalRaces;
+
+  return Array.from({ length: totalRaces }, (_, index) => ({
+    distanceKm: evenlyDistributedDistance,
+    points: evenlyDistributedPoints + (index < remainderPoints ? 1 : 0),
+  }));
+}
+
 export function StandingsPage() {
   const api = useAppApi();
   const { shellData } = useAppShellContext();
@@ -53,6 +86,7 @@ export function StandingsPage() {
   const selectCategory = useStandingsStore((state) => state.selectCategory);
   const [data, setData] = useState<StandingsData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [excludedRows, setExcludedRows] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const seasonId = shellData.selectedSeasonId;
@@ -102,21 +136,88 @@ export function StandingsPage() {
 
   const selectedCategory = data?.categories.find((entry) => entry.key === selectedCategoryKey) ?? null;
   const selectedRows = useMemo(
-    () => (selectedCategory ? data?.rowsByCategory[selectedCategory.key] ?? [] : []),
+    () => (selectedCategory ? [...(data?.rowsByCategory[selectedCategory.key] ?? [])].sort((a, b) => a.rank - b.rank) : []),
     [data, selectedCategory],
   );
 
-  const standingsColumns = useMemo<DataTableColumn<(typeof selectedRows)[number]>[]>(
+  const selectedViewRows = useMemo<StandingsViewRow[]>(
+    () =>
+      selectedRows.map((row) => ({
+        ...row,
+        raceResults: buildRaceResults(row),
+      })),
+    [selectedRows],
+  );
+
+  const maxRaceColumns = useMemo(
+    () => selectedCategory?.importedRuns ?? Math.max(0, ...selectedViewRows.map((row) => row.raceResults.length)),
+    [selectedCategory?.importedRuns, selectedViewRows],
+  );
+
+  const summaryColumns = useMemo<DataTableColumn<StandingsViewRow>[]>(
+    () => {
+      const couples = selectedCategory ? isCouplesCategory(selectedCategory.key) : false;
+      return [
+        { key: "rank", header: "Platz", align: "right", cell: (row) => row.rank },
+        { key: "team", header: "Name", cell: (row) => row.team },
+        {
+          key: "yob",
+          header: "Jahrgang",
+          align: "right",
+          cell: (row) => (couples ? row.yobPair ?? "—" : row.yob?.toString() ?? "—"),
+        },
+        { key: "club", header: "Verein", cell: (row) => row.club || "—" },
+        { key: "distanceKm", header: "Gesamtdistanz (km)", align: "right", cell: (row) => formatKm(row.distanceKm) },
+        {
+          key: "points",
+          header: "Gesamtpunkte",
+          align: "right",
+          cell: (row) => row.points.toLocaleString("de-DE"),
+        },
+      ];
+    },
+    [selectedCategory],
+  );
+
+  const detailedColumns = useMemo<DataTableColumn<StandingsViewRow>[]>(
     () => [
-      { key: "rank", header: STR.views.standings.rank, cell: (row) => row.rank },
-      { key: "team", header: STR.views.standings.team, cell: (row) => row.team },
-      { key: "club", header: STR.views.standings.club, cell: (row) => row.club },
-      { key: "points", header: STR.views.standings.points, cell: (row) => row.points },
-      { key: "distanceKm", header: STR.views.standings.distance, cell: (row) => formatKm(row.distanceKm) },
-      { key: "races", header: STR.views.standings.races, cell: (row) => row.races },
-      { key: "note", header: STR.views.standings.note, cell: (row) => row.note ?? " " },
+      { key: "rank", header: "Platz", align: "right", cell: (row) => row.rank },
+      {
+        key: "excluded",
+        header: "a.W.",
+        align: "center",
+        cell: (row) => {
+          const categoryPrefix = selectedCategory?.key ?? "unknown";
+          const exclusionKey = `${categoryPrefix}:${row.team}`;
+          return (
+            <input
+              type="checkbox"
+              checked={Boolean(excludedRows[exclusionKey])}
+              onChange={(event) => {
+                const checked = event.currentTarget.checked;
+                setExcludedRows((prev) => ({ ...prev, [exclusionKey]: checked }));
+              }}
+              aria-label={`a.W. ${row.team}`}
+            />
+          );
+        },
+      },
+      { key: "team", header: "Name", cell: (row) => row.team },
+      ...Array.from({ length: maxRaceColumns }, (_, index) => ({
+        key: `race_${index + 1}`,
+        header: `Lauf ${index + 1}`,
+        align: "right" as const,
+        cell: (row: StandingsViewRow) => formatRaceCell(row.raceResults[index] ?? null),
+      })),
+      { key: "distanceKm", header: "Gesamtdistanz", align: "right", cell: (row) => formatKm(row.distanceKm) },
+      {
+        key: "points",
+        header: "Gesamtpunkte",
+        align: "right",
+        cell: (row) => row.points.toLocaleString("de-DE"),
+      },
     ],
-    [],
+    [excludedRows, maxRaceColumns, selectedCategory?.key],
   );
 
   async function handleExport(action: ExportActionDescriptor) {
@@ -213,8 +314,20 @@ export function StandingsPage() {
                 </div>
               </div>
               <DataTable
-                columns={standingsColumns}
-                rows={selectedRows}
+                className="ui-table--standings"
+                columns={summaryColumns}
+                rows={selectedViewRows}
+                rowKey={(row) => `${row.rank}-${row.team}`}
+                emptyMessage={STR.views.standings.noRows}
+              />
+              <div className="surface-card__section">
+                <h3>Detailergebnisse</h3>
+              </div>
+              <DataTable
+                className="ui-table--standings ui-table--standings-detail"
+                columns={detailedColumns}
+                rows={selectedViewRows}
+                rowKey={(row) => `${row.rank}-${row.team}-detail`}
                 emptyMessage={STR.views.standings.noRows}
               />
             </section>
