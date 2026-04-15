@@ -14,12 +14,13 @@ import { ImportPage } from "@/features/import/ImportPage.tsx";
 const setSidebarControls = vi.fn();
 const refreshShellData = vi.fn(async () => {});
 
-const shellData: ShellData = {
+const defaultShellData: ShellData = {
   selectedSeasonId: "season-1",
   selectedSeasonLabel: "Saison 1",
   unresolvedReviews: 0,
   availableSeasons: [{ seasonId: "season-1", label: "Saison 1" }],
 };
+let shellData: ShellData = defaultShellData;
 
 const emptyStandings: StandingsData = {
   seasonId: "season-1",
@@ -191,6 +192,7 @@ function buildDraftWithUnresolvedReview(input: ImportDraftInput): ImportDraftSta
 beforeEach(() => {
   setSidebarControls.mockReset();
   refreshShellData.mockClear();
+  shellData = { ...defaultShellData };
 
   apiMock = {
     getShellData: vi.fn(async () => shellData),
@@ -317,5 +319,70 @@ describe("ImportPage", () => {
       name: /Kathi Moller - ausgewählt/i,
     });
     expect(selectedBestCandidate).toBeInTheDocument();
+  });
+
+  it("shows status when no season is selected", async () => {
+    shellData = {
+      ...defaultShellData,
+      selectedSeasonId: null,
+      selectedSeasonLabel: null,
+    };
+
+    render(<ImportPage />);
+    expect(screen.getByText(/Bitte zuerst eine Saison auswählen/i)).toBeInTheDocument();
+  });
+
+  it("does not advance when createImportDraft fails", async () => {
+    apiMock.createImportDraft = vi.fn(async () => {
+      throw new Error("Draft Fehler");
+    });
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("4"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await waitFor(() => {
+      expect(apiMock.createImportDraft).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole("heading", { name: "Import-Zusammenfassung" })).not.toBeInTheDocument();
+  });
+
+  it("does not finalize when unresolved decisions exist", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+    const finalizeSpy = vi.fn(async () => buildCommandResult("Import abgeschlossen"));
+    apiMock.finalizeImportDraft = finalizeSpy;
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("4"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Zusammenfassung/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Import-Zusammenfassung" })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Import abschließen" }));
+    expect(finalizeSpy).not.toHaveBeenCalled();
   });
 });
