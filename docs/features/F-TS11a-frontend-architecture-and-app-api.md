@@ -27,6 +27,76 @@ The repo already has the technical pieces needed for this direction:
 - `src/legacy/api/runtime.ts` proves the TS backend can already answer season, standings, history,
   and import-review workflows, but it does so through a legacy pywebview-shaped contract.
 
+## Migration snapshot
+
+### Current migration structure
+
+As of the initial frontend-reorg prep, the repo now has the target entry-layer folders in place for
+new UI work:
+
+```text
+src/
+  app/
+    App.tsx
+    router.tsx
+    theme.css
+    strings.ts
+    format.ts
+  api/
+    contracts/
+    mock/
+    ts/
+  features/
+    season/
+    standings/
+    import/
+    corrections/
+    history/
+  components/
+    feedback/
+    forms/
+    layout/
+    tables/
+  legacy/
+  devtools/
+```
+
+### Explicit file moves already completed
+
+The following prep moves have already been applied:
+
+| Old path | New path | Reason |
+|---|---|---|
+| `src/App.tsx` | `src/app/App.tsx` | Move app shell entry into the new app boundary |
+| `src/theme.css` | `src/app/theme.css` | Keep app-level styling beside the new app entry |
+| `src/strings.ts` | `src/app/strings.ts` | Keep app-facing UI catalog in the app boundary |
+| `src/format.ts` | `src/app/format.ts` | Keep app-facing format helpers in the app boundary |
+| `src/components/UpdatePrompt.tsx` | `src/components/feedback/UpdatePrompt.tsx` | Re-home shared feedback UI into the shared component tree |
+
+Additional prep changes already completed:
+
+- `src/main.tsx` now bootstraps the app via `src/app/router.tsx`.
+- `src/app/router.tsx` now owns the router setup that previously lived in `src/main.tsx`.
+- Placeholder entry files now exist under `src/api/` and `src/features/` so new work does not land
+  in ad-hoc locations.
+
+### Areas intentionally not moved yet
+
+These areas remain in place during migration and should not be reorganized until the new UI starts
+depending on them through `AppApi`:
+
+- `src/domain/`
+- `src/import/`
+- `src/matching/`
+- `src/ranking/`
+- `src/storage/`
+- `src/export/`
+- `src/portability/`
+- `src/services/`
+- `src/legacy/`
+- `src/devtools/`
+- `public/legacy/`
+
 ## Architecture decisions
 
 ### 1. Keep the current framework direction

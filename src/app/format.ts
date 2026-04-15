@@ -5,7 +5,7 @@
  * Reference: F-TS06 §7 (German String Catalog)
  */
 
-import { STR } from "@/strings.ts";
+import { STR } from "@/app/strings.ts";
 
 export type ConfidenceLevel = keyof typeof STR.confidence;
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { STR } from "@/strings.ts";
+import { STR } from "@/app/strings.ts";
 
 type LegacyView = "standings" | "import" | "history";
 

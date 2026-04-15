@@ -1,8 +1,8 @@
-import { ImportOrchestrationHarness } from "./devtools/ImportOrchestrationHarness.tsx";
-import { ImportSeasonWalkthroughHarness } from "./devtools/ImportSeasonWalkthroughHarness.tsx";
-import { LegacyLayoutParityPage } from "./devtools/LegacyLayoutParityPage.tsx";
-import { UpdatePrompt } from "./components/UpdatePrompt.tsx";
-import { APP_VERSION } from "./version.ts";
+import { UpdatePrompt } from "../components/feedback/UpdatePrompt.tsx";
+import { ImportOrchestrationHarness } from "../devtools/ImportOrchestrationHarness.tsx";
+import { ImportSeasonWalkthroughHarness } from "../devtools/ImportSeasonWalkthroughHarness.tsx";
+import { LegacyLayoutParityPage } from "../devtools/LegacyLayoutParityPage.tsx";
+import { APP_VERSION } from "../version.ts";
 
 function shouldShowImportHarness(): boolean {
   if (!import.meta.env.DEV) return false;
