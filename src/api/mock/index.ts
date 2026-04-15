@@ -386,6 +386,7 @@ function buildDraftSummary(decisions: ImportReviewDecision[]): ImportDraftState[
     mergedEntries,
     newPersonsCreated,
     typoCorrections,
+    infos: [],
     warnings: [],
   };
 }
@@ -404,6 +405,7 @@ function cloneImportDraft(record: ImportDraftRecord): ImportDraftState {
     decisions: record.decisions.map((decision) => ({ ...decision })),
     summary: {
       ...record.summary,
+      infos: [...record.summary.infos],
       warnings: [...record.summary.warnings],
     },
   };

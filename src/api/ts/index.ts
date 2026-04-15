@@ -5,17 +5,27 @@ import {
 import { categoryKey, isEffectiveRace, projectState } from "@/domain/projection.ts";
 import type { DomainEvent } from "@/domain/events.ts";
 import type {
+  IncomingRowData,
   RaceCategory,
   RaceEvent,
   SeasonDescriptor,
   SeasonState,
   Team,
 } from "@/domain/types.ts";
+import { consumeImportFile, peekImportFile } from "@/api/import-file-registry.ts";
+import {
+  finalizeImport as finalizeOrchestratedImport,
+  getReviewQueue,
+  resolveReviewEntry,
+  runMatching,
+  startImport,
+  type ImportSession,
+} from "@/import/orchestrator.ts";
+import { defaultMatchingConfig } from "@/matching/config.ts";
 import { importSeason, exportSeason } from "@/portability/index.ts";
 import { triggerDownload } from "@/portability/download.ts";
 import { computeStandings } from "@/ranking/index.ts";
 import { getSeasonRepository, type SeasonRepository } from "@/services/season-repository.ts";
-import { createMockAppApi } from "../mock/index.ts";
 import type {
   AppApi,
   AppCommandResult,
@@ -27,7 +37,13 @@ import type {
   HistoryRollbackInput,
   HistoryRow,
   ImportDraftInput,
+  ImportMatchingConfigInput,
+  ImportDraftState,
+  ImportFieldComparison,
+  ImportReviewCandidate,
   ImportReviewDecision,
+  ImportReviewItem,
+  ImportWizardStep,
   SeasonListItem,
   StandingsData,
   StandingsRow,
@@ -58,6 +74,18 @@ type SeasonSnapshot = {
   descriptor: SeasonDescriptor;
   eventLog: DomainEvent[];
   state: SeasonState;
+};
+
+type DraftDecision = ImportReviewDecision & { updatedAt: number };
+
+type ImportDraftRecord = {
+  draftId: string;
+  session: ImportSession;
+  decisionByReviewId: Map<string, DraftDecision>;
+  typoFixReviewIds: Set<string>;
+  category: ImportDraftInput["category"];
+  raceNumber: number;
+  sourceFileName: string;
 };
 
 function asInfo(message: string): AppCommandResult {
@@ -166,13 +194,13 @@ function raceById(state: SeasonState): Map<string, RaceEvent> {
   return new Map([...state.race_events.values()].map((race) => [race.race_event_id, race]));
 }
 
-function teamLabel(team: Team, state: SeasonState): { name: string; yobPair?: string; club: string } {
+function teamLabel(team: Team, state: SeasonState): { name: string; yob?: number; yobPair?: string; club: string } {
   if (team.team_kind === "solo") {
     const person = state.persons.get(team.member_person_ids[0] ?? "");
     return {
       name: person?.display_name ?? team.team_id,
       club: person?.club ?? "—",
-      yobPair: person?.yob ? String(person.yob) : undefined,
+      yob: person?.yob && person.yob > 0 ? person.yob : undefined,
     };
   }
   const members = team.member_person_ids.map((personId) => state.persons.get(personId)).filter(Boolean);
@@ -186,10 +214,108 @@ function teamLabel(team: Team, state: SeasonState): { name: string; yobPair?: st
   };
 }
 
+function toSourceType(category: ImportDraftInput["category"]): "singles" | "couples" {
+  return category === "doubles" ? "couples" : "singles";
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function effectiveAutoMinForMatchingCap(config: {
+  auto_merge_enabled: boolean;
+  perfect_match_auto_merge: boolean;
+  auto_min: number;
+}): number {
+  if (config.auto_merge_enabled) {
+    return clamp01(config.auto_min);
+  }
+  if (config.perfect_match_auto_merge) {
+    return 1.0;
+  }
+  return 1.01;
+}
+
+function toMatchingConfig(input: ImportMatchingConfigInput | undefined) {
+  if (!input) {
+    // Keep parity with legacy default ("Fuzzy-Automatik" + "Nur 100 % Ähnlichkeit").
+    return defaultMatchingConfig({
+      auto_merge_enabled: false,
+      perfect_match_auto_merge: true,
+      strict_normalized_auto_only: false,
+      auto_min: 0.5,
+      review_min: 0.5,
+    });
+  }
+  const normalized = {
+    auto_merge_enabled: Boolean(input.autoMergeEnabled),
+    perfect_match_auto_merge: Boolean(input.perfectMatchAutoMerge),
+    strict_normalized_auto_only: Boolean(input.strictNormalizedAutoOnly),
+    auto_min: clamp01(input.autoMin),
+    review_min: clamp01(input.reviewMin),
+  };
+  const cappedReviewMin = Math.min(
+    normalized.review_min,
+    effectiveAutoMinForMatchingCap(normalized),
+  );
+  return defaultMatchingConfig({
+    auto_merge_enabled: normalized.auto_merge_enabled,
+    perfect_match_auto_merge: normalized.perfect_match_auto_merge,
+    strict_normalized_auto_only: normalized.strict_normalized_auto_only,
+    auto_min: normalized.auto_min,
+    review_min: cappedReviewMin,
+  });
+}
+
+function formatIncomingResult(entry: { points: number; distance_m: number }): string {
+  return `${entry.points} Punkte · ${(entry.distance_m / 1000).toFixed(3)} km`;
+}
+
+function comparisonRow(label: string, incomingValue: string, candidateValue: string): ImportFieldComparison {
+  return {
+    fieldKey: label === "Name" ? "name" : label === "Jahrgang" ? "yob" : "club",
+    label,
+    incomingValue,
+    candidateValue,
+    isMatch: incomingValue.trim().toLowerCase() === candidateValue.trim().toLowerCase(),
+  };
+}
+
+function incomingYobLabel(incoming: IncomingRowData): string {
+  if (incoming.yob_text?.trim()) {
+    return incoming.yob_text.trim();
+  }
+  if (incoming.yob != null && Number.isFinite(incoming.yob) && incoming.yob > 0) {
+    return String(incoming.yob);
+  }
+  return "—";
+}
+
+function buildReviewCandidate(
+  incoming: IncomingRowData,
+  candidate: { team_id: string; display_name: string; score: number; yob: number; club: string | null },
+): ImportReviewCandidate {
+  const incomingClub = incoming.club ?? "—";
+  const candidateClub = candidate.club ?? "—";
+  const incomingYob = incomingYobLabel(incoming);
+  const candidateYob = candidate.yob > 0 ? String(candidate.yob) : "—";
+  return {
+    candidateId: candidate.team_id,
+    displayName: candidate.display_name,
+    confidence: candidate.score,
+    isRecommended: false,
+    fieldComparisons: [
+      comparisonRow("Name", incoming.display_name, candidate.display_name),
+      comparisonRow("Jahrgang", incomingYob, candidateYob),
+      comparisonRow("Verein", incomingClub, candidateClub),
+    ],
+  };
+}
+
 class TsAppApi implements AppApi {
   private readonly repoPromise: Promise<SeasonRepository>;
-  private readonly mockImportApi = createMockAppApi();
   private activeSeasonId: string | null = null;
+  private readonly importDrafts = new Map<string, ImportDraftRecord>();
 
   constructor() {
     this.repoPromise = getSeasonRepository();
@@ -219,6 +345,100 @@ class TsAppApi implements AppApi {
     };
   }
 
+  private wizardStepForSession(session: ImportSession): ImportWizardStep {
+    return session.phase === "committing" ? "summary" : "review_matches";
+  }
+
+  private toReviewItems(record: ImportDraftRecord): ImportReviewItem[] {
+    const pendingAndResolved = [...record.session.review_queue];
+    return pendingAndResolved.map((entry) => {
+      const staged = record.session.section_results[entry.section_index]?.staged_entries[entry.entry_index];
+      const candidates = entry.review_item.candidates.map((candidate) =>
+        buildReviewCandidate(staged?.incoming ?? {
+          display_name: entry.review_item.incoming_display_name,
+          yob: entry.review_item.incoming_yob,
+          yob_text: entry.review_item.incoming_yob > 0 ? String(entry.review_item.incoming_yob) : null,
+          club: entry.review_item.incoming_club,
+          row_kind: entry.review_item.incoming_kind,
+          sheet_name: "",
+          section_name: "",
+          row_index: 0,
+        }, candidate),
+      );
+      if (candidates.length > 0) {
+        const topId = entry.review_item.candidates[0]?.team_id ?? null;
+        for (const candidate of candidates) {
+          candidate.isRecommended = candidate.candidateId === topId;
+        }
+      }
+      return {
+        reviewId: entry.entry_id,
+        incoming: {
+          displayName: entry.review_item.incoming_display_name,
+          yob: entry.review_item.incoming_yob,
+          club: entry.review_item.incoming_club,
+          startNumber: Number.parseInt(staged?.startnr ?? "0", 10) || 0,
+          resultLabel: staged ? formatIncomingResult(staged) : "—",
+        },
+        candidates,
+      } satisfies ImportReviewItem;
+    });
+  }
+
+  private toDecisionArray(record: ImportDraftRecord): ImportReviewDecision[] {
+    return [...record.decisionByReviewId.values()]
+      .sort((a, b) => a.updatedAt - b.updatedAt)
+      .map(({ updatedAt: _updatedAt, ...decision }) => decision);
+  }
+
+  private toDraftSummary(record: ImportDraftRecord) {
+    const importedEntries = record.session.section_results.reduce(
+      (sum, section) => sum + section.staged_entries.length,
+      0,
+    );
+    const mergedEntries = record.session.section_results.reduce(
+      (sum, section) => sum + section.staged_entries.filter((entry) => entry.resolution?.method !== "new_identity").length,
+      0,
+    );
+    const newPersonsCreated = record.session.report.new_identities;
+    const typoCorrections = record.typoFixReviewIds.size;
+    const infos: string[] = [];
+    const warnings: string[] = [];
+    if (record.session.report.conflicts > 0) {
+      warnings.push(`${record.session.report.conflicts} Konflikte wurden im Matching erkannt.`);
+    }
+    if (record.session.report.replay_overrides > 0) {
+      const replayCount = record.session.report.replay_overrides;
+      infos.push(
+        replayCount === 1
+          ? "1 Eintrag wurde aus früheren Zuordnungen automatisch zugeordnet."
+          : `${replayCount} Einträge wurden aus früheren Zuordnungen automatisch zugeordnet.`,
+      );
+    }
+    return {
+      importedEntries,
+      mergedEntries,
+      newPersonsCreated,
+      typoCorrections,
+      infos,
+      warnings,
+    };
+  }
+
+  private toImportDraftState(record: ImportDraftRecord): ImportDraftState {
+    return {
+      draftId: record.draftId,
+      seasonId: record.session.season_state_at_start.season_id,
+      fileName: record.sourceFileName,
+      category: record.category,
+      raceNumber: record.raceNumber,
+      step: this.wizardStepForSession(record.session),
+      reviewItems: this.toReviewItems(record),
+      decisions: this.toDecisionArray(record),
+      summary: this.toDraftSummary(record),
+    };
+  }
+
   async getShellData() {
     const seasons = await this.listSeasons();
     const selectedSeasonId =
@@ -229,10 +449,14 @@ class TsAppApi implements AppApi {
       this.activeSeasonId = selectedSeasonId;
     }
     const selected = seasons.find((season) => season.seasonId === selectedSeasonId) ?? null;
+    const unresolvedReviews = [...this.importDrafts.values()].reduce(
+      (sum, draft) => sum + getReviewQueue(draft.session).length,
+      0,
+    );
     return {
       selectedSeasonId,
       selectedSeasonLabel: selected?.label ?? null,
-      unresolvedReviews: 0,
+      unresolvedReviews,
       availableSeasons: seasons.map((season) => ({
         seasonId: season.seasonId,
         label: season.label,
@@ -360,10 +584,11 @@ class TsAppApi implements AppApi {
             rank: row.rank,
             team: label.name,
             club: label.club,
+            ...(label.yob ? { yob: label.yob } : {}),
+            ...(label.yobPair ? { yobPair: label.yobPair } : {}),
             points: row.total_points,
             distanceKm: Math.round((row.total_distance_m / 1000) * 1000) / 1000,
             races: row.race_contributions.filter((entry) => entry.counts_toward_total).length,
-            ...(label.yobPair ? { note: `Jg: ${label.yobPair}` } : {}),
           };
         });
         return [table.category_key, rows];
@@ -433,19 +658,98 @@ class TsAppApi implements AppApi {
   }
 
   async createImportDraft(input: ImportDraftInput) {
-    return this.mockImportApi.createImportDraft(input);
+    await this.ensureSeason(input.seasonId);
+    const fileName = input.fileName.trim();
+    if (!fileName) {
+      throw new Error("Bitte eine Datei auswählen.");
+    }
+    if (!Number.isInteger(input.raceNumber) || input.raceNumber < 1) {
+      throw new Error("Bitte eine gültige Laufnummer wählen.");
+    }
+    const file = consumeImportFile(fileName) ?? peekImportFile(fileName);
+    if (!file) {
+      throw new Error("Bitte die Importdatei erneut auswählen.");
+    }
+
+    const snapshot = await this.loadSnapshot(input.seasonId);
+    let session = await startImport(file, snapshot.state, {
+      sourceType: toSourceType(input.category),
+      raceNoOverride: input.raceNumber,
+    });
+    session = await runMatching(session, toMatchingConfig(input.matchingConfig));
+
+    const draftId = crypto.randomUUID();
+    const record: ImportDraftRecord = {
+      draftId,
+      session,
+      decisionByReviewId: new Map(),
+      typoFixReviewIds: new Set(),
+      category: input.category,
+      raceNumber: input.raceNumber,
+      sourceFileName: fileName,
+    };
+    this.importDrafts.set(draftId, record);
+    return this.toImportDraftState(record);
   }
 
   async getImportDraft(draftId: string) {
-    return this.mockImportApi.getImportDraft(draftId);
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    return this.toImportDraftState(draft);
   }
 
   async setImportReviewDecision(draftId: string, decision: ImportReviewDecision) {
-    return this.mockImportApi.setImportReviewDecision(draftId, decision);
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    if (draft.session.phase !== "reviewing") {
+      throw new Error("Es gibt keine offenen Prüffälle mehr.");
+    }
+    const review = draft.session.review_queue.find((entry) => entry.entry_id === decision.reviewId);
+    if (!review) {
+      throw new Error("Die ausgewählte Prüfung wurde nicht gefunden.");
+    }
+
+    if (decision.action === "create_new") {
+      draft.session = resolveReviewEntry(draft.session, decision.reviewId, { type: "create_new_identity" });
+    } else {
+      if (!decision.candidateId) {
+        throw new Error("Bitte einen Kandidaten auswählen.");
+      }
+      draft.session = resolveReviewEntry(draft.session, decision.reviewId, {
+        type: "link_existing",
+        team_id: decision.candidateId,
+      });
+      if (decision.action === "merge_with_typo_fix") {
+        draft.typoFixReviewIds.add(decision.reviewId);
+      } else {
+        draft.typoFixReviewIds.delete(decision.reviewId);
+      }
+    }
+    draft.decisionByReviewId.set(decision.reviewId, { ...decision, updatedAt: Date.now() });
+    return this.toImportDraftState(draft);
   }
 
   async finalizeImportDraft(draftId: string) {
-    return this.mockImportApi.finalizeImportDraft(draftId);
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    if (draft.session.phase !== "committing") {
+      throw new Error("Bitte erst alle offenen Zuordnungen abschließen.");
+    }
+    const repo = await this.repo();
+    const currentEvents = await repo.getEventLog(draft.session.season_state_at_start.season_id);
+    const nextSeq = currentEvents.reduce((max, event) => Math.max(max, event.seq), -1) + 1;
+    const events = finalizeOrchestratedImport(draft.session, { startSeq: nextSeq });
+    await repo.appendEvents(draft.session.season_state_at_start.season_id, events);
+    this.importDrafts.delete(draftId);
+    return asSuccess(
+      `Import erfolgreich abgeschlossen: ${draft.sourceFileName} (${draft.session.report.rows_imported} Einträge).`,
+    );
   }
 
   async getHistory(seasonId: string, query?: HistoryQuery): Promise<HistoryData> {

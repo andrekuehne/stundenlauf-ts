@@ -160,6 +160,8 @@ export const STR = {
       summaryMergedEntries: "Zusammengeführt",
       summaryNewPersons: "Neue Personen",
       summaryTypoFixes: "Namenskorrekturen",
+      summaryInfos: "Hinweise",
+      summaryNoInfos: "Keine Hinweise.",
       summaryWarnings: "Warnungen",
       summaryNoWarnings: "Keine Warnungen.",
       finalizeImport: "Import abschließen",

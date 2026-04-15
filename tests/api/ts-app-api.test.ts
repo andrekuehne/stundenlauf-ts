@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { rememberImportFile } from "@/api/import-file-registry.ts";
 import { createTsAppApi } from "@/api/ts/index.ts";
+import { EXPECTED_HEADER_SINGLES } from "@/ingestion/constants";
 import type { DomainEvent } from "@/domain/events.ts";
 import type { SeasonDescriptor } from "@/domain/types.ts";
 import {
@@ -15,6 +17,7 @@ import {
   resetSeqCounter,
   teamRegistered,
 } from "../helpers/event-factories.ts";
+import { buildXlsx } from "../ingestion/xlsx-test-helpers.ts";
 
 class InMemorySeasonRepository implements SeasonRepository {
   private readonly seasons = new Map<string, SeasonDescriptor>();
@@ -66,6 +69,20 @@ class InMemorySeasonRepository implements SeasonRepository {
     this.eventLogs.set(season.season_id, [...events]);
     return Promise.resolve();
   }
+}
+
+function buildSinglesImportFile(
+  rows: unknown[][],
+  name = "Ergebnisliste MW Lauf 2.xlsx",
+): File {
+  const buffer = buildXlsx(rows);
+  const file = new File([buffer], name, {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  Object.defineProperty(file, "arrayBuffer", {
+    value: () => Promise.resolve(buffer.slice(0)),
+  });
+  return file;
 }
 
 beforeEach(() => {
@@ -220,5 +237,158 @@ describe("TsAppApi history workflows", () => {
       reason: "test.hard-reset",
     });
     expect(hardResetResult.severity).toBe("warn");
+  });
+});
+
+describe("TsAppApi import workflows", () => {
+  it("uses legacy default fuzzy-perfect matching when no config is provided", async () => {
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Stundenlauf 2032" });
+    await api.openSeason(created.seasonId);
+    const repo = await getSeasonRepository();
+    await repo.saveImportedSeason(
+      {
+        season_id: created.seasonId,
+        label: created.label,
+        created_at: new Date().toISOString(),
+      },
+      [
+        personRegistered({
+          person_id: "person-exact",
+          given_name: "Anna",
+          family_name: "Exact",
+          display_name: "Anna Exact",
+          name_normalized: "anna exact",
+          yob: 1999,
+          club: "Club A",
+          club_normalized: "club a",
+        }),
+        teamRegistered({
+          team_id: "team-exact",
+          member_person_ids: ["person-exact"],
+          team_kind: "solo",
+        }),
+      ],
+    );
+
+    const file = buildSinglesImportFile([
+      EXPECTED_HEADER_SINGLES,
+      ["h-Lauf", "", "", "", "", "", "", ""],
+      ["Männer", "", "", "", "", "", "", ""],
+      [1, "10", "Exact, Anna", 1999, "Club A", "10,2", "", "11"],
+    ]);
+    rememberImportFile(file);
+
+    const draft = await api.createImportDraft({
+      seasonId: created.seasonId,
+      fileName: file.name,
+      category: "singles",
+      raceNumber: 1,
+    });
+    expect(draft.reviewItems).toHaveLength(0);
+  });
+
+  it("creates draft, resolves review, finalizes import, and refreshes standings", async () => {
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Stundenlauf 2031" });
+    await api.openSeason(created.seasonId);
+    const repo = await getSeasonRepository();
+    await repo.saveImportedSeason(
+      {
+        season_id: created.seasonId,
+        label: created.label,
+        created_at: new Date().toISOString(),
+      },
+      [
+        personRegistered({
+          person_id: "person-existing",
+          given_name: "Runner",
+          family_name: "Existing",
+          display_name: "Runner Existing",
+          name_normalized: "runner existing",
+          yob: 2000,
+          club: "Club A",
+          club_normalized: "club a",
+        }),
+        teamRegistered({
+          team_id: "team-existing",
+          member_person_ids: ["person-existing"],
+          team_kind: "solo",
+        }),
+        importBatchRecorded({
+          import_batch_id: "batch-existing",
+          source_file: "lauf-1.xlsx",
+          source_sha256: "sha-existing",
+        }),
+        raceRegistered({
+          race_event_id: "race-existing",
+          import_batch_id: "batch-existing",
+          category: { duration: "hour", division: "men" },
+          race_no: 1,
+          entries: [
+            defaultEntry({
+              entry_id: "entry-existing",
+              team_id: "team-existing",
+              points: 9,
+              distance_m: 5000,
+            }),
+          ],
+        }),
+      ],
+    );
+
+    const file = buildSinglesImportFile([
+      EXPECTED_HEADER_SINGLES,
+      ["h-Lauf", "", "", "", "", "", "", ""],
+      ["Männer", "", "", "", "", "", "", ""],
+      [1, "11", "Existing, Runner", 2000, "Club Z", "11,5", "", "15"],
+      [2, "10", "New, Runner", 2002, "Club B", "10,1", "", "12"],
+    ]);
+    rememberImportFile(file);
+
+    const draft = await api.createImportDraft({
+      seasonId: created.seasonId,
+      fileName: file.name,
+      category: "singles",
+      raceNumber: 2,
+      matchingConfig: {
+        autoMin: 0.5,
+        reviewMin: 0.5,
+        autoMergeEnabled: false,
+        perfectMatchAutoMerge: false,
+        strictNormalizedAutoOnly: false,
+      },
+    });
+    expect(draft.seasonId).toBe(created.seasonId);
+    expect(draft.reviewItems.length).toBe(1);
+
+    const firstReview = draft.reviewItems[0];
+    if (!firstReview) {
+      throw new Error("Expected review item in import draft.");
+    }
+    const selectedCandidate = firstReview.candidates[0];
+    if (!selectedCandidate) {
+      throw new Error("Expected candidate for first review item.");
+    }
+
+    const reviewed = await api.setImportReviewDecision(draft.draftId, {
+      reviewId: firstReview.reviewId,
+      action: "merge",
+      candidateId: selectedCandidate.candidateId,
+    });
+    expect(reviewed.decisions.length).toBe(1);
+    expect(reviewed.summary.importedEntries).toBe(2);
+
+    const finalized = await api.finalizeImportDraft(draft.draftId);
+    expect(finalized.severity).toBe("success");
+
+    const standings = await api.getStandings(created.seasonId);
+    expect(standings.summary.totalRuns).toBe(2);
+    expect(standings.importedRuns.some((row) => row.raceLabel === "Lauf 2")).toBe(true);
+    const menRows = standings.rowsByCategory["hour:men"] ?? [];
+    expect(menRows.some((row) => row.yob != null && row.yob > 0)).toBe(true);
+
+    const shell = await api.getShellData();
+    expect(shell.unresolvedReviews).toBe(0);
   });
 });

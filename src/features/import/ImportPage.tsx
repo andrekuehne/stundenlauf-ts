@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ImportDraftState, ImportReviewAction, ImportedRunRow } from "@/api/contracts/index.ts";
+import { rememberImportFile } from "@/api/import-file-registry.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
@@ -13,6 +14,7 @@ import { useStatusStore } from "@/stores/status.ts";
 
 type StepKey = "select_file" | "review_matches" | "summary";
 type MatchingMode = "strict" | "fuzzy_automatik" | "manuell";
+type FuzzySubMode = "perfect" | "threshold";
 
 type MatchingModeSettings = {
   autoThreshold: number;
@@ -65,6 +67,20 @@ function thresholdLabel(value: number): string {
   return value.toFixed(2);
 }
 
+function effectiveAutoThresholdFromConfig(config: {
+  autoMergeEnabled: boolean;
+  perfectMatchAutoMerge: boolean;
+  autoMin: number;
+}): number {
+  if (config.autoMergeEnabled) {
+    return config.autoMin;
+  }
+  if (config.perfectMatchAutoMerge) {
+    return 1;
+  }
+  return 1.01;
+}
+
 export function ImportPage() {
   const api = useAppApi();
   const { shellData, refreshShellData, setSidebarControls } = useAppShellContext();
@@ -74,12 +90,17 @@ export function ImportPage() {
   const [draft, setDraft] = useState<ImportDraftState | null>(null);
   const [reviewIndex, setReviewIndex] = useState(0);
   const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [category, setCategory] = useState<"singles" | "doubles">("singles");
   const [raceNumber, setRaceNumber] = useState("");
   const [busy, setBusy] = useState(false);
   const [matchingMode, setMatchingMode] = useState<MatchingMode>("fuzzy_automatik");
+  const [fuzzySubMode, setFuzzySubMode] = useState<FuzzySubMode>("perfect");
   const [matchingModeSettings, setMatchingModeSettings] =
     useState<Record<MatchingMode, MatchingModeSettings>>(MATCHING_MODE_DEFAULTS);
+  const [stagedDecisions, setStagedDecisions] = useState<
+    Record<string, { action: ImportReviewAction; candidateId: string | null }>
+  >({});
   const filePickerRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -123,7 +144,9 @@ export function ImportPage() {
   const totalReviews = draft?.reviewItems.length ?? 0;
   const currentDecision =
     activeReview && draft
-      ? draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId) ?? null
+      ? stagedDecisions[activeReview.reviewId]
+        ? { reviewId: activeReview.reviewId, ...stagedDecisions[activeReview.reviewId] }
+        : draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId) ?? null
       : null;
   const orderedCandidates = useMemo(() => {
     if (!activeReview) {
@@ -138,7 +161,35 @@ export function ImportPage() {
     });
   }, [activeReview]);
   const activeMatchingSettings = matchingModeSettings[matchingMode];
-  const effectiveAutoThreshold = matchingMode === "fuzzy_automatik" ? activeMatchingSettings.autoThreshold : 1.01;
+  const matchingConfigInput = useMemo(() => {
+    if (matchingMode === "strict") {
+      return {
+        autoMin: activeMatchingSettings.autoThreshold,
+        reviewMin: activeMatchingSettings.reviewThreshold,
+        autoMergeEnabled: false,
+        perfectMatchAutoMerge: false,
+        strictNormalizedAutoOnly: true,
+      };
+    }
+    if (matchingMode === "manuell") {
+      return {
+        autoMin: activeMatchingSettings.autoThreshold,
+        reviewMin: activeMatchingSettings.reviewThreshold,
+        autoMergeEnabled: false,
+        perfectMatchAutoMerge: false,
+        strictNormalizedAutoOnly: false,
+      };
+    }
+    return {
+      autoMin: activeMatchingSettings.autoThreshold,
+      reviewMin: activeMatchingSettings.reviewThreshold,
+      autoMergeEnabled: fuzzySubMode === "threshold",
+      perfectMatchAutoMerge: true,
+      strictNormalizedAutoOnly: false,
+    };
+  }, [activeMatchingSettings.autoThreshold, activeMatchingSettings.reviewThreshold, fuzzySubMode, matchingMode]);
+  const effectiveAutoThreshold = effectiveAutoThresholdFromConfig(matchingConfigInput);
+  const cappedReviewThreshold = Math.min(activeMatchingSettings.reviewThreshold, effectiveAutoThreshold);
   const visibleCandidates = useMemo(() => {
     if (matchingMode === "strict") {
       return orderedCandidates.filter(
@@ -149,11 +200,11 @@ export function ImportPage() {
     }
     if (matchingMode === "fuzzy_automatik") {
       return orderedCandidates.filter(
-        (candidate) => candidate.confidence >= activeMatchingSettings.reviewThreshold,
+        (candidate) => candidate.confidence >= cappedReviewThreshold,
       );
     }
     return orderedCandidates;
-  }, [activeMatchingSettings.reviewThreshold, matchingMode, orderedCandidates]);
+  }, [cappedReviewThreshold, matchingMode, orderedCandidates]);
   const modeMayAutoMerge =
     matchingMode === "fuzzy_automatik" &&
     visibleCandidates.length > 0 &&
@@ -162,7 +213,9 @@ export function ImportPage() {
   const parsedRace = Number.parseInt(raceNumber, 10);
   const raceValid = Number.isFinite(parsedRace) && parsedRace > 0;
   const raceOccupied = isRunOccupied(importedRuns, category, raceNumber);
-  const resolvedReviews = draft?.decisions.length ?? 0;
+  const resolvedReviews = draft
+    ? draft.reviewItems.filter((item) => stagedDecisions[item.reviewId] != null).length
+    : 0;
   const openReviews = Math.max(0, totalReviews - resolvedReviews);
   const isDoublesReview = draft?.category === "doubles";
   const maxImportedRace = useMemo(
@@ -203,6 +256,26 @@ export function ImportPage() {
     return draft.summary;
   }, [draft]);
 
+  useEffect(() => {
+    if (!activeReview || visibleCandidates.length === 0) {
+      return;
+    }
+
+    const selectedCandidateId = currentDecision?.action === "merge" ? currentDecision.candidateId : null;
+    const selectedCandidateVisible =
+      selectedCandidateId != null &&
+      visibleCandidates.some((candidate) => candidate.candidateId === selectedCandidateId);
+    if (selectedCandidateVisible || currentDecision != null) {
+      return;
+    }
+
+    const bestCandidate = visibleCandidates[0];
+    if (!bestCandidate) {
+      return;
+    }
+    stageReviewDecision("merge", bestCandidate.candidateId);
+  }, [activeReview, currentDecision, visibleCandidates]);
+
   async function startDraft() {
     if (!shellData.selectedSeasonId || !canStartImport) {
       return;
@@ -210,15 +283,27 @@ export function ImportPage() {
     setBusy(true);
     try {
       const race = Number.parseInt(raceNumber, 10);
+      if (selectedFile && selectedFile.name === fileName.trim()) {
+        rememberImportFile(selectedFile);
+      }
       const nextDraft = await api.createImportDraft({
         seasonId: shellData.selectedSeasonId,
         fileName: fileName.trim(),
         category,
         raceNumber: race,
+        matchingConfig: matchingConfigInput,
       });
       setDraft(nextDraft);
+      setStagedDecisions(
+        Object.fromEntries(
+          nextDraft.decisions.map((decision) => [
+            decision.reviewId,
+            { action: decision.action, candidateId: decision.candidateId },
+          ]),
+        ),
+      );
       setReviewIndex(0);
-      setStep("review_matches");
+      setStep(nextDraft.reviewItems.length === 0 ? "summary" : "review_matches");
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : STR.views.import.importDraftFailed;
       setStatus({ severity: "error", source: "import", message });
@@ -227,24 +312,14 @@ export function ImportPage() {
     }
   }
 
-  async function applyReviewDecision(action: ImportReviewAction, candidateId: string | null) {
+  function stageReviewDecision(action: ImportReviewAction, candidateId: string | null) {
     if (!draft || !activeReview) {
       return;
     }
-    setBusy(true);
-    try {
-      const nextDraft = await api.setImportReviewDecision(draft.draftId, {
-        reviewId: activeReview.reviewId,
-        action,
-        candidateId,
-      });
-      setDraft(nextDraft);
-    } catch (reason) {
-      const message = reason instanceof Error ? reason.message : STR.views.import.importFailed;
-      setStatus({ severity: "error", source: "import", message });
-    } finally {
-      setBusy(false);
-    }
+    setStagedDecisions((current) => ({
+      ...current,
+      [activeReview.reviewId]: { action, candidateId },
+    }));
   }
 
   async function finalizeImport() {
@@ -253,12 +328,26 @@ export function ImportPage() {
     }
     setBusy(true);
     try {
-      const result = await api.finalizeImportDraft(draft.draftId);
+      let nextDraft = draft;
+      for (const reviewItem of draft.reviewItems) {
+        const stagedDecision = stagedDecisions[reviewItem.reviewId];
+        if (!stagedDecision) {
+          continue;
+        }
+        nextDraft = await api.setImportReviewDecision(nextDraft.draftId, {
+          reviewId: reviewItem.reviewId,
+          action: stagedDecision.action,
+          candidateId: stagedDecision.candidateId,
+        });
+      }
+      const result = await api.finalizeImportDraft(nextDraft.draftId);
       await refreshShellData();
       setStatus({ severity: result.severity, source: "import", message: result.message });
       setDraft(null);
+      setStagedDecisions({});
       setRaceNumber("");
       setFileName("");
+      setSelectedFile(null);
       setCategory("singles");
       setReviewIndex(0);
       setStep("select_file");
@@ -362,6 +451,7 @@ export function ImportPage() {
                             value={fileName}
                             onChange={(event) => {
                               setFileName(event.target.value);
+                              setSelectedFile(null);
                             }}
                             placeholder={STR.views.import.filePlaceholder}
                             disabled={busy}
@@ -374,7 +464,9 @@ export function ImportPage() {
                             onChange={(event) => {
                               const selectedFile = event.target.files?.[0];
                               if (selectedFile) {
+                                setSelectedFile(selectedFile);
                                 setFileName(selectedFile.name);
+                                rememberImportFile(selectedFile);
                               }
                             }}
                             disabled={busy}
@@ -510,7 +602,7 @@ export function ImportPage() {
                       disabled={!currentDecision?.candidateId || busy}
                       onClick={() => {
                         if (currentDecision?.candidateId) {
-                          void applyReviewDecision("merge_with_typo_fix", currentDecision.candidateId);
+                          stageReviewDecision("merge_with_typo_fix", currentDecision.candidateId);
                         }
                       }}
                     >
@@ -558,7 +650,7 @@ export function ImportPage() {
                         type="button"
                         className={`import-candidate import-candidate--new ${currentDecision?.action === "create_new" ? "is-selected" : ""}`}
                         onClick={() => {
-                          void applyReviewDecision("create_new", null);
+                          stageReviewDecision("create_new", null);
                         }}
                         disabled={busy}
                       >
@@ -582,7 +674,7 @@ export function ImportPage() {
                             isDoubles={isDoublesReview}
                             disabled={busy}
                             onSelect={() => {
-                              void applyReviewDecision("merge", candidate.candidateId);
+                              stageReviewDecision("merge", candidate.candidateId);
                             }}
                             recommendedLabel={STR.views.import.reviewRecommended}
                           />
@@ -606,7 +698,7 @@ export function ImportPage() {
                 {flowSidebar}
                 <div className="import-support__separator" />
                 <InfoCard title={STR.views.import.progressTitle}>
-                  <p>{STR.views.import.reviewProgressShort(reviewIndex + 1, totalReviews)}</p>
+                  <p>{STR.views.import.reviewProgressShort(totalReviews === 0 ? 0 : reviewIndex + 1, totalReviews)}</p>
                   <p>{STR.views.import.completedCount(resolvedReviews)}</p>
                   <p>{STR.views.import.openCount(openReviews)}</p>
                 </InfoCard>
@@ -649,6 +741,30 @@ export function ImportPage() {
                         Effektive Auto-Schwelle: <strong>{thresholdLabel(effectiveAutoThreshold)}</strong>
                       </span>
                     </div>
+                    {matchingMode === "fuzzy_automatik" ? (
+                      <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeFuzzy}>
+                        <button
+                          type="button"
+                          className={`button button--tab ${fuzzySubMode === "perfect" ? "is-active" : ""}`}
+                          onClick={() => {
+                            setFuzzySubMode("perfect");
+                          }}
+                          disabled={busy}
+                        >
+                          {STR.views.import.matchingFuzzySubPerfect}
+                        </button>
+                        <button
+                          type="button"
+                          className={`button button--tab ${fuzzySubMode === "threshold" ? "is-active" : ""}`}
+                          onClick={() => {
+                            setFuzzySubMode("threshold");
+                          }}
+                          disabled={busy}
+                        >
+                          {STR.views.import.matchingFuzzySubThreshold}
+                        </button>
+                      </div>
+                    ) : null}
                     <label className="matching-options__slider">
                       <span>{STR.views.import.autoThresholdLabel(thresholdLabel(activeMatchingSettings.autoThreshold))}</span>
                       <input
@@ -657,7 +773,7 @@ export function ImportPage() {
                         max={MATCHING_THRESHOLD_MAX}
                         step={MATCHING_THRESHOLD_STEP}
                         value={activeMatchingSettings.autoThreshold}
-                        disabled={busy || matchingMode !== "fuzzy_automatik"}
+                        disabled={busy || matchingMode !== "fuzzy_automatik" || fuzzySubMode === "perfect"}
                         onChange={(event) => {
                           const nextValue = clampThreshold(Number(event.target.value));
                           setMatchingModeSettings((current) => ({
@@ -671,21 +787,26 @@ export function ImportPage() {
                       />
                     </label>
                     <label className="matching-options__slider">
-                      <span>{STR.views.import.reviewThresholdLabel(thresholdLabel(activeMatchingSettings.reviewThreshold))}</span>
+                      <span>{STR.views.import.reviewThresholdLabel(thresholdLabel(cappedReviewThreshold))}</span>
                       <input
                         type="range"
                         min={MATCHING_THRESHOLD_MIN}
                         max={MATCHING_THRESHOLD_MAX}
                         step={MATCHING_THRESHOLD_STEP}
-                        value={activeMatchingSettings.reviewThreshold}
+                        value={cappedReviewThreshold}
                         disabled={busy}
                         onChange={(event) => {
                           const nextValue = clampThreshold(Number(event.target.value));
+                          const maxReview = effectiveAutoThresholdFromConfig({
+                            autoMergeEnabled: matchingMode === "fuzzy_automatik" && fuzzySubMode === "threshold",
+                            perfectMatchAutoMerge: matchingMode === "fuzzy_automatik",
+                            autoMin: activeMatchingSettings.autoThreshold,
+                          });
                           setMatchingModeSettings((current) => ({
                             ...current,
                             [matchingMode]: {
                               ...current[matchingMode],
-                              reviewThreshold: nextValue,
+                              reviewThreshold: Math.min(nextValue, maxReview),
                             },
                           }));
                         }}
@@ -743,6 +864,18 @@ export function ImportPage() {
                     <strong>{visibleSummary.typoCorrections}</strong>
                   </div>
                 </div>
+                <section className="surface-card__section">
+                  <h3>{STR.views.import.summaryInfos}</h3>
+                  {visibleSummary.infos.length === 0 ? (
+                    <p>{STR.views.import.summaryNoInfos}</p>
+                  ) : (
+                    <ul>
+                      {visibleSummary.infos.map((info) => (
+                        <li key={info}>{info}</li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
                 <section className="surface-card__section">
                   <h3>{STR.views.import.summaryWarnings}</h3>
                   {visibleSummary.warnings.length === 0 ? (

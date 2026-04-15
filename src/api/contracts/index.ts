@@ -51,6 +51,8 @@ export interface StandingsRow {
   rank: number;
   team: string;
   club: string;
+  yob?: number;
+  yobPair?: string;
   points: number;
   distanceKm: number;
   races: number;
@@ -85,11 +87,20 @@ export type ImportCategory = "singles" | "doubles";
 export type ImportWizardStep = "select_file" | "review_matches" | "summary";
 export type ImportReviewAction = "merge" | "merge_with_typo_fix" | "create_new";
 
+export interface ImportMatchingConfigInput {
+  autoMin: number;
+  reviewMin: number;
+  autoMergeEnabled: boolean;
+  perfectMatchAutoMerge: boolean;
+  strictNormalizedAutoOnly: boolean;
+}
+
 export interface ImportDraftInput {
   seasonId: string;
   fileName: string;
   category: ImportCategory;
   raceNumber: number;
+  matchingConfig?: ImportMatchingConfigInput;
 }
 
 export interface ImportIncomingRecord {
@@ -133,6 +144,7 @@ export interface ImportDraftSummary {
   mergedEntries: number;
   newPersonsCreated: number;
   typoCorrections: number;
+  infos: string[];
   warnings: string[];
 }
 

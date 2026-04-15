@@ -22,11 +22,15 @@ more confidence-building interface than either the harnesses or the legacy UI pr
 
 ## In scope
 
-- Four-step import wizard:
+- Four conceptual import phases in the UI:
   - file selection
-  - detected data review
+  - detected data review (currently embedded in the selection-to-review transition)
   - participant assignment review
   - completion summary
+- Technical wizard state remains the existing three-step `ImportWizardStep` contract:
+  - `select_file`
+  - `review_matches`
+  - `summary`
 - Sticky progress and review counters
 - Candidate-card review UI based on the redesign document
 - Mock-first workflow support for UX tuning
@@ -73,6 +77,24 @@ The live implementation should compose the existing TS workflow pieces behind `T
 - `finalizeImport()`
 
 The UI should not call these helpers directly. Orchestration belongs inside `TsAppApi`.
+
+Review items and review decisions must be sourced from orchestration/session state in the backend adapter.
+Frontend state can cache view-local cursor/progress (`reviewIndex`), but not invent review entities.
+
+## Legacy matching parity notes
+
+To keep migration behavior consistent with the standalone app:
+
+- Preserve matching modes and intent:
+  - strict
+  - fuzzy automatik
+  - manuell
+- Preserve candidate ordering by backend confidence with recommended-first behavior.
+- Keep explicit review actions mapped to the existing contract:
+  - legacy link existing -> `merge`
+  - legacy merge + correction path -> `merge_with_typo_fix`
+  - legacy create new identity -> `create_new`
+- Preserve reassignment semantics for merge decisions (no identity mutation side effects in this phase).
 
 ## UX goals carried over from the redesign
 
