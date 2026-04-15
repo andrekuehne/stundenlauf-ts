@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import type { ShellData } from "@/api/contracts/index.ts";
 import { AppApiProvider, useAppApi } from "@/api/provider.tsx";
@@ -73,6 +73,7 @@ function Phase1App() {
   const [shellData, setShellData] = useState<ShellData>(EMPTY_SHELL_DATA);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sidebarControls, setSidebarControls] = useState<ReactNode | null>(null);
   const activeRoute = activeRouteFromPath(location.pathname);
 
   const refreshShellData = useCallback(async () => {
@@ -114,6 +115,10 @@ function Phase1App() {
     [api, refreshShellData, setStatus, shellData.availableSeasons],
   );
 
+  useEffect(() => {
+    setSidebarControls(null);
+  }, [activeRoute]);
+
   const footer = useMemo(
     () => (
       <>
@@ -126,13 +131,19 @@ function Phase1App() {
 
   return (
     <>
-      <AppShell activeRoute={activeRoute} shellData={shellData} onSeasonChange={handleSeasonChange} footer={footer}>
+      <AppShell
+        activeRoute={activeRoute}
+        shellData={shellData}
+        onSeasonChange={handleSeasonChange}
+        footer={footer}
+        sidebarControls={sidebarControls}
+      >
         {error ? (
           <div className="page-stack">
             <EmptyState title="App-Fehler" message={error} />
           </div>
         ) : (
-          <Outlet context={{ shellData, refreshShellData }} />
+          <Outlet context={{ shellData, refreshShellData, setSidebarControls }} />
         )}
       </AppShell>
       <div className="version-badge" title={`Version ${APP_VERSION}`}>

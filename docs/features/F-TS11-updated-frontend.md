@@ -137,13 +137,15 @@ Width recommendation:
 
 Split vertically into:
 
-## Top: Navigation
+## Top: Bereiche
 
-Main app sections.
+Main app sections and route switching.
 
-## Bottom: Context Actions
+## Bottom: Bereich-specific Controls
 
-Tools relevant to the currently active section.
+This block replaces the former "Next steps" area.
+It should stay visible and use the remaining sidebar height for controls that belong to the active Bereich.
+For `Auswertung`, this includes imported-run overview, category selectors, and export actions.
 
 ---
 
@@ -341,13 +343,16 @@ Columns may include:
 
 ---
 
-## Context Actions (Sidebar Bottom)
+## Bereich-specific Controls (Sidebar Bottom)
 
-* Kategorie wählen
-* Export PDF
-* Export Excel
-* Sortierung
-* Filter
+The sidebar bottom is now a control panel, not guidance text.
+
+For `Auswertung` the control panel contains:
+
+* Importierte Läufe matrix
+* Einzel category buttons
+* Paare category buttons
+* Export actions (PDF / Excel)
 
 ---
 
@@ -624,7 +629,7 @@ Success message:
 
 ---
 
-# Context Actions During Import
+# Bereich-specific Controls During Import
 
 Sidebar bottom may contain:
 
@@ -797,7 +802,7 @@ AppShell
 ├── TopBar
 ├── Sidebar
 │   ├── NavSection
-│   └── ContextSection
+│   └── BereichControlsSection
 └── MainContent
     ├── SeasonPage
     ├── StandingsPage

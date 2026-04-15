@@ -123,7 +123,7 @@ textarea {
 
 .shell-sidebar {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 220px;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: var(--spacing-md);
   min-height: 0;
   padding: var(--spacing-md);
@@ -132,7 +132,7 @@ textarea {
 }
 
 .shell-sidebar__nav,
-.shell-sidebar__context,
+.shell-sidebar__controls,
 .surface-card,
 .summary-card,
 .empty-state {
@@ -142,7 +142,7 @@ textarea {
 }
 
 .shell-sidebar__nav,
-.shell-sidebar__context,
+.shell-sidebar__controls,
 .surface-card,
 .empty-state {
   padding: var(--spacing-lg);
@@ -155,7 +155,7 @@ textarea {
 }
 
 .shell-sidebar__nav h2,
-.shell-sidebar__context h3,
+.shell-sidebar__controls h3,
 .surface-card__header h2,
 .page-header h1,
 .empty-state h2 {
@@ -192,22 +192,17 @@ textarea {
   opacity: 0.7;
 }
 
-.shell-sidebar__context {
+.shell-sidebar__controls {
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: var(--spacing-md);
-  min-height: 220px;
-}
-
-.shell-sidebar__context-copy {
-  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   align-content: start;
-  gap: var(--spacing-sm);
-  min-height: 92px;
+  gap: var(--spacing-md);
+  min-height: 0;
+  overflow-y: auto;
 }
 
-.shell-sidebar__context-title {
-  font-weight: 600;
+.shell-sidebar__controls-hint {
+  color: var(--color-text-muted);
 }
 
 .shell-main {
@@ -246,7 +241,7 @@ textarea {
 .page-header p,
 .surface-card__header p,
 .empty-state p,
-.shell-sidebar__context p,
+.shell-sidebar__controls p,
 .season-table__name,
 .category-button span,
 .category-button small {
@@ -328,6 +323,21 @@ textarea {
   font-size: 1.9rem;
 }
 
+.sidebar-controls {
+  display: grid;
+  gap: var(--spacing-lg);
+  align-content: start;
+}
+
+.sidebar-controls__section {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.sidebar-controls__section h4 {
+  margin: 0;
+}
+
 .category-matrix {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -352,15 +362,16 @@ textarea {
 }
 
 .category-button--compact {
-  min-height: 70px;
+  min-height: 56px;
   place-items: center;
-  padding: var(--spacing-md) var(--spacing-sm);
+  padding: var(--spacing-sm) 10px;
   text-align: center;
 }
 
 .category-button--compact strong {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
+  line-height: 1.15;
 }
 
 .category-button--compact.is-active strong {

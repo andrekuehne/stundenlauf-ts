@@ -16,7 +16,7 @@ function formatDateTime(value: string): string {
 
 export function SeasonPage() {
   const api = useAppApi();
-  const { shellData, refreshShellData } = useAppShellContext();
+  const { shellData, refreshShellData, setSidebarControls } = useAppShellContext();
   const setStatus = useStatusStore((state) => state.setStatus);
   const [seasons, setSeasons] = useState<SeasonListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,21 +140,24 @@ export function SeasonPage() {
     }
   }
 
-  async function handleSeasonCommand(command: "import_backup" | "export_backup", row?: SeasonListItem) {
-    setActionSeasonId(row?.seasonId ?? "global");
-    try {
-      const result = await api.runSeasonCommand(command, row?.seasonId ?? shellData.selectedSeasonId ?? undefined);
-      setStatus({
-        severity: result.severity,
-        message: result.message,
-        source: "season",
-      });
-    } finally {
-      setActionSeasonId(null);
-    }
-  }
+  const handleSeasonCommand = useCallback(
+    async (command: "import_backup" | "export_backup", row?: SeasonListItem) => {
+      setActionSeasonId(row?.seasonId ?? "global");
+      try {
+        const result = await api.runSeasonCommand(command, row?.seasonId ?? shellData.selectedSeasonId ?? undefined);
+        setStatus({
+          severity: result.severity,
+          message: result.message,
+          source: "season",
+        });
+      } finally {
+        setActionSeasonId(null);
+      }
+    },
+    [api, setStatus, shellData.selectedSeasonId],
+  );
 
-  async function handleCreate() {
+  const handleCreate = useCallback(async () => {
     const nextLabel = seasonLabel.trim();
     if (!nextLabel) {
       setStatus({
@@ -178,32 +181,13 @@ export function SeasonPage() {
     } finally {
       setCreating(false);
     }
-  }
+  }, [api, seasonLabel, setStatus]);
 
-  return (
-    <div className="page-stack">
-      <PageHeader title={STR.views.season.title} description={STR.views.season.subtitle} />
-
-      <div className="page-grid page-grid--season">
-        <section className="surface-card">
-          <div className="surface-card__header">
-            <div>
-              <h2>Bestehende Saisons</h2>
-              <p>Alle vorhandenen Saisons stehen hier direkt zum Oeffnen oder Verwalten bereit.</p>
-            </div>
-          </div>
-          <DataTable columns={columns} rows={seasons} emptyMessage={STR.views.season.noSeasons} />
-          {loading ? <p className="surface-card__note">Saisons werden geladen...</p> : null}
-        </section>
-
-        <section className="surface-card">
-          <div className="surface-card__header">
-            <div>
-              <h2>{STR.views.season.createTitle}</h2>
-              <p>{STR.views.season.subtitle}</p>
-            </div>
-          </div>
-
+  useEffect(() => {
+    setSidebarControls(
+      <div className="sidebar-controls">
+        <section className="sidebar-controls__section">
+          <h4>{STR.views.season.createTitle}</h4>
           <label className="field-stack">
             <span>{STR.views.season.createLabel}</span>
             <input
@@ -215,8 +199,7 @@ export function SeasonPage() {
               }}
             />
           </label>
-
-          <div className="inline-actions">
+          <div className="stack-actions">
             <button type="button" className="button button--primary" disabled={creating} onClick={() => void handleCreate()}>
               {STR.views.season.createAction}
             </button>
@@ -229,17 +212,45 @@ export function SeasonPage() {
               {STR.views.season.importAction}
             </button>
           </div>
-
-          <div className="season-side-note">
-            <h3>Aktive Saison</h3>
-            <p>{shellData.selectedSeasonLabel ?? "Noch keine Saison geoeffnet."}</p>
-            <p className="surface-card__note">
-              Backup-Import und Backup-Export sind in Phase 1 bereits sichtbar, werden aber noch vom
-              Mock-AppApi beantwortet.
-            </p>
-          </div>
         </section>
-      </div>
+
+        <section className="sidebar-controls__section season-side-note">
+          <h4>Aktive Saison</h4>
+          <p>{shellData.selectedSeasonLabel ?? "Noch keine Saison geoeffnet."}</p>
+          <p className="surface-card__note">
+            Backup-Import und Backup-Export sind in Phase 1 bereits sichtbar, werden aber noch vom Mock-AppApi beantwortet.
+          </p>
+        </section>
+      </div>,
+    );
+
+    return () => {
+      setSidebarControls(null);
+    };
+  }, [
+    actionSeasonId,
+    creating,
+    handleCreate,
+    handleSeasonCommand,
+    seasonLabel,
+    setSidebarControls,
+    shellData.selectedSeasonLabel,
+  ]);
+
+  return (
+    <div className="page-stack">
+      <PageHeader title={STR.views.season.title} description={STR.views.season.subtitle} />
+
+      <section className="surface-card">
+        <div className="surface-card__header">
+          <div>
+            <h2>Bestehende Saisons</h2>
+            <p>Alle vorhandenen Saisons stehen hier direkt zum Oeffnen oder Verwalten bereit.</p>
+          </div>
+        </div>
+        <DataTable columns={columns} rows={seasons} emptyMessage={STR.views.season.noSeasons} />
+        {loading ? <p className="surface-card__note">Saisons werden geladen...</p> : null}
+      </section>
     </div>
   );
 }

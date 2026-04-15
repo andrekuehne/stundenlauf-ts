@@ -8,48 +8,22 @@ interface AppShellProps {
   activeRoute: AppRoute;
   shellData: ShellData;
   onSeasonChange: (seasonId: string) => void | Promise<void>;
+  sidebarControls?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
 }
 
 const NAV_ITEMS: AppRoute[] = ["season", "standings", "import", "corrections", "history"];
 
-const CONTEXT_COPY: Record<AppRoute, { title: string; message: string; href: string; action: string }> = {
-  season: {
-    title: "Saisonen im Blick behalten",
-    message: "Neue Saison anlegen oder eine bestehende Saison fuer die weitere Arbeit oeffnen.",
-    href: "/season",
-    action: "Zur Saisonverwaltung",
-  },
-  standings: {
-    title: "Wertung pruefen",
-    message: "Kategorie waehlen, Tabellenstand kontrollieren und Export vorbereiten.",
-    href: "/standings",
-    action: "Zur Auswertung",
-  },
-  import: {
-    title: "Import folgt als naechstes",
-    message: "Die gefuehrte Importstrecke wird in Phase 2 auf die neue Oberflaeche umgezogen.",
-    href: "/season",
-    action: "Vorher Saison pruefen",
-  },
-  corrections: {
-    title: "Korrekturen spaeter ausbauen",
-    message: "Phase 1 haelt den Navigationsplatz stabil, ohne die echte Korrekturlogik vorzuziehen.",
-    href: "/standings",
-    action: "Aktuelle Wertung ansehen",
-  },
-  history: {
-    title: "Historie spaeter anbinden",
-    message: "Die Timeline folgt in einer spaeteren Phase, bleibt aber jetzt schon als Ziel sichtbar.",
-    href: "/standings",
-    action: "Zur Auswertung",
-  },
+const DEFAULT_CONTROL_HINT: Record<AppRoute, string> = {
+  season: "Bereichsspezifische Saison-Steuerungen erscheinen hier.",
+  standings: "Steuerungen fuer die Auswertung werden geladen.",
+  import: "Bereichsspezifische Import-Steuerungen erscheinen hier.",
+  corrections: "Bereichsspezifische Korrektur-Steuerungen erscheinen hier.",
+  history: "Bereichsspezifische Historie-Steuerungen erscheinen hier.",
 };
 
-export function AppShell({ activeRoute, shellData, onSeasonChange, children, footer }: AppShellProps) {
-  const contextCopy = CONTEXT_COPY[activeRoute];
-
+export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarControls, children, footer }: AppShellProps) {
   return (
     <div className="shell-layout">
       <header className="shell-topbar">
@@ -101,15 +75,13 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, children, foo
             </nav>
           </div>
 
-          <div className="shell-sidebar__context">
-            <h3>{STR.shell.contextTitle}</h3>
-            <div className="shell-sidebar__context-copy">
-              <p className="shell-sidebar__context-title">{contextCopy.title}</p>
-              <p>{contextCopy.message}</p>
-            </div>
-            <NavLink to={contextCopy.href} className="button button--primary shell-sidebar__context-link">
-              {contextCopy.action}
-            </NavLink>
+          <div className="shell-sidebar__controls">
+            <h3>{STR.shell.tabs[activeRoute]}</h3>
+            {sidebarControls ? (
+              sidebarControls
+            ) : (
+              <p className="shell-sidebar__controls-hint">{DEFAULT_CONTROL_HINT[activeRoute]}</p>
+            )}
           </div>
         </aside>
 

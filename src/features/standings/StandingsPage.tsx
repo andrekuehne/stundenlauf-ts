@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ExportActionDescriptor, StandingsData, StandingsRow } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { formatKm } from "@/app/format.ts";
@@ -80,7 +80,7 @@ function buildRaceResults(row: StandingsRow): RaceResult[] {
 
 export function StandingsPage() {
   const api = useAppApi();
-  const { shellData } = useAppShellContext();
+  const { shellData, setSidebarControls } = useAppShellContext();
   const setStatus = useStatusStore((state) => state.setStatus);
   const selectedCategoryKey = useStandingsStore((state) => state.selectedCategoryKey);
   const selectCategory = useStandingsStore((state) => state.selectCategory);
@@ -220,23 +220,107 @@ export function StandingsPage() {
     [excludedRows, maxRaceColumns, selectedCategory?.key],
   );
 
-  async function handleExport(action: ExportActionDescriptor) {
-    if (!shellData.selectedSeasonId) {
+  const handleExport = useCallback(
+    async (action: ExportActionDescriptor) => {
+      if (!shellData.selectedSeasonId) {
+        setStatus({
+          severity: "warn",
+          message: STR.views.standings.noSeason,
+          source: "standings",
+        });
+        return;
+      }
+
+      const result = await api.runExportAction(shellData.selectedSeasonId, action.id);
       setStatus({
-        severity: "warn",
-        message: STR.views.standings.noSeason,
+        severity: result.severity,
+        message: result.message,
         source: "standings",
       });
+    },
+    [api, setStatus, shellData.selectedSeasonId],
+  );
+
+  useEffect(() => {
+    if (!shellData.selectedSeasonId) {
+      setSidebarControls(null);
       return;
     }
 
-    const result = await api.runExportAction(shellData.selectedSeasonId, action.id);
-    setStatus({
-      severity: result.severity,
-      message: result.message,
-      source: "standings",
-    });
-  }
+    setSidebarControls(
+      <div className="sidebar-controls">
+        <section className="sidebar-controls__section">
+          <h4>Einzel</h4>
+          <div className="category-matrix">
+            {CATEGORY_GROUPS[0]?.rows.flat().map((categoryKey) => {
+              const category = data?.categories.find((entry) => entry.key === categoryKey) ?? null;
+              const isDisabled = !category || category.participantCount === 0;
+              return (
+                <button
+                  key={categoryKey}
+                  type="button"
+                  className={`category-button category-button--compact ${selectedCategory?.key === categoryKey ? "is-active" : ""}`}
+                  disabled={isDisabled}
+                  onClick={() => {
+                    if (category) {
+                      selectCategory(category.key);
+                    }
+                  }}
+                >
+                  <strong>{categoryButtonLabel(categoryKey)}</strong>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="sidebar-controls__section">
+          <h4>Paare</h4>
+          <div className="category-matrix">
+            {CATEGORY_GROUPS[1]?.rows.flat().map((categoryKey) => {
+              const category = data?.categories.find((entry) => entry.key === categoryKey) ?? null;
+              const isDisabled = !category || category.participantCount === 0;
+              return (
+                <button
+                  key={categoryKey}
+                  type="button"
+                  className={`category-button category-button--compact ${selectedCategory?.key === categoryKey ? "is-active" : ""}`}
+                  disabled={isDisabled}
+                  onClick={() => {
+                    if (category) {
+                      selectCategory(category.key);
+                    }
+                  }}
+                >
+                  <strong>{categoryButtonLabel(categoryKey)}</strong>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="sidebar-controls__section">
+          <h4>{STR.views.standings.exportTitle}</h4>
+          <div className="stack-actions">
+            {data?.exportActions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                className={`button ${action.availability === "ready" ? "button--primary" : ""}`}
+                onClick={() => void handleExport(action)}
+              >
+                {action.id === "export_pdf" ? "Wertungen als PDF speichern" : "Gesamtwertung als Excel speichern"}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>,
+    );
+
+    return () => {
+      setSidebarControls(null);
+    };
+  }, [data, handleExport, selectCategory, selectedCategory?.key, setSidebarControls, shellData.selectedSeasonId]);
 
   return (
     <div className="page-stack">
@@ -249,89 +333,31 @@ export function StandingsPage() {
           <p className="surface-card__note">Wertungen werden geladen...</p>
         </section>
       ) : (
-        <div className="page-grid page-grid--standings">
-            <aside className="surface-card">
-              <div className="surface-card__header">
-                <div>
-                  <h2>{STR.views.standings.categoriesTitle}</h2>
-                  <p>Die Auswahl steuert die Tabelle im Hauptbereich.</p>
-                </div>
-              </div>
-
-              <div className="category-group-list">
-                {CATEGORY_GROUPS.map((group) => (
-                  <section key={group.key} className="category-group">
-                    <h3>{group.title}</h3>
-                    <div className="category-matrix">
-                      {group.rows.flat().map((categoryKey) => {
-                        const category = data.categories.find((entry) => entry.key === categoryKey) ?? null;
-                        const isDisabled = !category || category.participantCount === 0;
-                        return (
-                          <button
-                            key={categoryKey}
-                            type="button"
-                            className={`category-button category-button--compact ${
-                              selectedCategory?.key === categoryKey ? "is-active" : ""
-                            }`}
-                            disabled={isDisabled}
-                            onClick={() => {
-                              if (category) {
-                                selectCategory(category.key);
-                              }
-                            }}
-                          >
-                            <strong>{categoryButtonLabel(categoryKey)}</strong>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
-              </div>
-
-              <div className="surface-card__section">
-                <h3>{STR.views.standings.exportTitle}</h3>
-                <div className="stack-actions">
-                  {data.exportActions.map((action) => (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className={`button ${action.availability === "ready" ? "button--primary" : ""}`}
-                      onClick={() => void handleExport(action)}
-                    >
-                      {action.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </aside>
-
-            <section className="surface-card">
-              <div className="surface-card__header">
-                <div>
-                  <h2>{selectedCategory?.label ?? STR.views.standings.title}</h2>
-                  <p>{selectedCategory?.description ?? STR.views.standings.placeholder}</p>
-                </div>
-              </div>
-              <DataTable
-                className="ui-table--standings"
-                columns={summaryColumns}
-                rows={selectedViewRows}
-                rowKey={(row) => `${row.rank}-${row.team}`}
-                emptyMessage={STR.views.standings.noRows}
-              />
-              <div className="surface-card__section">
-                <h3>Detailergebnisse</h3>
-              </div>
-              <DataTable
-                className="ui-table--standings ui-table--standings-detail"
-                columns={detailedColumns}
-                rows={selectedViewRows}
-                rowKey={(row) => `${row.rank}-${row.team}-detail`}
-                emptyMessage={STR.views.standings.noRows}
-              />
-            </section>
+        <section className="surface-card">
+          <div className="surface-card__header">
+            <div>
+              <h2>{selectedCategory?.label ?? STR.views.standings.title}</h2>
+              <p>{selectedCategory?.description ?? STR.views.standings.placeholder}</p>
+            </div>
           </div>
+          <DataTable
+            className="ui-table--standings"
+            columns={summaryColumns}
+            rows={selectedViewRows}
+            rowKey={(row) => `${row.rank}-${row.team}`}
+            emptyMessage={STR.views.standings.noRows}
+          />
+          <div className="surface-card__section">
+            <h3>Detailergebnisse</h3>
+          </div>
+          <DataTable
+            className="ui-table--standings ui-table--standings-detail"
+            columns={detailedColumns}
+            rows={selectedViewRows}
+            rowKey={(row) => `${row.rank}-${row.team}-detail`}
+            emptyMessage={STR.views.standings.noRows}
+          />
+        </section>
       )}
     </div>
   );

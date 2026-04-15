@@ -22,7 +22,6 @@ export const STR = {
     reviewLabelPlaceholder: "Offene Prüfungen: 0",
     seasonSelectLabel: "Aktuelle Saison:",
     reviewLabel: "Offene Prüfungen:",
-    contextTitle: "Nächster Schritt",
   },
   status: {
     prefix: "Status:",
