@@ -1,17 +1,69 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ImportDraftState, ImportReviewAction, ImportedRunRow } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
+import { ContentSplitLayout } from "@/components/layout/ContentSplitLayout.tsx";
+import { InfoCard } from "@/components/layout/InfoCard.tsx";
+import { PageHeader } from "@/components/layout/PageHeader.tsx";
+import { SupportPanel } from "@/components/layout/SupportPanel.tsx";
+import { ImportCandidateCard } from "@/features/import/ImportCandidateCard.tsx";
+import { DEFAULT_AUTO_MIN, DEFAULT_REVIEW_MIN } from "@/matching/config.ts";
 import { useStatusStore } from "@/stores/status.ts";
 
 type StepKey = "select_file" | "review_matches" | "summary";
+type MatchingMode = "strict" | "fuzzy_automatik" | "manuell";
+
+type MatchingModeSettings = {
+  autoThreshold: number;
+  reviewThreshold: number;
+};
+
+const MATCHING_MODE_DEFAULTS: Record<MatchingMode, MatchingModeSettings> = {
+  strict: { autoThreshold: DEFAULT_AUTO_MIN, reviewThreshold: DEFAULT_REVIEW_MIN },
+  fuzzy_automatik: { autoThreshold: DEFAULT_AUTO_MIN, reviewThreshold: DEFAULT_REVIEW_MIN },
+  manuell: { autoThreshold: DEFAULT_AUTO_MIN, reviewThreshold: DEFAULT_REVIEW_MIN },
+};
+const MATCHING_THRESHOLD_MIN = 0.5;
+const MATCHING_THRESHOLD_MAX = 1;
+const MATCHING_THRESHOLD_STEP = 0.01;
 
 const FLOW_STEPS: Array<{ key: StepKey; label: string }> = [
   { key: "select_file", label: STR.views.import.flowStepSelect },
   { key: "review_matches", label: STR.views.import.flowStepReview },
   { key: "summary", label: STR.views.import.flowStepSummary },
 ];
+
+function isRunOccupied(importedRuns: ImportedRunRow[], category: "singles" | "doubles", raceValue: string): boolean {
+  const race = Number.parseInt(raceValue, 10);
+  if (!Number.isFinite(race) || race <= 0) {
+    return false;
+  }
+
+  const isDoubles = category === "doubles";
+  return importedRuns.some((entry) => {
+    const normalizedLabel = entry.raceLabel.toLowerCase().replace("lauf", "").trim();
+    const raceMatch = Number.parseInt(normalizedLabel, 10) === race;
+    const categoryMatch = isDoubles ? entry.categoryLabel.includes("Paare") : !entry.categoryLabel.includes("Paare");
+    return raceMatch && categoryMatch;
+  });
+}
+
+function raceNumberFromLabel(label: string): number | null {
+  const value = Number.parseInt(label.toLowerCase().replace("lauf", "").trim(), 10);
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  return value;
+}
+
+function clampThreshold(value: number): number {
+  return Math.min(MATCHING_THRESHOLD_MAX, Math.max(MATCHING_THRESHOLD_MIN, value));
+}
+
+function thresholdLabel(value: number): string {
+  return value.toFixed(2);
+}
 
 export function ImportPage() {
   const api = useAppApi();
@@ -25,6 +77,10 @@ export function ImportPage() {
   const [category, setCategory] = useState<"singles" | "doubles">("singles");
   const [raceNumber, setRaceNumber] = useState("");
   const [busy, setBusy] = useState(false);
+  const [matchingMode, setMatchingMode] = useState<MatchingMode>("fuzzy_automatik");
+  const [matchingModeSettings, setMatchingModeSettings] =
+    useState<Record<MatchingMode, MatchingModeSettings>>(MATCHING_MODE_DEFAULTS);
+  const filePickerRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const seasonId = shellData.selectedSeasonId;
@@ -55,59 +111,11 @@ export function ImportPage() {
   }, [api, shellData.selectedSeasonId]);
 
   useEffect(() => {
-    if (!shellData.selectedSeasonId) {
-      setSidebarControls(null);
-      return;
-    }
-
-    setSidebarControls(
-      <div className="sidebar-controls">
-        <section className="sidebar-controls__section">
-          <h4>{STR.views.standings.importedRunsTitle}</h4>
-          {importedRuns.length === 0 ? (
-            <p>{STR.views.standings.noRows}</p>
-          ) : (
-            <div className="table-wrap">
-              <table className="ui-table">
-                <thead>
-                  <tr>
-                    <th>{STR.views.standings.importedRunsRaceCol}</th>
-                    {importedRuns.map((entry) => (
-                      <th key={entry.raceLabel} className="ui-table__cell--center">
-                        {entry.raceLabel.replace("Lauf ", "")}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th>{STR.views.standings.importedRunsRowSingles}</th>
-                    {importedRuns.map((entry) => (
-                      <td key={`single-${entry.raceLabel}`} className="ui-table__cell--center">
-                        {entry.categoryLabel.includes("Paare") ? "—" : "x"}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <th>{STR.views.standings.importedRunsRowCouples}</th>
-                    {importedRuns.map((entry) => (
-                      <td key={`couples-${entry.raceLabel}`} className="ui-table__cell--center">
-                        {entry.categoryLabel.includes("Paare") ? "x" : "—"}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </div>,
-    );
-
+    setSidebarControls(null);
     return () => {
       setSidebarControls(null);
     };
-  }, [importedRuns, setSidebarControls, shellData.selectedSeasonId]);
+  }, [setSidebarControls]);
 
   const canStartImport =
     Boolean(shellData.selectedSeasonId) && fileName.trim().length > 0 && Number.parseInt(raceNumber, 10) > 0;
@@ -117,6 +125,80 @@ export function ImportPage() {
     activeReview && draft
       ? draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId) ?? null
       : null;
+  const orderedCandidates = useMemo(() => {
+    if (!activeReview) {
+      return [];
+    }
+
+    return [...activeReview.candidates].sort((a, b) => {
+      if (a.isRecommended !== b.isRecommended) {
+        return a.isRecommended ? -1 : 1;
+      }
+      return b.confidence - a.confidence;
+    });
+  }, [activeReview]);
+  const selectedCandidate =
+    currentDecision?.candidateId && activeReview
+      ? orderedCandidates.find((candidate) => candidate.candidateId === currentDecision.candidateId) ?? null
+      : null;
+  const activeMatchingSettings = matchingModeSettings[matchingMode];
+  const effectiveAutoThreshold = matchingMode === "fuzzy_automatik" ? activeMatchingSettings.autoThreshold : 1.01;
+  const visibleCandidates = useMemo(() => {
+    if (matchingMode === "strict") {
+      return orderedCandidates.filter(
+        (candidate) =>
+          candidate.confidence >= 1 ||
+          candidate.fieldComparisons.every((comparison) => comparison.isMatch),
+      );
+    }
+    if (matchingMode === "fuzzy_automatik") {
+      return orderedCandidates.filter(
+        (candidate) => candidate.confidence >= activeMatchingSettings.reviewThreshold,
+      );
+    }
+    return orderedCandidates;
+  }, [activeMatchingSettings.reviewThreshold, matchingMode, orderedCandidates]);
+  const modeMayAutoMerge =
+    matchingMode === "fuzzy_automatik" &&
+    visibleCandidates.length > 0 &&
+    visibleCandidates[0]!.confidence >= effectiveAutoThreshold;
+  const fileSelected = fileName.trim().length > 0;
+  const parsedRace = Number.parseInt(raceNumber, 10);
+  const raceValid = Number.isFinite(parsedRace) && parsedRace > 0;
+  const raceOccupied = isRunOccupied(importedRuns, category, raceNumber);
+  const resolvedReviews = draft?.decisions.length ?? 0;
+  const openReviews = Math.max(0, totalReviews - resolvedReviews);
+  const isDoublesReview = draft?.category === "doubles";
+  const maxImportedRace = useMemo(
+    () =>
+      importedRuns.reduce((max, entry) => {
+        const race = raceNumberFromLabel(entry.raceLabel);
+        return race ? Math.max(max, race) : max;
+      }, 0),
+    [importedRuns],
+  );
+  const raceColumns = useMemo(() => {
+    const total = Math.max(5, maxImportedRace);
+    return Array.from({ length: total }, (_, index) => index + 1);
+  }, [maxImportedRace]);
+  const importedRunState = useMemo(() => {
+    const result: Record<number, { singles: boolean; doubles: boolean }> = {};
+    for (const race of raceColumns) {
+      result[race] = { singles: false, doubles: false };
+    }
+    for (const entry of importedRuns) {
+      const race = raceNumberFromLabel(entry.raceLabel);
+      if (!race || !result[race]) {
+        continue;
+      }
+      if (entry.categoryLabel.includes("Paare")) {
+        result[race].doubles = true;
+      } else {
+        result[race].singles = true;
+      }
+    }
+    return result;
+  }, [importedRuns, raceColumns]);
 
   const visibleSummary = useMemo(() => {
     if (!draft) {
@@ -195,268 +277,475 @@ export function ImportPage() {
   if (!shellData.selectedSeasonId) {
     return (
       <div className="page-stack">
-        <header className="page-header">
-          <h1>{STR.views.import.title}</h1>
-          <p>{STR.views.standings.noSeason}</p>
-        </header>
+        <PageHeader title={STR.views.import.title} description={STR.views.standings.noSeason} />
       </div>
     );
   }
 
+  const flowSidebar = (
+    <section className="import-support__flow">
+      <ol className="import-flowbar import-flowbar--vertical" aria-label={STR.views.import.flowCurrent}>
+        {FLOW_STEPS.map((entry, index) => {
+          const currentIdx = FLOW_STEPS.findIndex((stepEntry) => stepEntry.key === step);
+          const isDone = index < currentIdx;
+          const isCurrent = index === currentIdx;
+          return (
+            <li
+              key={entry.key}
+              className={`import-flowbar__step ${isDone ? "is-done" : ""} ${isCurrent ? "is-current" : ""}`.trim()}
+            >
+              <span className="import-flowbar__label">
+                {entry.label}
+                {isDone ? <span className="import-flowbar__emoji"> ✅</span> : null}
+                {isCurrent ? <span className="import-flowbar__emoji"> 👉</span> : null}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+
   return (
-    <div className="page-stack">
-      <header className="page-header">
-        <h1>{STR.views.import.title}</h1>
-        <p>{STR.views.import.subtitle}</p>
-      </header>
+    <div className={`page-stack ${step === "review_matches" ? "page-stack--fill" : ""}`.trim()}>
+      <PageHeader title={STR.views.import.title} description={STR.views.import.subtitle} />
 
-      <section className="import-workflow">
-        <ol className="import-flowbar" aria-label={STR.views.import.flowCurrent}>
-          {FLOW_STEPS.map((entry, index) => {
-            const currentIdx = FLOW_STEPS.findIndex((stepEntry) => stepEntry.key === step);
-            const isDone = index < currentIdx;
-            const isCurrent = index === currentIdx;
-            return (
-              <li
-                key={entry.key}
-                className={`import-flowbar__step ${isDone ? "is-done" : ""} ${isCurrent ? "is-current" : ""}`.trim()}
-              >
-                <span>{entry.label}</span>
-              </li>
-            );
-          })}
-        </ol>
-
+      <section className={`import-workflow ${step === "review_matches" ? "import-workflow--fill" : ""}`.trim()}>
         {step === "select_file" ? (
-          <article className="surface-card import-step">
-            <div className="surface-card__header">
-              <h2>{STR.views.import.selectFileTitle}</h2>
-              <p>{STR.views.import.selectFileHint}</p>
-            </div>
-            <div className="import-step__form">
-              <label className="import-controls__label">
-                <span>{STR.views.import.fileNameLabel}</span>
-                <input
-                  value={fileName}
-                  onChange={(event) => setFileName(event.target.value)}
-                  placeholder="lauf4-mw.xlsx"
-                  disabled={busy}
-                />
-              </label>
+          <ContentSplitLayout
+            main={
+              <article className="surface-card import-step import-step--narrow">
+                <div className="import-select-grid">
+                  <section className="surface-card import-existing-runs">
+                    <div className="surface-card__header">
+                      <h3>{STR.views.standings.importedRunsTitle}</h3>
+                    </div>
+                    <div className="table-wrap">
+                      <table className="ui-table">
+                        <thead>
+                          <tr>
+                            <th>{STR.views.standings.importedRunsRaceCol}</th>
+                            {raceColumns.map((race) => (
+                              <th key={`race-col-${race}`} className="ui-table__cell--center">
+                                {race}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <th>{STR.views.standings.importedRunsRowSingles}</th>
+                            {raceColumns.map((race) => (
+                              <td key={`single-${race}`} className="ui-table__cell--center">
+                                {importedRunState[race]?.singles ? "✅" : "—"}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr>
+                            <th>{STR.views.standings.importedRunsRowCouples}</th>
+                            {raceColumns.map((race) => (
+                              <td key={`doubles-${race}`} className="ui-table__cell--center">
+                                {importedRunState[race]?.doubles ? "✅" : "—"}
+                              </td>
+                            ))}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                  <section className="surface-card import-select-form">
+                    <div className="surface-card__header">
+                      <h2>{STR.views.import.selectFileTitle}</h2>
+                      <p>{STR.views.import.selectFileHint}</p>
+                    </div>
+                    <div className="import-step__form">
+                      <label className="import-controls__label">
+                        <span>{STR.views.import.fileNameLabel}</span>
+                        <div className="import-controls__file-row">
+                          <input
+                            value={fileName}
+                            onChange={(event) => setFileName(event.target.value)}
+                            placeholder="lauf4-mw.xlsx"
+                            disabled={busy}
+                          />
+                          <input
+                            ref={filePickerRef}
+                            type="file"
+                            accept=".xlsx"
+                            className="import-controls__file-input"
+                            onChange={(event) => {
+                              const selectedFile = event.target.files?.[0];
+                              if (selectedFile) {
+                                setFileName(selectedFile.name);
+                              }
+                            }}
+                            disabled={busy}
+                          />
+                          <button
+                            type="button"
+                            className="button"
+                            onClick={() => filePickerRef.current?.click()}
+                            disabled={busy}
+                          >
+                            Datei wählen
+                          </button>
+                        </div>
+                      </label>
 
-              <div className="import-controls__label">
-                <span>{STR.views.import.pickFile}</span>
-                <div className="import-controls__toggle">
-                  <button
-                    type="button"
-                    className={`button button--tab ${category === "singles" ? "is-active" : ""}`}
-                    onClick={() => setCategory("singles")}
-                    disabled={busy}
-                  >
-                    {STR.views.import.singles}
-                  </button>
-                  <button
-                    type="button"
-                    className={`button button--tab ${category === "doubles" ? "is-active" : ""}`}
-                    onClick={() => setCategory("doubles")}
-                    disabled={busy}
-                  >
-                    {STR.views.import.couples}
-                  </button>
+                      <div className="import-controls__label">
+                        <span>{STR.views.import.pickFile}</span>
+                        <div className="import-controls__toggle">
+                          <button
+                            type="button"
+                            className={`button button--tab ${category === "singles" ? "is-active" : ""}`}
+                            onClick={() => setCategory("singles")}
+                            disabled={busy}
+                          >
+                            {STR.views.import.singles}
+                          </button>
+                          <button
+                            type="button"
+                            className={`button button--tab ${category === "doubles" ? "is-active" : ""}`}
+                            onClick={() => setCategory("doubles")}
+                            disabled={busy}
+                          >
+                            {STR.views.import.couples}
+                          </button>
+                        </div>
+                      </div>
+
+                      <label className="import-controls__label">
+                        <span>{STR.views.import.raceNumber}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={raceNumber}
+                          onChange={(event) => setRaceNumber(event.target.value)}
+                          placeholder="4"
+                          disabled={busy}
+                        />
+                      </label>
+                    </div>
+                    <div className="import-step__actions">
+                      <button type="button" className="button button--primary" onClick={startDraft} disabled={!canStartImport || busy}>
+                        {STR.views.import.stepNextToReview}
+                      </button>
+                    </div>
+                  </section>
                 </div>
-              </div>
-
-              <label className="import-controls__label">
-                <span>{STR.views.import.raceNumber}</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={raceNumber}
-                  onChange={(event) => setRaceNumber(event.target.value)}
-                  placeholder="4"
-                  disabled={busy}
-                />
-              </label>
-            </div>
-            <div className="import-step__actions">
-              <button type="button" className="button button--primary" onClick={startDraft} disabled={!canStartImport || busy}>
-                {STR.views.import.stepNextToReview}
-              </button>
-            </div>
-          </article>
+              </article>
+            }
+            side={
+              <SupportPanel>
+                {flowSidebar}
+                <div className="import-support__separator" />
+                <InfoCard title="Hilfe">
+                  <p>Wählen Sie Datei, Wettbewerb und Laufnummer.</p>
+                </InfoCard>
+                <InfoCard title="Datei-Prüfung">
+                  <ul className="support-list">
+                    <li>{fileSelected ? "Datei erkannt ✅" : "Datei fehlt"}</li>
+                    <li>{fileSelected ? "Excel-Datei gültig ✅" : "Dateityp wird nach Start geprüft"}</li>
+                    <li>{raceValid ? `Laufnummer ${parsedRace} gewählt` : "Laufnummer fehlt"}</li>
+                    <li>{raceValid ? (raceOccupied ? "Laufnummer bereits belegt" : "Laufnummer frei ✅") : "Laufnummer noch offen"}</li>
+                  </ul>
+                </InfoCard>
+                <InfoCard title="Nächster Schritt">
+                  <p>Danach prüfen Sie mögliche Zuordnungen.</p>
+                </InfoCard>
+              </SupportPanel>
+            }
+          />
         ) : null}
 
         {step === "review_matches" && draft ? (
-          <article className="surface-card import-step">
-            <div className="surface-card__header">
-              <h2>{STR.views.import.reviewTitle}</h2>
-              <p>{STR.views.import.reviewProgressShort(reviewIndex + 1, totalReviews)}</p>
-            </div>
-            {activeReview ? (
-              <div className="import-review">
-                <div className="import-review__incoming">
-                  <h3>{STR.views.import.incomingHeading}</h3>
-                  <p className="import-review__incoming-name">{activeReview.incoming.displayName}</p>
-                  <dl>
-                    <div>
-                      <dt>{STR.views.import.reviewYob}</dt>
-                      <dd>{activeReview.incoming.yob}</dd>
-                    </div>
-                    <div>
-                      <dt>{STR.views.import.reviewClub}</dt>
-                      <dd>{activeReview.incoming.club || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt>Startnr.</dt>
-                      <dd>{activeReview.incoming.startNumber}</dd>
-                    </div>
-                    <div>
-                      <dt>Wertung</dt>
-                      <dd>{activeReview.incoming.resultLabel}</dd>
-                    </div>
-                  </dl>
+          <ContentSplitLayout
+            fillHeight
+            stickySide
+            main={
+              <article className="surface-card import-step import-step--fill">
+                <div className="surface-card__header">
+                  <h2>{STR.views.import.reviewTitle}</h2>
+                  <div className="import-review__header-actions">
+                    <button
+                      type="button"
+                      className="button button--ghost"
+                      onClick={() => setReviewIndex((current) => Math.max(0, current - 1))}
+                      disabled={reviewIndex === 0 || busy}
+                    >
+                      ⬅️ {STR.views.import.reviewBackEntry}
+                    </button>
+                    <button
+                      type="button"
+                      className={`button import-review__next-button ${reviewIndex >= totalReviews - 1 ? "button--primary" : "button--ghost"}`}
+                      onClick={() => {
+                        if (reviewIndex >= totalReviews - 1) {
+                          setStep("summary");
+                          return;
+                        }
+                        setReviewIndex((current) => Math.min(totalReviews - 1, current + 1));
+                      }}
+                      disabled={busy || totalReviews === 0}
+                    >
+                      {reviewIndex >= totalReviews - 1 ? "Zusammenfassung ➡️" : `${STR.views.import.reviewNextEntry} ➡️`}
+                    </button>
+                    <button
+                      type="button"
+                      className="button"
+                      disabled={!currentDecision?.candidateId || busy}
+                      onClick={() =>
+                        currentDecision?.candidateId
+                          ? applyReviewDecision("merge_with_typo_fix", currentDecision.candidateId)
+                          : undefined
+                      }
+                    >
+                      ✍️ Daten korrigieren
+                    </button>
+                    <button type="button" className="button button--ghost" onClick={() => setStep("select_file")} disabled={busy}>
+                      ↩️ {STR.views.import.stepBackToSelection}
+                    </button>
+                  </div>
                 </div>
+                {activeReview ? (
+                  <div className="import-review import-review--cards-scroll">
+                    <div className="import-review__incoming">
+                      <h3>{STR.views.import.incomingHeading}</h3>
+                      <p className="import-review__incoming-name">{activeReview.incoming.displayName}</p>
+                      <dl>
+                        <div>
+                          <dt>{STR.views.import.reviewYob}</dt>
+                          <dd>{activeReview.incoming.yob}</dd>
+                        </div>
+                        <div>
+                          <dt>{STR.views.import.reviewClub}</dt>
+                          <dd>{activeReview.incoming.club || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>Startnr.</dt>
+                          <dd>{activeReview.incoming.startNumber}</dd>
+                        </div>
+                        <div>
+                          <dt>Wertung</dt>
+                          <dd>{activeReview.incoming.resultLabel}</dd>
+                        </div>
+                      </dl>
+                    </div>
 
-                <div className="import-review__cards">
-                  {activeReview.candidates.map((candidate) => {
-                    const isSelected = currentDecision?.candidateId === candidate.candidateId;
-                    return (
+                    <div className="import-review__cards">
                       <button
-                        key={candidate.candidateId}
                         type="button"
-                        className={`import-candidate ${isSelected ? "is-selected" : ""}`}
-                        onClick={() => applyReviewDecision("merge", candidate.candidateId)}
+                        className={`import-candidate import-candidate--new ${currentDecision?.action === "create_new" ? "is-selected" : ""}`}
+                        onClick={() => applyReviewDecision("create_new", null)}
                         disabled={busy}
                       >
                         <div className="import-candidate__head">
-                          <strong>{candidate.displayName}</strong>
-                          {candidate.isRecommended ? <span className="import-candidate__badge">{STR.views.import.reviewRecommended}</span> : null}
+                          <strong>
+                            {currentDecision?.action === "create_new"
+                              ? `${STR.views.import.reviewCreateNewTitle} - ausgewählt`
+                              : STR.views.import.reviewCreateNewTitle}
+                          </strong>
                         </div>
-                        <small>{Math.round(candidate.confidence * 100)} % Treffer</small>
-                        <div className="import-candidate__comparison">
-                          {candidate.fieldComparisons.map((comparison) => (
-                            <div key={comparison.fieldKey} className="import-candidate__row">
-                              <strong>{comparison.label}</strong>
-                              {comparison.isMatch ? (
-                                <span>✅ gleich</span>
-                              ) : (
-                                <span>
-                                  ❌ abweichend
-                                  <br />
-                                  Neuer Eintrag: {comparison.incomingValue}
-                                  <br />
-                                  Bestand: {comparison.candidateValue}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                        <small>{STR.views.import.reviewCreateNewDescription}</small>
                       </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    className={`import-candidate import-candidate--new ${currentDecision?.action === "create_new" ? "is-selected" : ""}`}
-                    onClick={() => applyReviewDecision("create_new", null)}
-                    disabled={busy}
-                  >
-                    <div className="import-candidate__head">
-                      <strong>{STR.views.import.reviewCreateNewTitle}</strong>
+                      {visibleCandidates.map((candidate) => {
+                        const isSelected = currentDecision?.candidateId === candidate.candidateId;
+                        return (
+                          <ImportCandidateCard
+                            key={candidate.candidateId}
+                            candidate={candidate}
+                            incoming={activeReview.incoming}
+                            isSelected={isSelected}
+                            isDoubles={isDoublesReview}
+                            disabled={busy}
+                            onSelect={() => applyReviewDecision("merge", candidate.candidateId)}
+                            recommendedLabel={STR.views.import.reviewRecommended}
+                          />
+                        );
+                      })}
+                      {visibleCandidates.length === 0 ? (
+                        <div className="import-review__empty-candidates">
+                          Für den aktuellen Modus gibt es keine sichtbaren Kandidaten. Prüfen Sie die Matching-Optionen.
+                        </div>
+                      ) : null}
                     </div>
-                    <small>{STR.views.import.reviewCreateNewDescription}</small>
-                  </button>
-                </div>
 
-                <div className="import-review__actions">
-                  <button
-                    type="button"
-                    className="button button--ghost"
-                    onClick={() => setReviewIndex((current) => Math.max(0, current - 1))}
-                    disabled={reviewIndex === 0 || busy}
-                  >
-                    {STR.views.import.reviewBackEntry}
-                  </button>
-                  <button
-                    type="button"
-                    className="button button--ghost"
-                    onClick={() => setReviewIndex((current) => Math.min(totalReviews - 1, current + 1))}
-                    disabled={reviewIndex >= totalReviews - 1 || busy}
-                  >
-                    {STR.views.import.reviewNextEntry}
-                  </button>
-                  <button
-                    type="button"
-                    className="button"
-                    disabled={!currentDecision?.candidateId || busy}
-                    onClick={() =>
-                      currentDecision?.candidateId
-                        ? applyReviewDecision("merge_with_typo_fix", currentDecision.candidateId)
-                        : undefined
-                    }
-                  >
-                    {STR.views.import.reviewTypoFix}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <p>{STR.views.import.noOpenReviews}</p>
-            )}
-            <div className="import-step__actions">
-              <button type="button" className="button button--ghost" onClick={() => setStep("select_file")} disabled={busy}>
-                {STR.views.import.stepBackToSelection}
-              </button>
-              <button type="button" className="button button--primary" onClick={() => setStep("summary")} disabled={busy}>
-                {STR.views.import.flowStepSummary}
-              </button>
-            </div>
-          </article>
+                  </div>
+                ) : (
+                  <p>{STR.views.import.noOpenReviews}</p>
+                )}
+              </article>
+            }
+            side={
+              <SupportPanel>
+                {flowSidebar}
+                <div className="import-support__separator" />
+                <InfoCard title="Fortschritt">
+                  <p>{STR.views.import.reviewProgressShort(reviewIndex + 1, totalReviews)}</p>
+                  <p>{resolvedReviews} erledigt</p>
+                  <p>{openReviews} offen</p>
+                </InfoCard>
+                <InfoCard title="Matching-Optionen">
+                  <div className="matching-options">
+                    <div className="matching-options__modes" role="tablist" aria-label="Matching-Modus">
+                      <button
+                        type="button"
+                        className={`button button--tab ${matchingMode === "strict" ? "is-active" : ""}`}
+                        onClick={() => setMatchingMode("strict")}
+                        disabled={busy}
+                      >
+                        Strikt
+                      </button>
+                      <button
+                        type="button"
+                        className={`button button--tab ${matchingMode === "fuzzy_automatik" ? "is-active" : ""}`}
+                        onClick={() => setMatchingMode("fuzzy_automatik")}
+                        disabled={busy}
+                      >
+                        Fuzzy
+                      </button>
+                      <button
+                        type="button"
+                        className={`button button--tab ${matchingMode === "manuell" ? "is-active" : ""}`}
+                        onClick={() => setMatchingMode("manuell")}
+                        disabled={busy}
+                      >
+                        Manuell
+                      </button>
+                    </div>
+                    <div className="matching-options__summary">
+                      <span>
+                        Effektive Auto-Schwelle: <strong>{thresholdLabel(effectiveAutoThreshold)}</strong>
+                      </span>
+                    </div>
+                    <label className="matching-options__slider">
+                      <span>Auto-Schwelle ({thresholdLabel(activeMatchingSettings.autoThreshold)})</span>
+                      <input
+                        type="range"
+                        min={MATCHING_THRESHOLD_MIN}
+                        max={MATCHING_THRESHOLD_MAX}
+                        step={MATCHING_THRESHOLD_STEP}
+                        value={activeMatchingSettings.autoThreshold}
+                        disabled={busy || matchingMode !== "fuzzy_automatik"}
+                        onChange={(event) => {
+                          const nextValue = clampThreshold(Number(event.target.value));
+                          setMatchingModeSettings((current) => ({
+                            ...current,
+                            [matchingMode]: {
+                              ...current[matchingMode],
+                              autoThreshold: nextValue,
+                            },
+                          }));
+                        }}
+                      />
+                    </label>
+                    <label className="matching-options__slider">
+                      <span>Prüf-Schwelle ({thresholdLabel(activeMatchingSettings.reviewThreshold)})</span>
+                      <input
+                        type="range"
+                        min={MATCHING_THRESHOLD_MIN}
+                        max={MATCHING_THRESHOLD_MAX}
+                        step={MATCHING_THRESHOLD_STEP}
+                        value={activeMatchingSettings.reviewThreshold}
+                        disabled={busy}
+                        onChange={(event) => {
+                          const nextValue = clampThreshold(Number(event.target.value));
+                          setMatchingModeSettings((current) => ({
+                            ...current,
+                            [matchingMode]: {
+                              ...current[matchingMode],
+                              reviewThreshold: nextValue,
+                            },
+                          }));
+                        }}
+                      />
+                    </label>
+                    <p className="matching-options__hint">
+                      {matchingMode === "strict"
+                        ? "Strikt zeigt nur exakte Treffer."
+                        : matchingMode === "manuell"
+                          ? "Manuell zeigt alle Kandidaten ohne Auto-Zuordnung."
+                          : modeMayAutoMerge
+                            ? "Fuzzy-Automatik: oberster Treffer liegt in der Auto-Zone."
+                            : "Fuzzy-Automatik: oberster Treffer bleibt in der Prüfliste."}
+                    </p>
+                    <p className="matching-options__hint">
+                      Sichtbare Kandidaten: {visibleCandidates.length} von {orderedCandidates.length}
+                    </p>
+                  </div>
+                </InfoCard>
+                <InfoCard title="Hinweise">
+                  <ul className="support-list">
+                    <li>Prüfen Sie Jahrgang bei Unsicherheit.</li>
+                    <li>Verein kann sich geändert haben.</li>
+                    <li>Der nächste offene Fall wird danach geladen.</li>
+                  </ul>
+                </InfoCard>
+              </SupportPanel>
+            }
+          />
         ) : null}
 
         {step === "summary" && visibleSummary ? (
-          <article className="surface-card import-step">
-            <div className="surface-card__header">
-              <h2>{STR.views.import.summaryTitle}</h2>
-              <p>{STR.views.import.summaryHint}</p>
-            </div>
-            <div className="import-summary-grid">
-              <div className="summary-card">
-                <span>{STR.views.import.summaryImportedEntries}</span>
-                <strong>{visibleSummary.importedEntries}</strong>
-              </div>
-              <div className="summary-card">
-                <span>{STR.views.import.summaryMergedEntries}</span>
-                <strong>{visibleSummary.mergedEntries}</strong>
-              </div>
-              <div className="summary-card">
-                <span>{STR.views.import.summaryNewPersons}</span>
-                <strong>{visibleSummary.newPersonsCreated}</strong>
-              </div>
-              <div className="summary-card">
-                <span>{STR.views.import.summaryTypoFixes}</span>
-                <strong>{visibleSummary.typoCorrections}</strong>
-              </div>
-            </div>
-            <section className="surface-card__section">
-              <h3>{STR.views.import.summaryWarnings}</h3>
-              {visibleSummary.warnings.length === 0 ? (
-                <p>{STR.views.import.summaryNoWarnings}</p>
-              ) : (
-                <ul>
-                  {visibleSummary.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              )}
-            </section>
-            <div className="import-step__actions">
-              <button type="button" className="button button--ghost" onClick={() => setStep("review_matches")} disabled={busy}>
-                {STR.views.import.stepBackToReview}
-              </button>
-              <button type="button" className="button button--primary" onClick={finalizeImport} disabled={busy}>
-                {STR.views.import.finalizeImport}
-              </button>
-            </div>
-          </article>
+          <ContentSplitLayout
+            main={
+              <article className="surface-card import-step">
+                <div className="surface-card__header">
+                  <h2>{STR.views.import.summaryTitle}</h2>
+                  <p>{STR.views.import.summaryHint}</p>
+                </div>
+                <div className="import-summary-grid">
+                  <div className="summary-card">
+                    <span>{STR.views.import.summaryImportedEntries}</span>
+                    <strong>{visibleSummary.importedEntries}</strong>
+                  </div>
+                  <div className="summary-card">
+                    <span>{STR.views.import.summaryMergedEntries}</span>
+                    <strong>{visibleSummary.mergedEntries}</strong>
+                  </div>
+                  <div className="summary-card">
+                    <span>{STR.views.import.summaryNewPersons}</span>
+                    <strong>{visibleSummary.newPersonsCreated}</strong>
+                  </div>
+                  <div className="summary-card">
+                    <span>{STR.views.import.summaryTypoFixes}</span>
+                    <strong>{visibleSummary.typoCorrections}</strong>
+                  </div>
+                </div>
+                <section className="surface-card__section">
+                  <h3>{STR.views.import.summaryWarnings}</h3>
+                  {visibleSummary.warnings.length === 0 ? (
+                    <p>{STR.views.import.summaryNoWarnings}</p>
+                  ) : (
+                    <ul>
+                      {visibleSummary.warnings.map((warning) => (
+                        <li key={warning}>{warning}</li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+                <div className="import-step__actions">
+                  <button type="button" className="button button--ghost" onClick={() => setStep("review_matches")} disabled={busy}>
+                    {STR.views.import.stepBackToReview}
+                  </button>
+                  <button type="button" className="button button--primary" onClick={finalizeImport} disabled={busy}>
+                    {STR.views.import.finalizeImport}
+                  </button>
+                </div>
+              </article>
+            }
+            side={
+              <SupportPanel>
+                {flowSidebar}
+                <div className="import-support__separator" />
+                <InfoCard title="Ergebnis">
+                  <p>Nach dem Abschluss wird die Saisonwertung aktualisiert.</p>
+                </InfoCard>
+                <InfoCard title="Hinweis">
+                  <p>Alle Änderungen erscheinen in der Historie.</p>
+                </InfoCard>
+              </SupportPanel>
+            }
+          />
         ) : null}
       </section>
     </div>
