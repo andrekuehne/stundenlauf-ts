@@ -13,6 +13,10 @@ export const TS_APP_API_METHOD_MAP = {
   runSeasonCommand: ["exportSeason()", "importSeason()"],
   getStandings: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "computeStandings()"],
   runExportAction: ["exportLaufuebersichtDualPdfs()", "exportGesamtwertungWorkbook()"],
+  getHistory: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "legacy timeline synthesis adapter"],
+  previewHistoryState: ["SeasonRepository.getEventLog(seasonId)", "projectState(seasonId, eventsPrefix)"],
+  rollbackHistory: ["appendEvents()", "race.rolled_back", "import_batch.rolled_back"],
+  hardResetHistoryToSeq: ["SeasonRepository.getEventLog(seasonId)", "writeEventLog(seasonId, eventsPrefix)"],
 } as const;
 
 export function createTsAppApi(): AppApi {

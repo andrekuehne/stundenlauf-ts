@@ -148,6 +148,72 @@ export interface ImportDraftState {
   summary: ImportDraftSummary;
 }
 
+export type HistoryScope = "race" | "batch" | "season";
+export type HistoryRollbackMode = "atomic" | "grouped";
+
+export interface HistoryQuery {
+  raceEventId?: string;
+  includeNonRace?: boolean;
+}
+
+export interface HistoryActionability {
+  canPreviewRollbackAtomic: boolean;
+  canPreviewRollbackGroup: boolean;
+  canHardResetToHere: boolean;
+}
+
+export interface HistoryRow {
+  seq: number;
+  recordedAt: string;
+  eventId: string;
+  type: string;
+  summary: string;
+  scope: HistoryScope;
+  raceEventId: string | null;
+  importBatchId: string | null;
+  groupKey: string | null;
+  isEffectiveChange: boolean;
+  actionability: HistoryActionability;
+}
+
+export interface HistoryRaceContext {
+  raceEventId: string;
+  raceLabel: string;
+  categoryLabel: string;
+  raceDateLabel: string;
+}
+
+export interface HistoryData {
+  seasonId: string;
+  seasonLabel: string;
+  raceContext: HistoryRaceContext | null;
+  rows: HistoryRow[];
+}
+
+export interface HistoryPreviewState {
+  anchorSeq: number;
+  isFrozen: boolean;
+  derivedStateLabel: string;
+  blockedReason: string;
+}
+
+export interface HistoryPreviewInput {
+  anchorSeq: number;
+}
+
+export interface HistoryRollbackInput {
+  mode: HistoryRollbackMode;
+  anchorSeq: number;
+  raceEventId?: string;
+  importBatchId?: string;
+  reason: string;
+}
+
+export interface HistoryHardResetInput {
+  anchorSeq: number;
+  reason: string;
+}
+
 export interface AppApi {
   getShellData(): Promise<ShellData>;
   listSeasons(): Promise<SeasonListItem[]>;
@@ -161,4 +227,8 @@ export interface AppApi {
   getImportDraft(draftId: string): Promise<ImportDraftState>;
   setImportReviewDecision(draftId: string, decision: ImportReviewDecision): Promise<ImportDraftState>;
   finalizeImportDraft(draftId: string): Promise<AppCommandResult>;
+  getHistory(seasonId: string, query?: HistoryQuery): Promise<HistoryData>;
+  previewHistoryState(seasonId: string, input: HistoryPreviewInput): Promise<HistoryPreviewState>;
+  rollbackHistory(seasonId: string, input: HistoryRollbackInput): Promise<AppCommandResult>;
+  hardResetHistoryToSeq(seasonId: string, input: HistoryHardResetInput): Promise<AppCommandResult>;
 }

@@ -2,6 +2,13 @@ import type {
   AppApi,
   AppCommandResult,
   CreateSeasonInput,
+  HistoryData,
+  HistoryHardResetInput,
+  HistoryPreviewInput,
+  HistoryPreviewState,
+  HistoryQuery,
+  HistoryRollbackInput,
+  HistoryRow,
   ImportCategory,
   ImportDraftInput,
   ImportDraftState,
@@ -17,6 +24,16 @@ type MockSeasonRecord = SeasonListItem & {
 };
 
 type ImportDraftRecord = ImportDraftState;
+
+type HistoryRecord = {
+  seasonId: string;
+  seasonLabel: string;
+  raceEventId: string;
+  raceLabel: string;
+  categoryLabel: string;
+  raceDateLabel: string;
+  rows: HistoryRow[];
+};
 
 function isoDate(value: string): string {
   return new Date(value).toISOString();
@@ -392,6 +409,170 @@ function cloneImportDraft(record: ImportDraftRecord): ImportDraftState {
   };
 }
 
+function createHistoryRows(): HistoryRow[] {
+  return [
+    {
+      seq: 101,
+      recordedAt: isoDate("2026-04-01T19:03:00"),
+      eventId: "evt-101",
+      type: "import_batch.recorded",
+      summary: "Importlauf 3 (Datei lauf3-mw.xlsx) angelegt.",
+      scope: "batch",
+      raceEventId: "race-2026-3-hour-men",
+      importBatchId: "batch-2026-04-01-lauf3",
+      groupKey: "batch-2026-04-01-lauf3",
+      isEffectiveChange: true,
+      actionability: {
+        canPreviewRollbackAtomic: false,
+        canPreviewRollbackGroup: true,
+        canHardResetToHere: true,
+      },
+    },
+    {
+      seq: 102,
+      recordedAt: isoDate("2026-04-01T19:03:08"),
+      eventId: "evt-102",
+      type: "race.registered",
+      summary: "Lauf 3 (60 Minuten Herren) importiert.",
+      scope: "race",
+      raceEventId: "race-2026-3-hour-men",
+      importBatchId: "batch-2026-04-01-lauf3",
+      groupKey: "batch-2026-04-01-lauf3",
+      isEffectiveChange: true,
+      actionability: {
+        canPreviewRollbackAtomic: true,
+        canPreviewRollbackGroup: true,
+        canHardResetToHere: true,
+      },
+    },
+    {
+      seq: 103,
+      recordedAt: isoDate("2026-04-02T09:20:51"),
+      eventId: "evt-103",
+      type: "entry.corrected",
+      summary: "Distanzkorrektur bei Startnr. 12 (+0,084 km).",
+      scope: "race",
+      raceEventId: "race-2026-3-hour-men",
+      importBatchId: "batch-2026-04-01-lauf3",
+      groupKey: "batch-2026-04-01-lauf3",
+      isEffectiveChange: true,
+      actionability: {
+        canPreviewRollbackAtomic: true,
+        canPreviewRollbackGroup: true,
+        canHardResetToHere: true,
+      },
+    },
+    {
+      seq: 104,
+      recordedAt: isoDate("2026-04-02T09:31:15"),
+      eventId: "evt-104",
+      type: "entry.reassigned",
+      summary: "Startnr. 28 auf bestehendes Team umgebucht.",
+      scope: "race",
+      raceEventId: "race-2026-3-hour-men",
+      importBatchId: "batch-2026-04-01-lauf3",
+      groupKey: "batch-2026-04-01-lauf3",
+      isEffectiveChange: true,
+      actionability: {
+        canPreviewRollbackAtomic: true,
+        canPreviewRollbackGroup: true,
+        canHardResetToHere: true,
+      },
+    },
+    {
+      seq: 105,
+      recordedAt: isoDate("2026-04-05T10:17:03"),
+      eventId: "evt-105",
+      type: "race.metadata_corrected",
+      summary: "Laufdatum auf 01.04.2026 korrigiert.",
+      scope: "race",
+      raceEventId: "race-2026-3-hour-men",
+      importBatchId: "batch-2026-04-01-lauf3",
+      groupKey: "batch-2026-04-01-lauf3",
+      isEffectiveChange: true,
+      actionability: {
+        canPreviewRollbackAtomic: true,
+        canPreviewRollbackGroup: true,
+        canHardResetToHere: true,
+      },
+    },
+    {
+      seq: 106,
+      recordedAt: isoDate("2026-04-07T12:02:10"),
+      eventId: "evt-106",
+      type: "race.rolled_back",
+      summary: "Rollback für Lauf 3 aus Historie ausgelöst.",
+      scope: "race",
+      raceEventId: "race-2026-3-hour-men",
+      importBatchId: "batch-2026-04-01-lauf3",
+      groupKey: "batch-2026-04-01-lauf3",
+      isEffectiveChange: false,
+      actionability: {
+        canPreviewRollbackAtomic: false,
+        canPreviewRollbackGroup: false,
+        canHardResetToHere: true,
+      },
+    },
+    {
+      seq: 107,
+      recordedAt: isoDate("2026-04-07T12:02:11"),
+      eventId: "evt-107",
+      type: "import_batch.rolled_back",
+      summary: "Importbatch lauf3-mw.xlsx wurde zurückgerollt.",
+      scope: "batch",
+      raceEventId: "race-2026-3-hour-men",
+      importBatchId: "batch-2026-04-01-lauf3",
+      groupKey: "batch-2026-04-01-lauf3",
+      isEffectiveChange: false,
+      actionability: {
+        canPreviewRollbackAtomic: false,
+        canPreviewRollbackGroup: false,
+        canHardResetToHere: true,
+      },
+    },
+  ];
+}
+
+function createInitialHistoryBySeason(): Map<string, HistoryRecord> {
+  const season2026Rows = createHistoryRows();
+  return new Map<string, HistoryRecord>([
+    [
+      "season-2026",
+      {
+        seasonId: "season-2026",
+        seasonLabel: "Stundenlauf 2026",
+        raceEventId: "race-2026-3-hour-men",
+        raceLabel: "Lauf 3",
+        categoryLabel: "60 Minuten Herren",
+        raceDateLabel: "01.04.2026",
+        rows: season2026Rows,
+      },
+    ],
+  ]);
+}
+
+function cloneHistoryData(record: HistoryRecord, query?: HistoryQuery): HistoryData {
+  const raceEventId = query?.raceEventId ?? record.raceEventId;
+  const includeNonRace = Boolean(query?.includeNonRace);
+  const rows = record.rows
+    .filter((row) => includeNonRace || row.raceEventId === raceEventId)
+    .map((row) => ({
+      ...row,
+      actionability: { ...row.actionability },
+    }));
+  return {
+    seasonId: record.seasonId,
+    seasonLabel: record.seasonLabel,
+    raceContext: {
+      raceEventId: record.raceEventId,
+      raceLabel: record.raceLabel,
+      categoryLabel: record.categoryLabel,
+      raceDateLabel: record.raceDateLabel,
+    },
+    rows,
+  };
+}
+
 function upsertImportedRun(record: MockSeasonRecord, fileName: string, category: ImportCategory, raceNumber: number) {
   const raceLabel = `Lauf ${raceNumber}`;
   const existing = record.standings.importedRuns.find((entry) => entry.raceLabel === raceLabel);
@@ -428,6 +609,7 @@ class MockAppApi implements AppApi {
 
   private unresolvedReviews = 2;
   private importDrafts = new Map<string, ImportDraftRecord>();
+  private historyBySeason = createInitialHistoryBySeason();
 
   getShellData() {
     const active = this.seasons.find((season) => season.isActive) ?? null;
@@ -653,6 +835,133 @@ class MockAppApi implements AppApi {
     return Promise.resolve({
       severity: "success",
       message: `Import erfolgreich abgeschlossen: ${draft.fileName} (${draft.summary.importedEntries} Einträge).`,
+    } satisfies AppCommandResult);
+  }
+
+  getHistory(seasonId: string, query?: HistoryQuery) {
+    const record = this.historyBySeason.get(seasonId);
+    if (!record) {
+      const season = this.seasons.find((entry) => entry.seasonId === seasonId);
+      if (!season) {
+        throw new Error("Die ausgewaehlte Saison wurde nicht gefunden.");
+      }
+      return Promise.resolve({
+        seasonId,
+        seasonLabel: season.label,
+        raceContext: null,
+        rows: [],
+      } satisfies HistoryData);
+    }
+    return Promise.resolve(cloneHistoryData(record, query));
+  }
+
+  previewHistoryState(seasonId: string, input: HistoryPreviewInput) {
+    const record = this.historyBySeason.get(seasonId);
+    if (!record) {
+      throw new Error("Für diese Saison liegt keine Historie vor.");
+    }
+    const anchor = record.rows.find((row) => row.seq === input.anchorSeq);
+    if (!anchor) {
+      throw new Error("Der ausgewaehlte Verlaufspunkt ist nicht mehr vorhanden.");
+    }
+    return Promise.resolve({
+      anchorSeq: anchor.seq,
+      isFrozen: true,
+      derivedStateLabel: `Historischer Stand bis seq ${anchor.seq}`,
+      blockedReason: "Vorschau aktiv: weitere Aenderungen sind voruebergehend gesperrt.",
+    } satisfies HistoryPreviewState);
+  }
+
+  rollbackHistory(seasonId: string, input: HistoryRollbackInput) {
+    const record = this.historyBySeason.get(seasonId);
+    if (!record) {
+      throw new Error("Für diese Saison liegt keine Historie vor.");
+    }
+    const anchor = record.rows.find((row) => row.seq === input.anchorSeq);
+    if (!anchor) {
+      throw new Error("Der ausgewaehlte Verlaufspunkt wurde nicht gefunden.");
+    }
+
+    const latestSeq = record.rows.reduce((max, row) => Math.max(max, row.seq), 0);
+    const stamp = new Date().toISOString();
+    if (input.mode === "atomic") {
+      record.rows.push({
+        seq: latestSeq + 1,
+        recordedAt: stamp,
+        eventId: `evt-${latestSeq + 1}`,
+        type: "race.rolled_back",
+        summary: `Atomic rollback ab seq ${anchor.seq} ausgeführt (${input.reason}).`,
+        scope: "race",
+        raceEventId: input.raceEventId ?? anchor.raceEventId,
+        importBatchId: anchor.importBatchId,
+        groupKey: anchor.groupKey,
+        isEffectiveChange: false,
+        actionability: {
+          canPreviewRollbackAtomic: false,
+          canPreviewRollbackGroup: false,
+          canHardResetToHere: true,
+        },
+      });
+      return Promise.resolve({
+        severity: "success",
+        message: `Rollback für Laufkontext ab seq ${anchor.seq} wurde markiert.`,
+      } satisfies AppCommandResult);
+    }
+
+    record.rows.push({
+      seq: latestSeq + 1,
+      recordedAt: stamp,
+      eventId: `evt-${latestSeq + 1}`,
+      type: "race.rolled_back",
+      summary: `Gruppierter rollback (Importbatch ${input.importBatchId ?? anchor.importBatchId ?? "unbekannt"}) ausgeführt.`,
+      scope: "race",
+      raceEventId: input.raceEventId ?? anchor.raceEventId,
+      importBatchId: input.importBatchId ?? anchor.importBatchId,
+      groupKey: input.importBatchId ?? anchor.groupKey,
+      isEffectiveChange: false,
+      actionability: {
+        canPreviewRollbackAtomic: false,
+        canPreviewRollbackGroup: false,
+        canHardResetToHere: true,
+      },
+    });
+    record.rows.push({
+      seq: latestSeq + 2,
+      recordedAt: stamp,
+      eventId: `evt-${latestSeq + 2}`,
+      type: "import_batch.rolled_back",
+      summary: `Importbatch-Rollback protokolliert (${input.reason}).`,
+      scope: "batch",
+      raceEventId: input.raceEventId ?? anchor.raceEventId,
+      importBatchId: input.importBatchId ?? anchor.importBatchId,
+      groupKey: input.importBatchId ?? anchor.groupKey,
+      isEffectiveChange: false,
+      actionability: {
+        canPreviewRollbackAtomic: false,
+        canPreviewRollbackGroup: false,
+        canHardResetToHere: true,
+      },
+    });
+
+    return Promise.resolve({
+      severity: "success",
+      message: `Gruppen-Rollback für Importbatch ab seq ${anchor.seq} wurde markiert.`,
+    } satisfies AppCommandResult);
+  }
+
+  hardResetHistoryToSeq(seasonId: string, input: HistoryHardResetInput) {
+    const record = this.historyBySeason.get(seasonId);
+    if (!record) {
+      throw new Error("Für diese Saison liegt keine Historie vor.");
+    }
+    const anchorIdx = record.rows.findIndex((row) => row.seq === input.anchorSeq);
+    if (anchorIdx === -1) {
+      throw new Error("Der ausgewaehlte Verlaufspunkt wurde nicht gefunden.");
+    }
+    record.rows = record.rows.slice(0, anchorIdx + 1);
+    return Promise.resolve({
+      severity: "warn",
+      message: `Hard reset bis seq ${input.anchorSeq} ausgeführt. Nachfolgende Events wurden verworfen.`,
     } satisfies AppCommandResult);
   }
 }

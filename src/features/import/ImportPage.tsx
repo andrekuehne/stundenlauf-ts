@@ -137,10 +137,6 @@ export function ImportPage() {
       return b.confidence - a.confidence;
     });
   }, [activeReview]);
-  const selectedCandidate =
-    currentDecision?.candidateId && activeReview
-      ? orderedCandidates.find((candidate) => candidate.candidateId === currentDecision.candidateId) ?? null
-      : null;
   const activeMatchingSettings = matchingModeSettings[matchingMode];
   const effectiveAutoThreshold = matchingMode === "fuzzy_automatik" ? activeMatchingSettings.autoThreshold : 1.01;
   const visibleCandidates = useMemo(() => {
@@ -161,7 +157,7 @@ export function ImportPage() {
   const modeMayAutoMerge =
     matchingMode === "fuzzy_automatik" &&
     visibleCandidates.length > 0 &&
-    visibleCandidates[0]!.confidence >= effectiveAutoThreshold;
+    (visibleCandidates[0]?.confidence ?? 0) >= effectiveAutoThreshold;
   const fileSelected = fileName.trim().length > 0;
   const parsedRace = Number.parseInt(raceNumber, 10);
   const raceValid = Number.isFinite(parsedRace) && parsedRace > 0;
@@ -364,7 +360,9 @@ export function ImportPage() {
                         <div className="import-controls__file-row">
                           <input
                             value={fileName}
-                            onChange={(event) => setFileName(event.target.value)}
+                            onChange={(event) => {
+                              setFileName(event.target.value);
+                            }}
                             placeholder={STR.views.import.filePlaceholder}
                             disabled={busy}
                           />
@@ -384,7 +382,9 @@ export function ImportPage() {
                           <button
                             type="button"
                             className="button"
-                            onClick={() => filePickerRef.current?.click()}
+                            onClick={() => {
+                              filePickerRef.current?.click();
+                            }}
                             disabled={busy}
                           >
                             {STR.views.import.filePickButton}
@@ -398,7 +398,9 @@ export function ImportPage() {
                           <button
                             type="button"
                             className={`button button--tab ${category === "singles" ? "is-active" : ""}`}
-                            onClick={() => setCategory("singles")}
+                            onClick={() => {
+                              setCategory("singles");
+                            }}
                             disabled={busy}
                           >
                             {STR.views.import.singles}
@@ -406,7 +408,9 @@ export function ImportPage() {
                           <button
                             type="button"
                             className={`button button--tab ${category === "doubles" ? "is-active" : ""}`}
-                            onClick={() => setCategory("doubles")}
+                            onClick={() => {
+                              setCategory("doubles");
+                            }}
                             disabled={busy}
                           >
                             {STR.views.import.couples}
@@ -420,14 +424,23 @@ export function ImportPage() {
                           type="number"
                           min={1}
                           value={raceNumber}
-                          onChange={(event) => setRaceNumber(event.target.value)}
+                          onChange={(event) => {
+                            setRaceNumber(event.target.value);
+                          }}
                           placeholder={STR.views.import.racePlaceholder}
                           disabled={busy}
                         />
                       </label>
                     </div>
                     <div className="import-step__actions">
-                      <button type="button" className="button button--primary" onClick={startDraft} disabled={!canStartImport || busy}>
+                      <button
+                        type="button"
+                        className="button button--primary"
+                        onClick={() => {
+                          void startDraft();
+                        }}
+                        disabled={!canStartImport || busy}
+                      >
                         {STR.views.import.stepNextToReview}
                       </button>
                     </div>
@@ -470,7 +483,9 @@ export function ImportPage() {
                     <button
                       type="button"
                       className="button button--ghost"
-                      onClick={() => setReviewIndex((current) => Math.max(0, current - 1))}
+                      onClick={() => {
+                        setReviewIndex((current) => Math.max(0, current - 1));
+                      }}
                       disabled={reviewIndex === 0 || busy}
                     >
                       ⬅️ {STR.views.import.reviewBackEntry}
@@ -493,15 +508,22 @@ export function ImportPage() {
                       type="button"
                       className="button"
                       disabled={!currentDecision?.candidateId || busy}
-                      onClick={() =>
-                        currentDecision?.candidateId
-                          ? applyReviewDecision("merge_with_typo_fix", currentDecision.candidateId)
-                          : undefined
-                      }
+                      onClick={() => {
+                        if (currentDecision?.candidateId) {
+                          void applyReviewDecision("merge_with_typo_fix", currentDecision.candidateId);
+                        }
+                      }}
                     >
                       {STR.views.import.fixData}
                     </button>
-                    <button type="button" className="button button--ghost" onClick={() => setStep("select_file")} disabled={busy}>
+                    <button
+                      type="button"
+                      className="button button--ghost"
+                      onClick={() => {
+                        setStep("select_file");
+                      }}
+                      disabled={busy}
+                    >
                       ↩️ {STR.views.import.stepBackToSelection}
                     </button>
                   </div>
@@ -535,7 +557,9 @@ export function ImportPage() {
                       <button
                         type="button"
                         className={`import-candidate import-candidate--new ${currentDecision?.action === "create_new" ? "is-selected" : ""}`}
-                        onClick={() => applyReviewDecision("create_new", null)}
+                        onClick={() => {
+                          void applyReviewDecision("create_new", null);
+                        }}
                         disabled={busy}
                       >
                         <div className="import-candidate__head">
@@ -557,7 +581,9 @@ export function ImportPage() {
                             isSelected={isSelected}
                             isDoubles={isDoublesReview}
                             disabled={busy}
-                            onSelect={() => applyReviewDecision("merge", candidate.candidateId)}
+                            onSelect={() => {
+                              void applyReviewDecision("merge", candidate.candidateId);
+                            }}
                             recommendedLabel={STR.views.import.reviewRecommended}
                           />
                         );
@@ -590,7 +616,9 @@ export function ImportPage() {
                       <button
                         type="button"
                         className={`button button--tab ${matchingMode === "strict" ? "is-active" : ""}`}
-                        onClick={() => setMatchingMode("strict")}
+                        onClick={() => {
+                          setMatchingMode("strict");
+                        }}
                         disabled={busy}
                       >
                         {STR.views.import.matchingModeStrict}
@@ -598,7 +626,9 @@ export function ImportPage() {
                       <button
                         type="button"
                         className={`button button--tab ${matchingMode === "fuzzy_automatik" ? "is-active" : ""}`}
-                        onClick={() => setMatchingMode("fuzzy_automatik")}
+                        onClick={() => {
+                          setMatchingMode("fuzzy_automatik");
+                        }}
                         disabled={busy}
                       >
                         {STR.views.import.matchingModeShortFuzzy}
@@ -606,7 +636,9 @@ export function ImportPage() {
                       <button
                         type="button"
                         className={`button button--tab ${matchingMode === "manuell" ? "is-active" : ""}`}
-                        onClick={() => setMatchingMode("manuell")}
+                        onClick={() => {
+                          setMatchingMode("manuell");
+                        }}
                         disabled={busy}
                       >
                         {STR.views.import.matchingModeManual}
@@ -724,10 +756,24 @@ export function ImportPage() {
                   )}
                 </section>
                 <div className="import-step__actions">
-                  <button type="button" className="button button--ghost" onClick={() => setStep("review_matches")} disabled={busy}>
+                  <button
+                    type="button"
+                    className="button button--ghost"
+                    onClick={() => {
+                      setStep("review_matches");
+                    }}
+                    disabled={busy}
+                  >
                     {STR.views.import.stepBackToReview}
                   </button>
-                  <button type="button" className="button button--primary" onClick={finalizeImport} disabled={busy}>
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    onClick={() => {
+                      void finalizeImport();
+                    }}
+                    disabled={busy}
+                  >
                     {STR.views.import.finalizeImport}
                   </button>
                 </div>

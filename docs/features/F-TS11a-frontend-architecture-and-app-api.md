@@ -182,6 +182,9 @@ export interface AppApi {
   getSeasonOverview(seasonId: string): Promise<SeasonOverview>;
   getStandings(seasonId: string, query: StandingsQuery): Promise<StandingsData>;
   getHistory(seasonId: string, query?: HistoryQuery): Promise<HistoryData>;
+  previewHistoryState(seasonId: string, input: HistoryPreviewInput): Promise<HistoryPreviewState>;
+  rollbackHistory(seasonId: string, input: HistoryRollbackInput): Promise<AppCommandResult>;
+  hardResetHistoryToSeq(seasonId: string, input: HistoryHardResetInput): Promise<AppCommandResult>;
   getImportDraft(seed?: ImportDraftSeed): Promise<ImportDraftData>;
   getImportReview(sessionId: string): Promise<ImportReviewData>;
 }
@@ -252,6 +255,8 @@ That keeps mock data realistic and reduces adapter churn later.
 | seasons | `SeasonRepository`, projected race coverage helpers |
 | standings | `projectState()`, `computeStandings()`, exclusion helpers |
 | history | event-log projection and timeline synthesis logic already present in `src/legacy/api/runtime.ts` |
+| history rollback | `race.rolled_back` and `import_batch.rolled_back` append patterns in legacy runtime + domain projection |
+| history hard reset | destructive event-log rewrite (`clearEventLog` / write prefix) through season repository |
 | import review | `startImport()`, `runMatching()`, `getReviewQueue()`, `resolveReviewEntry()`, `finalizeImport()` |
 | exports | `exportLaufuebersichtDualPdfs()`, `exportGesamtwertungWorkbook()` |
 | season portability | `exportSeason()`, `importSeason()` |

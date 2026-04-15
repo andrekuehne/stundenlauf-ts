@@ -95,7 +95,14 @@ Do not implement these mock screens in `src/legacy/`, `public/legacy/`, or `src/
 
 ### History
 
-- Show an audit-style table layout with representative items and filtering affordances
+- Show an audit-style event-log table for the currently selected race context
+- Include representative rows for atomic events and grouped import-batch events
+- Provide mock interactions for:
+  - "Stand ansehen" (as-of seq preview with frozen mode)
+  - "Atomic rollback"
+  - "Gruppen rollback" by `import_batch_id`
+  - "Hard reset bis hier" (destructive truncate-to-seq)
+- Include explicit warning/confirmation modal states for rollback and hard reset
 
 ## Mock data requirements
 
@@ -105,6 +112,8 @@ backend:
 - season summaries with labels, created dates, review counts, and race coverage
 - standings rows with rank, display name, year of birth, club, distance, and points
 - history rows for import, correction, reassignment, export, and rollback
+- history rows expose `seq`, `event_id`, event type, scope (`race`/`batch`/`season`), group key,
+  effective-change flag, and actionability hints
 - import review counts consistent with the import flow planned in later phases
 
 ## Acceptance criteria
@@ -115,6 +124,9 @@ backend:
 - [ ] Screen states are rich enough to support visual and wording iteration.
 - [ ] Mock data reflects real domain concepts already present in the repo.
 - [ ] The mock-first UI lands in the new app folders, not in legacy or harness folders.
+- [ ] History supports a visible frozen "historischer Stand (seq N)" mode while previewing a point-in-time state.
+- [ ] Rollback actions are shown for both atomic and grouped contexts with explicit confirmation states.
+- [ ] Hard reset is represented as a destructive "discard events after seq" flow with guardrail copy.
 
 ## Implementation steps
 
