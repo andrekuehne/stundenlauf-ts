@@ -8,6 +8,7 @@ import { ContentSplitLayout } from "@/components/layout/ContentSplitLayout.tsx";
 import { PageHeader } from "@/components/layout/PageHeader.tsx";
 import { ImportCandidateCard } from "@/features/import/ImportCandidateCard.tsx";
 import { ImportSeasonOverview } from "@/features/import/ImportSeasonOverview.tsx";
+import { ImportSummaryOverview } from "@/features/import/ImportSummaryOverview.tsx";
 import { splitPairToken } from "@/features/import/split-pair-token.ts";
 import { detectSourceType, parseRaceNo } from "@/ingestion/helpers.ts";
 import { DEFAULT_AUTO_MIN, DEFAULT_REVIEW_MIN } from "@/matching/config.ts";
@@ -728,7 +729,7 @@ export function ImportPage() {
           />
         ) : null}
 
-        {step === "summary" && visibleSummary ? (
+        {step === "summary" && visibleSummary && draft ? (
           <ContentSplitLayout
             main={
               <article className="surface-card import-step">
@@ -737,48 +738,26 @@ export function ImportPage() {
                   <h2>{STR.views.import.summaryTitle}</h2>
                   <p>{STR.views.import.summaryHint}</p>
                 </div>
-                <div className="import-summary-grid">
-                  <div className="summary-card">
-                    <span>{STR.views.import.summaryImportedEntries}</span>
-                    <strong>{visibleSummary.importedEntries}</strong>
-                  </div>
-                  <div className="summary-card">
-                    <span>{STR.views.import.summaryMergedEntries}</span>
-                    <strong>{visibleSummary.mergedEntries}</strong>
-                  </div>
-                  <div className="summary-card">
-                    <span>{STR.views.import.summaryNewPersons}</span>
-                    <strong>{visibleSummary.newPersonsCreated}</strong>
-                  </div>
-                  <div className="summary-card">
-                    <span>{STR.views.import.summaryTypoFixes}</span>
-                    <strong>{visibleSummary.typoCorrections}</strong>
-                  </div>
-                </div>
-                <section className="surface-card__section">
-                  <h3>{STR.views.import.summaryInfos}</h3>
-                  {visibleSummary.infos.length === 0 ? (
-                    <p>{STR.views.import.summaryNoInfos}</p>
-                  ) : (
-                    <ul>
-                      {visibleSummary.infos.map((info) => (
-                        <li key={info}>{info}</li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-                <section className="surface-card__section">
-                  <h3>{STR.views.import.summaryWarnings}</h3>
-                  {visibleSummary.warnings.length === 0 ? (
-                    <p>{STR.views.import.summaryNoWarnings}</p>
-                  ) : (
-                    <ul>
-                      {visibleSummary.warnings.map((warning) => (
-                        <li key={warning}>{warning}</li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
+                <ImportSummaryOverview
+                  summary={visibleSummary}
+                  fileName={draft.fileName}
+                  category={draft.category}
+                  raceNumber={draft.raceNumber}
+                  reviewItems={draft.reviewItems}
+                  decisions={draft.reviewItems
+                    .map((reviewItem) => {
+                      const staged = stagedDecisions[reviewItem.reviewId];
+                      if (staged) {
+                        return {
+                          reviewId: reviewItem.reviewId,
+                          action: staged.action,
+                          candidateId: staged.candidateId,
+                        };
+                      }
+                      return draft.decisions.find((decision) => decision.reviewId === reviewItem.reviewId) ?? null;
+                    })
+                    .filter((decision): decision is { reviewId: string; action: ImportReviewAction; candidateId: string | null } => decision != null)}
+                />
                 <div className="import-step__actions">
                   <button
                     type="button"

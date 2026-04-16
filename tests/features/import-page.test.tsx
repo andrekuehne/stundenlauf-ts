@@ -181,6 +181,97 @@ function buildDoublesDraftWithUnresolvedReview(input: ImportDraftInput): ImportD
   };
 }
 
+function buildDraftWithMultipleResolvedReviews(input: ImportDraftInput): ImportDraftState {
+  return {
+    draftId: "draft-with-resolved-reviews",
+    seasonId: input.seasonId,
+    fileName: input.fileName,
+    category: input.category,
+    raceNumber: input.raceNumber,
+    step: "review_matches",
+    reviewItems: [
+      {
+        reviewId: "review-a",
+        incoming: {
+          displayName: "Anna Schmidt",
+          yob: 1991,
+          club: "SV Sued",
+          startNumber: 5,
+          resultLabel: "11,2 km / 13 P",
+        },
+        candidates: [
+          {
+            candidateId: "team-anna",
+            displayName: "Anne Schmidt",
+            confidence: 0.92,
+            isRecommended: true,
+            fieldComparisons: [
+              {
+                fieldKey: "name",
+                label: "Name",
+                incomingValue: "Anna Schmidt",
+                candidateValue: "Anne Schmidt",
+                isMatch: false,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        reviewId: "review-b",
+        incoming: {
+          displayName: "Bernd Klar",
+          yob: 1985,
+          club: "VfL Mitte",
+          startNumber: 12,
+          resultLabel: "9,4 km / 10 P",
+        },
+        candidates: [
+          {
+            candidateId: "team-bernd",
+            displayName: "Bernd Clarsen",
+            confidence: 0.88,
+            isRecommended: true,
+            fieldComparisons: [
+              {
+                fieldKey: "name",
+                label: "Name",
+                incomingValue: "Bernd Klar",
+                candidateValue: "Bernd Clarsen",
+                isMatch: false,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        reviewId: "review-c",
+        incoming: {
+          displayName: "Carla Neu",
+          yob: 1999,
+          club: "—",
+          startNumber: 21,
+          resultLabel: "13,5 km / 16 P",
+        },
+        candidates: [],
+      },
+    ],
+    decisions: [
+      { reviewId: "review-a", action: "merge_with_typo_fix", candidateId: "team-anna" },
+      { reviewId: "review-b", action: "merge", candidateId: "team-bernd" },
+      { reviewId: "review-c", action: "create_new", candidateId: null },
+    ],
+    summary: {
+      importedEntries: 25,
+      mergedEntries: 22,
+      newPersonsCreated: 3,
+      typoCorrections: 1,
+      infos: [],
+      warnings: [],
+    },
+  };
+}
+
 function buildDraftWithUnresolvedReview(input: ImportDraftInput): ImportDraftState {
   return {
     draftId: "draft-unresolved-review",
@@ -449,8 +540,124 @@ describe("ImportPage", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Import-Zusammenfassung" })).toBeInTheDocument();
     });
-    expect(screen.getByText("24 Einträge wurden aus früheren Zuordnungen automatisch zugeordnet.")).toBeInTheDocument();
-    expect(screen.getByText("Keine Warnungen.")).toBeInTheDocument();
+  });
+
+  it("does not show the Hinweise/Warnungen sections on the summary screen", async () => {
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Import-Zusammenfassung" })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("heading", { name: /Hinweise/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Warnungen/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Keine Warnungen.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Keine Hinweise.")).not.toBeInTheDocument();
+  });
+
+  it("shows a context callout on the summary screen with category, race number, and the file name", async () => {
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 4.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    const heading = await screen.findByRole("heading", { name: "Import-Zusammenfassung" });
+    const card = heading.closest(".import-step");
+    expect(card).toBeTruthy();
+
+    const callout = card!.querySelector(".import-summary__context");
+    expect(callout).toBeTruthy();
+    expect(callout!.textContent).toMatch(/Einzel/);
+    expect(callout!.textContent).toMatch(/Lauf 4/);
+    expect(callout!.textContent).toMatch(/Ergebnisliste MW Lauf 4\.xlsx/);
+  });
+
+  it("shows clear KPI tiles on the summary screen for imported entries, new persons, and manual decisions", async () => {
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: "Import-Zusammenfassung" });
+
+    const importedTile = screen.getByText("Importierte Einträge").closest(".summary-card");
+    expect(importedTile?.textContent).toMatch(/10/);
+
+    const newTile = screen.getByText("Neue Personen").closest(".summary-card");
+    expect(newTile?.textContent).toMatch(/0/);
+
+    const manualTile = screen.getByText("Manuell entschieden").closest(".summary-card");
+    expect(manualTile?.textContent).toMatch(/0/);
+  });
+
+  it("shows a placeholder when there are no manual decisions on the summary screen", async () => {
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: "Import-Zusammenfassung" });
+
+    const decisionsBlock = document.querySelector(".import-summary__decisions");
+    expect(decisionsBlock).toBeTruthy();
+    expect(decisionsBlock?.textContent).toMatch(/automatisch|keine|alle/i);
+    expect(decisionsBlock?.querySelector("table")).toBeNull();
+  });
+
+  it("renders a tabular overview of manually adjusted matches on the summary screen", async () => {
+    const draft = buildDraftWithMultipleResolvedReviews({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => draft);
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/3/i });
+
+    for (let i = 0; i < 3; i++) {
+      const next = screen.getByRole("button", {
+        name: /Nächste Zuordnung|Zusammenfassung ➡/i,
+      });
+      fireEvent.click(next);
+    }
+
+    await screen.findByRole("heading", { name: "Import-Zusammenfassung" });
+
+    const table = document.querySelector(".import-summary__decisions table") as HTMLTableElement | null;
+    expect(table).toBeTruthy();
+    const rows = table!.querySelectorAll("tbody tr");
+    expect(rows.length).toBe(3);
+
+    const allText = table!.textContent ?? "";
+    expect(allText).toMatch(/Anna Schmidt/);
+    expect(allText).toMatch(/Anne Schmidt/);
+    expect(allText).toMatch(/Bernd Klar/);
+    expect(allText).toMatch(/Bernd Clarsen/);
+    expect(allText).toMatch(/Carla Neu/);
+    expect(allText).toMatch(/[Nn]eue Person/);
+    expect(allText).toMatch(/[Kk]orrektur/);
+
+    const manualTile = screen.getByText("Manuell entschieden").closest(".summary-card");
+    expect(manualTile?.textContent).toMatch(/3/);
   });
 
   it("refreshes the season overview after finalize so the new run shows as imported", async () => {
