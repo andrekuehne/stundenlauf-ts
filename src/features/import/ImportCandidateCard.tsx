@@ -9,7 +9,6 @@ type ImportCandidateCardProps = {
   isDoubles: boolean;
   disabled: boolean;
   onSelect: () => void;
-  recommendedLabel: string;
 };
 
 function normalizeForMatch(value: string): string {
@@ -173,7 +172,6 @@ export function ImportCandidateCard({
   isDoubles,
   disabled,
   onSelect,
-  recommendedLabel,
 }: ImportCandidateCardProps) {
   const displayName = isSelected
     ? STR.importCandidate.selectedDisplayName(candidate.displayName, STR.views.import.selectedSuffix)
@@ -188,7 +186,6 @@ export function ImportCandidateCard({
     >
       <div className="import-candidate__head">
         <strong>{displayName}</strong>
-        {candidate.isRecommended ? <span className="import-candidate__badge">{recommendedLabel}</span> : null}
       </div>
       <small className="import-candidate__hint">
         {STR.importCandidate.assignmentHint}
@@ -208,11 +205,6 @@ export function ImportCandidateCard({
           ))}
         </div>
       )}
-      <div className="import-candidate__footer">
-        <span className="import-candidate__confidence">
-          {STR.importCandidate.confidencePercent(Math.round(candidate.confidence * 100))}
-        </span>
-      </div>
     </button>
   );
 }

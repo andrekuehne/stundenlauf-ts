@@ -51,7 +51,6 @@ describe("ImportCandidateCard doubles comparison", () => {
         isDoubles
         disabled={false}
         onSelect={() => {}}
-        recommendedLabel="Empfohlen"
       />,
     );
 
@@ -101,7 +100,6 @@ describe("ImportCandidateCard mismatch highlighting", () => {
         isDoubles={false}
         disabled={false}
         onSelect={() => {}}
-        recommendedLabel="Empfohlen"
       />,
     );
 

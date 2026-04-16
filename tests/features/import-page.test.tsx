@@ -294,20 +294,95 @@ describe("ImportPage", () => {
     expect(screen.queryByRole("heading", { name: "Importierte Läufe" })).not.toBeInTheDocument();
   });
 
-  it("auto-detects race number and pairs category from typed filename", () => {
-    render(<ImportPage />);
+  it("renders a season overview panel beside the file selector with a row for Einzel and a row for Paare", async () => {
+    const { container } = render(<ImportPage />);
+
+    await waitFor(() => {
+      expect(container.querySelector(".import-season-overview")).toBeTruthy();
+    });
+
+    const overview = container.querySelector(".import-season-overview");
+    expect(overview).toBeTruthy();
+    expect(overview!.textContent).toMatch(/Einzel/);
+    expect(overview!.textContent).toMatch(/Paare/);
+
+    const singlesRow = overview!.querySelector(".import-season-overview__row--singles");
+    const doublesRow = overview!.querySelector(".import-season-overview__row--doubles");
+    expect(singlesRow).toBeTruthy();
+    expect(doublesRow).toBeTruthy();
+
+    expect(singlesRow!.querySelectorAll(".import-season-overview__chip").length).toBeGreaterThanOrEqual(5);
+    expect(doublesRow!.querySelectorAll(".import-season-overview__chip").length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("marks already-imported races as imported in the season overview panel", async () => {
+    apiMock.getStandings = vi.fn(async () => ({
+      ...emptyStandings,
+      importedRuns: [
+        { raceLabel: "Lauf 2", categoryLabel: "60 Minuten Herren/Damen", dateLabel: "—", sourceLabel: "f.xlsx", entries: 12 },
+        { raceLabel: "Lauf 3", categoryLabel: "30 Minuten Paare", dateLabel: "—", sourceLabel: "p.xlsx", entries: 8 },
+      ],
+    }));
+
+    const { container } = render(<ImportPage />);
+
+    await waitFor(() => {
+      const overview = container.querySelector(".import-season-overview");
+      expect(overview).toBeTruthy();
+      expect(overview!.querySelectorAll(".import-season-overview__chip.is-imported").length).toBe(2);
+    });
+
+    const singlesImported = container.querySelectorAll(
+      ".import-season-overview__row--singles .import-season-overview__chip.is-imported",
+    );
+    const doublesImported = container.querySelectorAll(
+      ".import-season-overview__row--doubles .import-season-overview__chip.is-imported",
+    );
+    expect(singlesImported.length).toBe(1);
+    expect(singlesImported[0]?.textContent).toMatch(/2/);
+    expect(doublesImported.length).toBe(1);
+    expect(doublesImported[0]?.textContent).toMatch(/3/);
+  });
+
+  it("prefills race number and category when a free chip in the overview is clicked", async () => {
+    const { container } = render(<ImportPage />);
+
+    await waitFor(() => {
+      expect(container.querySelector(".import-season-overview")).toBeTruthy();
+    });
+
+    const doublesChip4 = container.querySelector<HTMLButtonElement>(
+      ".import-season-overview__row--doubles .import-season-overview__chip[data-race='4']",
+    );
+    expect(doublesChip4).toBeTruthy();
+    fireEvent.click(doublesChip4!);
+
+    expect(doublesChip4!.classList.contains("is-selected")).toBe(true);
+    const singlesChip4 = container.querySelector(
+      ".import-season-overview__row--singles .import-season-overview__chip[data-race='4']",
+    );
+    expect(singlesChip4?.classList.contains("is-selected")).toBe(false);
+  });
+
+  it("auto-detects race number and pairs category from typed filename and highlights the matching chip", () => {
+    const { container } = render(<ImportPage />);
 
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW_Paare Lauf 2.xlsx" },
     });
 
-    expect(screen.getByPlaceholderText("4")).toHaveValue(2);
-    expect(screen.getByRole("button", { name: "Paare" })).toHaveClass("is-active");
-    expect(screen.getByRole("button", { name: "Einzel" })).not.toHaveClass("is-active");
+    const doublesChip2 = container.querySelector(
+      ".import-season-overview__row--doubles .import-season-overview__chip[data-race='2']",
+    );
+    const singlesChip2 = container.querySelector(
+      ".import-season-overview__row--singles .import-season-overview__chip[data-race='2']",
+    );
+    expect(doublesChip2?.classList.contains("is-selected")).toBe(true);
+    expect(singlesChip2?.classList.contains("is-selected")).toBe(false);
   });
 
-  it("auto-detects race number and singles category from picked filename", () => {
-    render(<ImportPage />);
+  it("auto-detects race number and singles category from picked filename and highlights the matching chip", () => {
+    const { container } = render(<ImportPage />);
 
     const fileInput = document.querySelector<HTMLInputElement>("input[type='file']");
     expect(fileInput).not.toBeNull();
@@ -317,9 +392,50 @@ describe("ImportPage", () => {
     fireEvent.change(fileInput!, { target: { files: [file] } });
 
     expect(screen.getByPlaceholderText("lauf4-mw.xlsx")).toHaveValue("Ergebnisliste MW Lauf 5.xlsx");
-    expect(screen.getByPlaceholderText("4")).toHaveValue(5);
-    expect(screen.getByRole("button", { name: "Einzel" })).toHaveClass("is-active");
-    expect(screen.getByRole("button", { name: "Paare" })).not.toHaveClass("is-active");
+    const singlesChip5 = container.querySelector(
+      ".import-season-overview__row--singles .import-season-overview__chip[data-race='5']",
+    );
+    const doublesChip5 = container.querySelector(
+      ".import-season-overview__row--doubles .import-season-overview__chip[data-race='5']",
+    );
+    expect(singlesChip5?.classList.contains("is-selected")).toBe(true);
+    expect(doublesChip5?.classList.contains("is-selected")).toBe(false);
+  });
+
+  it("does not render a duplicate category toggle or race number input in the file selector form", () => {
+    render(<ImportPage />);
+
+    expect(screen.queryByPlaceholderText("4")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Einzel" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Paare" })).not.toBeInTheDocument();
+  });
+
+  it("shows a confirmation status when the filename auto-detection succeeds", () => {
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 3.xlsx" },
+    });
+
+    const status = container.querySelector(".import-select-status");
+    expect(status).toBeTruthy();
+    expect(status?.textContent).toMatch(/Erkannt/i);
+    expect(status?.textContent).toMatch(/Einzel/);
+    expect(status?.textContent).toMatch(/Lauf 3/);
+    expect(status?.classList.contains("is-detected")).toBe(true);
+  });
+
+  it("guides the user to pick a slot in the overview when no race number is in the filename", () => {
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "ergebnisliste-mw.xlsx" },
+    });
+
+    const status = container.querySelector(".import-select-status");
+    expect(status).toBeTruthy();
+    expect(status?.classList.contains("is-needs-pick")).toBe(true);
+    expect(status?.textContent).toMatch(/links/i);
   });
 
   it("jumps directly to summary when draft has no review items", async () => {
@@ -328,9 +444,6 @@ describe("ImportPage", () => {
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
     });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
@@ -338,6 +451,60 @@ describe("ImportPage", () => {
     });
     expect(screen.getByText("24 Einträge wurden aus früheren Zuordnungen automatisch zugeordnet.")).toBeInTheDocument();
     expect(screen.getByText("Keine Warnungen.")).toBeInTheDocument();
+  });
+
+  it("refreshes the season overview after finalize so the new run shows as imported", async () => {
+    let standingsAfterCommit = false;
+    apiMock.getStandings = vi.fn(async () => {
+      if (!standingsAfterCommit) {
+        return emptyStandings;
+      }
+      return {
+        ...emptyStandings,
+        importedRuns: [
+          {
+            raceLabel: "Lauf 2",
+            categoryLabel: "60 Minuten Herren/Damen",
+            dateLabel: "—",
+            sourceLabel: "Ergebnisliste MW Lauf 2.xlsx",
+            entries: 12,
+          },
+        ],
+      };
+    });
+    apiMock.finalizeImportDraft = vi.fn(async () => {
+      standingsAfterCommit = true;
+      return buildCommandResult("Import abgeschlossen");
+    });
+
+    const { container } = render(<ImportPage />);
+
+    await waitFor(() => {
+      expect(container.querySelector(".import-season-overview")).toBeTruthy();
+    });
+
+    const singlesLauf2Before = container.querySelector(
+      ".import-season-overview__row--singles .import-season-overview__chip[data-race='2']",
+    );
+    expect(singlesLauf2Before?.classList.contains("is-imported")).toBe(false);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 2.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Import-Zusammenfassung" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Import abschließen" }));
+
+    await waitFor(() => {
+      const chip = container.querySelector(
+        ".import-season-overview__row--singles .import-season-overview__chip[data-race='2']",
+      );
+      expect(chip?.classList.contains("is-imported")).toBe(true);
+    });
   });
 
   it("stages review decisions locally and submits them only on final confirmation", async () => {
@@ -358,9 +525,6 @@ describe("ImportPage", () => {
 
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
@@ -402,9 +566,6 @@ describe("ImportPage", () => {
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
     });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
@@ -429,10 +590,6 @@ describe("ImportPage", () => {
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste Paare Lauf 1.xlsx" },
     });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Paare" }));
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
@@ -455,9 +612,6 @@ describe("ImportPage", () => {
 
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
@@ -487,9 +641,6 @@ describe("ImportPage", () => {
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
     });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     const selectedBestCandidate = await screen.findByRole("button", {
@@ -512,9 +663,6 @@ describe("ImportPage", () => {
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
     });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
@@ -523,7 +671,7 @@ describe("ImportPage", () => {
 
     expect(screen.queryByRole("dialog", { name: "Matching-Optionen" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Matching-Einstellungen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Einstellungen" }));
 
     expect(screen.getByRole("dialog", { name: "Matching-Optionen" })).toBeInTheDocument();
 
@@ -546,16 +694,13 @@ describe("ImportPage", () => {
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
     });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /Eintrag 1\/1/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Matching-Einstellungen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Einstellungen" }));
     expect(screen.getByRole("dialog", { name: "Matching-Optionen" })).toBeInTheDocument();
 
     const sliders = screen.getAllByRole("slider");
@@ -586,9 +731,6 @@ describe("ImportPage", () => {
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
     });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
@@ -612,9 +754,6 @@ describe("ImportPage", () => {
 
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("4"), {
-      target: { value: "1" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
@@ -640,5 +779,110 @@ describe("ImportPage", () => {
     expect(screen.queryByText("Hilfe")).not.toBeInTheDocument();
     expect(screen.queryByText("Datei-Prüfung")).not.toBeInTheDocument();
     expect(screen.queryByText("Nächster Schritt")).not.toBeInTheDocument();
+  });
+
+  it("groups review-step toolbar buttons into a secondary-left and forward-right cluster", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const left = container.querySelector(".import-review__toolbar-left");
+    const right = container.querySelector(".import-review__toolbar-right");
+    expect(left).toBeTruthy();
+    expect(right).toBeTruthy();
+
+    expect(left!.textContent).toMatch(/Zurück zu Datei/);
+    expect(left!.textContent).toMatch(/Einstellungen/);
+    expect(left!.textContent).not.toMatch(/Vorherige Zuordnung/);
+
+    expect(right!.textContent).toMatch(/Vorherige Zuordnung/);
+    expect(right!.textContent).toMatch(/Daten korrigieren/);
+    expect(right!.textContent).toMatch(/Zusammenfassung|Nächste Zuordnung/);
+  });
+
+  it("frames the incoming entry as a current-entry callout with context eyebrow and a call-to-action to act below", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const incoming = container.querySelector(".import-review__incoming");
+    expect(incoming).toBeTruthy();
+
+    const eyebrow = incoming!.querySelector(".import-review__incoming-eyebrow");
+    expect(eyebrow).toBeTruthy();
+    expect(eyebrow!.textContent).toMatch(/Aktuell zu prüfen/i);
+
+    const cta = incoming!.querySelector(".import-review__incoming-cta");
+    expect(cta).toBeTruthy();
+    expect(cta!.textContent).toMatch(/unten/i);
+
+    const incomingTag = incoming!.tagName.toLowerCase();
+    expect(["section", "aside"]).toContain(incomingTag);
+  });
+
+  it("lists candidate matches before the 'new person' fallback with a labelled divider between them", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const cards = container.querySelector(".import-review__cards");
+    expect(cards).toBeTruthy();
+    const cardChildren = Array.from(cards!.children);
+
+    const matchesHeadingIdx = cardChildren.findIndex((el) =>
+      el.classList.contains("import-review__matches-heading"),
+    );
+    const candidateIdx = cardChildren.findIndex(
+      (el) =>
+        el.classList.contains("import-candidate") && !el.classList.contains("import-candidate--new"),
+    );
+    const dividerIdx = cardChildren.findIndex((el) =>
+      el.classList.contains("import-review__fallback-divider"),
+    );
+    const newIdx = cardChildren.findIndex((el) => el.classList.contains("import-candidate--new"));
+
+    expect(matchesHeadingIdx).toBeGreaterThanOrEqual(0);
+    expect(candidateIdx).toBeGreaterThan(matchesHeadingIdx);
+    expect(dividerIdx).toBeGreaterThan(candidateIdx);
+    expect(newIdx).toBeGreaterThan(dividerIdx);
   });
 });

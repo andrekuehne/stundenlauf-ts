@@ -92,6 +92,13 @@ beforeEach(() => {
 });
 
 describe("HistoryPage", () => {
+  it("renders race context and audit summary in the main view instead of the shell sidebar", async () => {
+    render(<HistoryPage />);
+    await waitFor(() => expect(screen.getByText("Lauf 1")).toBeInTheDocument());
+    expect(screen.getByText("Audit-Protokoll")).toBeInTheDocument();
+    expect(setSidebarControls).not.toHaveBeenCalled();
+  });
+
   it("previews a seq and shows preview controls", async () => {
     render(<HistoryPage />);
     await waitFor(() => expect(screen.getByText("Import")).toBeInTheDocument());

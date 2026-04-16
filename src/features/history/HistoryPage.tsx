@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { HistoryData, HistoryRow, HistoryRollbackMode } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
@@ -28,7 +28,7 @@ function scopeLabel(scope: HistoryRow["scope"]): string {
 
 export function HistoryPage() {
   const api = useAppApi();
-  const { shellData, setSidebarControls } = useAppShellContext();
+  const { shellData } = useAppShellContext();
   const setStatus = useStatusStore((state) => state.setStatus);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<HistoryData | null>(null);
@@ -188,75 +188,75 @@ export function HistoryPage() {
     [busySeq, frozenSeq, previewSeq],
   );
 
-  useLayoutEffect(() => {
-    setSidebarControls(
-      <div className="sidebar-controls">
-        <section className="sidebar-controls__section">
-          <h4>{STR.views.history.selectedRaceTitle}</h4>
-          {data?.raceContext ? (
-            <>
-              <p>
-                <strong>{data.raceContext.raceLabel}</strong> - {data.raceContext.categoryLabel}
-              </p>
-              <p>{data.raceContext.raceDateLabel}</p>
-              <p className="surface-card__note">
-                {frozenSeq == null ? STR.views.history.selectedRaceLive : STR.views.history.selectedRaceAsOf(frozenSeq)}
-              </p>
-              {frozenSeq != null ? (
-                <>
-                  <p className="surface-card__note">{STR.views.history.freezeHint}</p>
-                  <button
-                    type="button"
-                    className="button"
-                    onClick={() => {
-                      setFrozenSeq(null);
-                    }}
-                  >
-                    {STR.views.history.leavePreview}
-                  </button>
-                </>
-              ) : null}
-            </>
-          ) : (
-            <p>{STR.views.history.selectedRaceEmpty}</p>
-          )}
-        </section>
-        <section className="sidebar-controls__section">
-          <InfoCard title={STR.views.history.auditTrailTitle}>
-            <p>
-              {rows.length} Events {frozenSeq == null ? "im Live-Stand" : `bis seq ${frozenSeq}`}
-            </p>
-          </InfoCard>
-        </section>
-      </div>,
-    );
-    return () => {
-      setSidebarControls(null);
-    };
-  }, [data?.raceContext, frozenSeq, rows.length, setSidebarControls]);
-
   return (
     <div className="page-stack">
       <PageHeader title={STR.views.history.title} description={STR.views.history.subtitle} />
       {!shellData.selectedSeasonId ? (
         <EmptyState title={STR.views.history.title} message={STR.views.history.noSeason} />
-      ) : loading || !data ? (
-        <section className="surface-card">
-          <p className="surface-card__note">{STR.views.history.loading}</p>
-        </section>
       ) : (
-        <section className="surface-card">
-          <div className="surface-card__header">
-            <div>
-              <h2>{STR.views.history.historyTableTitle}</h2>
-              <p>
-                {data.seasonLabel}
-                {frozenSeq != null ? ` - ${STR.views.history.selectedRaceAsOf(frozenSeq)}` : ""}
-              </p>
+        <>
+          <section className="surface-card history-view__context">
+            <div className="sidebar-controls">
+              <section className="sidebar-controls__section">
+                <h4>{STR.views.history.selectedRaceTitle}</h4>
+                {data?.raceContext ? (
+                  <>
+                    <p>
+                      <strong>{data.raceContext.raceLabel}</strong> - {data.raceContext.categoryLabel}
+                    </p>
+                    <p>{data.raceContext.raceDateLabel}</p>
+                    <p className="surface-card__note">
+                      {frozenSeq == null
+                        ? STR.views.history.selectedRaceLive
+                        : STR.views.history.selectedRaceAsOf(frozenSeq)}
+                    </p>
+                    {frozenSeq != null ? (
+                      <>
+                        <p className="surface-card__note">{STR.views.history.freezeHint}</p>
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={() => {
+                            setFrozenSeq(null);
+                          }}
+                        >
+                          {STR.views.history.leavePreview}
+                        </button>
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  <p>{STR.views.history.selectedRaceEmpty}</p>
+                )}
+              </section>
+              <section className="sidebar-controls__section">
+                <InfoCard title={STR.views.history.auditTrailTitle}>
+                  <p>
+                    {rows.length} Events {frozenSeq == null ? "im Live-Stand" : `bis seq ${frozenSeq}`}
+                  </p>
+                </InfoCard>
+              </section>
             </div>
-          </div>
-          <DataTable columns={columns} rows={rows} rowKey={(row) => row.eventId} emptyMessage={STR.views.history.placeholder} />
-        </section>
+          </section>
+          {loading || !data ? (
+            <section className="surface-card">
+              <p className="surface-card__note">{STR.views.history.loading}</p>
+            </section>
+          ) : (
+            <section className="surface-card">
+              <div className="surface-card__header">
+                <div>
+                  <h2>{STR.views.history.historyTableTitle}</h2>
+                  <p>
+                    {data.seasonLabel}
+                    {frozenSeq != null ? ` - ${STR.views.history.selectedRaceAsOf(frozenSeq)}` : ""}
+                  </p>
+                </div>
+              </div>
+              <DataTable columns={columns} rows={rows} rowKey={(row) => row.eventId} emptyMessage={STR.views.history.placeholder} />
+            </section>
+          )}
+        </>
       )}
 
       {confirmDialog ? (

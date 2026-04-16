@@ -129,6 +129,19 @@ describe("App season selector routing", () => {
     expect(screen.queryByText("Bereichsspezifische Import-Steuerungen erscheinen hier.")).not.toBeInTheDocument();
   });
 
+  it("hides corrections and history sidebar control panels when no outlet injects controls", async () => {
+    currentPathname = "/corrections";
+    const { unmount } = render(<App />);
+    await screen.findByLabelText("Aktuelle Saison:");
+    expect(screen.queryByRole("heading", { name: "Korrekturen", level: 3 })).not.toBeInTheDocument();
+    unmount();
+
+    currentPathname = "/history";
+    render(<App />);
+    await screen.findByLabelText("Aktuelle Saison:");
+    expect(screen.queryByRole("heading", { name: "Historie", level: 3 })).not.toBeInTheDocument();
+  });
+
   it("navigates to standings when opened season has runs", async () => {
     render(<App />);
     const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");

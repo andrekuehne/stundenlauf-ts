@@ -114,10 +114,11 @@ textarea {
 }
 
 .shell-body {
-  --shell-sidebar-max-width: 390px;
+  /* Fixed width (not fit-content) keeps the column stable when the lower panel mounts; keep modest so the main pane gets room. */
+  --shell-sidebar-max-width: 15rem;
   --shell-main-min-width: min(56rem, 100%);
   display: grid;
-  grid-template-columns: fit-content(var(--shell-sidebar-max-width)) minmax(var(--shell-main-min-width), 1fr);
+  grid-template-columns: var(--shell-sidebar-max-width) minmax(var(--shell-main-min-width), 1fr);
   min-height: 0;
   overflow: hidden;
 }
@@ -359,12 +360,16 @@ textarea {
 
 .shell-sidebar__controls .sidebar-controls .button,
 .shell-sidebar__controls .sidebar-controls select,
-.shell-sidebar__controls .sidebar-controls input {
+.shell-sidebar__controls .sidebar-controls input,
+.history-view__context .sidebar-controls .button,
+.history-view__context .sidebar-controls select,
+.history-view__context .sidebar-controls input {
   min-width: 0;
   max-width: 100%;
 }
 
-.shell-sidebar__controls .sidebar-controls .button {
+.shell-sidebar__controls .sidebar-controls .button,
+.history-view__context .sidebar-controls .button {
   white-space: normal;
   overflow-wrap: anywhere;
   text-align: left;
@@ -859,17 +864,66 @@ textarea {
   gap: var(--spacing-xs);
 }
 
-.import-controls__toggle {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--spacing-sm);
-}
-
 .import-controls__file-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--spacing-sm);
   align-items: center;
+}
+
+.import-controls__file-button {
+  white-space: nowrap;
+}
+
+.import-select-status {
+  display: grid;
+  gap: 0.15rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.import-select-status__line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+
+.import-select-status__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.import-select-status__sub {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.import-select-status.is-empty {
+  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-text-muted) 8%);
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+
+.import-select-status.is-detected {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface) 90%);
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border) 55%);
+}
+
+.import-select-status.is-needs-pick {
+  background: color-mix(in srgb, #f59e0b 12%, var(--color-surface) 88%);
+  border-color: color-mix(in srgb, #f59e0b 55%, var(--color-border) 45%);
+  color: var(--color-text);
+}
+
+.import-select-status.is-needs-pick .import-select-status__sub {
+  color: color-mix(in srgb, #b45309 80%, var(--color-text) 20%);
+  font-weight: 600;
 }
 
 .import-controls__file-input {
@@ -898,13 +952,23 @@ textarea {
   flex-wrap: wrap;
 }
 
-.import-review__header-actions {
+.import-review__toolbar-left,
+.import-review__toolbar-right {
   display: flex;
   gap: var(--spacing-sm);
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  padding-right: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
   min-width: 0;
+}
+
+.import-review__toolbar-right {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.import-review__toolbar-left > .button,
+.import-review__toolbar-right > .button {
+  white-space: nowrap;
 }
 
 .import-review__next-button {
@@ -914,7 +978,10 @@ textarea {
 }
 
 .import-review__toolbar {
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  row-gap: var(--spacing-sm);
 }
 
 .import-workflow {
@@ -1106,6 +1173,12 @@ textarea {
   align-items: start;
 }
 
+.import-select-grid--with-overview {
+  grid-template-columns: minmax(280px, 360px) minmax(420px, 560px);
+  justify-content: center;
+  align-items: stretch;
+}
+
 .import-existing-runs,
 .import-select-form {
   height: 100%;
@@ -1113,6 +1186,149 @@ textarea {
 
 .import-existing-runs .table-wrap {
   max-height: none;
+}
+
+.import-season-overview {
+  display: grid;
+  gap: var(--spacing-md);
+  align-content: start;
+  height: 100%;
+}
+
+.import-season-overview__header {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.import-season-overview__header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.import-season-overview__header p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.import-season-overview__rows {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.import-season-overview__row {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.import-season-overview__row-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.import-season-overview__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.import-season-overview__chip {
+  --chip-size: 2.6rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: var(--chip-size);
+  height: var(--chip-size);
+  padding: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  line-height: 1;
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+
+.import-season-overview__chip:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+
+.import-season-overview__chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.import-season-overview__chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.import-season-overview__chip-number {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.import-season-overview__chip-status {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 1px;
+}
+
+.import-season-overview__chip.is-imported {
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-surface) 82%);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border) 45%);
+  color: var(--color-text);
+}
+
+.import-season-overview__chip.is-imported .import-season-overview__chip-status {
+  color: var(--color-primary-hover);
+  font-weight: 700;
+}
+
+.import-season-overview__chip.is-free {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.import-season-overview__chip.is-selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 35%, transparent 65%);
+  color: var(--color-text);
+}
+
+.import-season-overview__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.import-season-overview__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.import-season-overview__legend-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.import-season-overview__legend-swatch.is-imported {
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-surface) 82%);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border) 45%);
+  color: var(--color-primary-hover);
 }
 
 .import-step--fill {
@@ -1136,9 +1352,15 @@ textarea {
 }
 
 @media (max-width: 780px) {
-  .import-review__header-actions {
+  .import-review__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .import-review__toolbar-left,
+  .import-review__toolbar-right {
     justify-content: flex-start;
-    padding-right: 0;
+    margin-left: 0;
   }
 }
 
@@ -1171,32 +1393,57 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 1;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border: 0;
+  border-left: 4px solid var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-primary) 6%);
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.import-review__incoming-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.import-review__incoming-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary-hover);
 }
 
 .import-review__incoming h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .import-review__incoming-lines {
   display: grid;
   gap: 0.2rem;
-  margin-top: var(--spacing-xs);
   min-width: 0;
 }
 
 .import-review__incoming-line {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.4;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+}
+
+.import-review__incoming-cta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .import-review__cards {
@@ -1217,6 +1464,47 @@ textarea {
   border-radius: var(--radius-sm);
   padding: var(--spacing-md);
   color: var(--color-text-muted);
+}
+
+.import-review__matches-heading {
+  display: grid;
+  gap: 2px;
+  padding: 2px 2px var(--spacing-xs);
+}
+
+.import-review__matches-heading h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.import-review__matches-heading p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.import-review__fallback-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-xs) 0;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.import-review__fallback-divider::before,
+.import-review__fallback-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.import-review__fallback-divider span {
+  flex: 0 0 auto;
 }
 
 .import-candidate {
@@ -1244,18 +1532,9 @@ textarea {
 
 .import-candidate__head {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--spacing-sm);
   align-items: start;
-}
-
-.import-candidate__badge {
-  font-size: 0.78rem;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border) 65%);
-  border-radius: 999px;
-  padding: 2px 8px;
-  color: var(--color-primary-hover);
-  white-space: nowrap;
 }
 
 .import-candidate__comparison {
@@ -1340,22 +1619,26 @@ textarea {
   padding: 0 2px;
 }
 
-.import-candidate__footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.import-candidate__confidence {
-  font-size: 0.78rem;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border) 65%);
-  border-radius: 999px;
-  padding: 2px 8px;
-  color: var(--color-primary-hover);
-  white-space: nowrap;
-}
-
 .import-candidate--new {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-border) 8%);
+  gap: 4px;
+}
+
+.import-candidate--new .import-candidate__head strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.import-candidate--new small {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.import-candidate--new.is-selected {
   border-style: solid;
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface) 90%);
 }
 
 .matching-options {
@@ -1770,7 +2053,8 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .import-select-grid {
+  .import-select-grid,
+  .import-select-grid--with-overview {
     grid-template-columns: 1fr;
   }
 }

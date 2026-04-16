@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ImportDraftState, ImportReviewAction, ImportReviewItem, ImportedRunRow } from "@/api/contracts/index.ts";
 import { rememberImportFile } from "@/api/import-file-registry.ts";
 import { useAppApi } from "@/api/provider.tsx";
@@ -7,6 +7,7 @@ import { STR } from "@/app/strings.ts";
 import { ContentSplitLayout } from "@/components/layout/ContentSplitLayout.tsx";
 import { PageHeader } from "@/components/layout/PageHeader.tsx";
 import { ImportCandidateCard } from "@/features/import/ImportCandidateCard.tsx";
+import { ImportSeasonOverview } from "@/features/import/ImportSeasonOverview.tsx";
 import { splitPairToken } from "@/features/import/split-pair-token.ts";
 import { detectSourceType, parseRaceNo } from "@/ingestion/helpers.ts";
 import { DEFAULT_AUTO_MIN, DEFAULT_REVIEW_MIN } from "@/matching/config.ts";
@@ -362,6 +363,12 @@ export function ImportPage() {
       }
       const result = await api.finalizeImportDraft(nextDraft.draftId);
       await refreshShellData();
+      try {
+        const standings = await api.getStandings(nextDraft.seasonId);
+        setImportedRuns(standings.importedRuns);
+      } catch {
+        setImportedRuns([]);
+      }
       setStatus({ severity: result.severity, source: "import", message: result.message });
       setDraft(null);
       setStagedDecisions({});
@@ -418,7 +425,17 @@ export function ImportPage() {
             main={
               <article className="surface-card import-step import-step--narrow">
                 {flowSteps}
-                <div className="import-select-grid">
+                <div className="import-select-grid import-select-grid--with-overview">
+                  <ImportSeasonOverview
+                    importedRuns={importedRuns}
+                    selectedCategory={category}
+                    selectedRaceNumber={raceNumber}
+                    disabled={busy}
+                    onSelectRace={(nextCategory, nextRace) => {
+                      setCategory(nextCategory);
+                      setRaceNumber(String(nextRace));
+                    }}
+                  />
                   <section className="surface-card import-select-form">
                     <div className="surface-card__header">
                       <h2>{STR.views.import.selectFileTitle}</h2>
@@ -457,56 +474,66 @@ export function ImportPage() {
                           />
                           <button
                             type="button"
-                            className="button"
+                            className="button button--ghost import-controls__file-button"
                             onClick={() => {
                               filePickerRef.current?.click();
                             }}
                             disabled={busy}
                           >
-                            {STR.views.import.filePickButton}
+                            📂 {STR.views.import.filePickButton}
                           </button>
                         </div>
                       </label>
 
-                      <div className="import-controls__label">
-                        <span>{STR.views.import.pickFile}</span>
-                        <div className="import-controls__toggle">
-                          <button
-                            type="button"
-                            className={`button button--tab ${category === "singles" ? "is-active" : ""}`}
-                            onClick={() => {
-                              setCategory("singles");
-                            }}
-                            disabled={busy}
-                          >
-                            {STR.views.import.singles}
-                          </button>
-                          <button
-                            type="button"
-                            className={`button button--tab ${category === "doubles" ? "is-active" : ""}`}
-                            onClick={() => {
-                              setCategory("doubles");
-                            }}
-                            disabled={busy}
-                          >
-                            {STR.views.import.couples}
-                          </button>
-                        </div>
-                      </div>
-
-                      <label className="import-controls__label">
-                        <span>{STR.views.import.raceNumber}</span>
-                        <input
-                          type="number"
-                          min={1}
-                          value={raceNumber}
-                          onChange={(event) => {
-                            setRaceNumber(event.target.value);
-                          }}
-                          placeholder={STR.views.import.racePlaceholder}
-                          disabled={busy}
-                        />
-                      </label>
+                      {(() => {
+                        const trimmedName = fileName.trim();
+                        const detectedRace = Number.parseInt(raceNumber, 10);
+                        const hasRace = Number.isFinite(detectedRace) && detectedRace > 0;
+                        const categoryLabel =
+                          category === "singles" ? STR.views.import.singles : STR.views.import.couples;
+                        let statusClass = "import-select-status is-empty";
+                        let statusContent: ReactNode = (
+                          <span className="import-select-status__line">
+                            {STR.views.import.selectionStatusNoFile}
+                          </span>
+                        );
+                        if (trimmedName.length > 0 && hasRace) {
+                          statusClass = "import-select-status is-detected";
+                          statusContent = (
+                            <>
+                              <span className="import-select-status__line">
+                                <span className="import-select-status__icon" aria-hidden="true">
+                                  ✅
+                                </span>
+                                {STR.views.import.selectionStatusDetected(categoryLabel, detectedRace)}
+                              </span>
+                              <small className="import-select-status__sub">
+                                {STR.views.import.selectionStatusDetectedSub}
+                              </small>
+                            </>
+                          );
+                        } else if (trimmedName.length > 0 && !hasRace) {
+                          statusClass = "import-select-status is-needs-pick";
+                          statusContent = (
+                            <>
+                              <span className="import-select-status__line">
+                                <span className="import-select-status__icon" aria-hidden="true">
+                                  ⚠️
+                                </span>
+                                {STR.views.import.selectionStatusRaceMissing(categoryLabel)}
+                              </span>
+                              <small className="import-select-status__sub">
+                                {STR.views.import.selectionStatusRaceMissingSub}
+                              </small>
+                            </>
+                          );
+                        }
+                        return (
+                          <div className={statusClass} role="status" aria-live="polite">
+                            {statusContent}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="import-step__actions">
                       <button
@@ -535,7 +562,17 @@ export function ImportPage() {
               <article className="surface-card import-step import-step--fill">
                 {flowSteps}
                 <div className="surface-card__header import-review__toolbar">
-                  <div className="import-review__header-actions">
+                  <div className="import-review__toolbar-left">
+                    <button
+                      type="button"
+                      className="button button--ghost"
+                      onClick={() => {
+                        setStep("select_file");
+                      }}
+                      disabled={busy}
+                    >
+                      ↩️ {STR.views.import.stepBackToSelection}
+                    </button>
                     <button
                       type="button"
                       className="button"
@@ -546,6 +583,8 @@ export function ImportPage() {
                     >
                       {STR.views.import.matchingSettings}
                     </button>
+                  </div>
+                  <div className="import-review__toolbar-right">
                     <button
                       type="button"
                       className="button button--ghost"
@@ -555,20 +594,6 @@ export function ImportPage() {
                       disabled={reviewIndex === 0 || busy}
                     >
                       ⬅️ {STR.views.import.reviewBackEntry}
-                    </button>
-                    <button
-                      type="button"
-                      className={`button import-review__next-button ${reviewIndex >= totalReviews - 1 ? "button--primary" : "button--ghost"}`}
-                      onClick={() => {
-                        if (reviewIndex >= totalReviews - 1) {
-                          setStep("summary");
-                          return;
-                        }
-                        setReviewIndex((current) => Math.min(totalReviews - 1, current + 1));
-                      }}
-                      disabled={busy || totalReviews === 0}
-                    >
-                      {reviewIndex >= totalReviews - 1 ? STR.views.import.summaryNext : `${STR.views.import.reviewNextEntry} ➡️`}
                     </button>
                     <button
                       type="button"
@@ -584,20 +609,32 @@ export function ImportPage() {
                     </button>
                     <button
                       type="button"
-                      className="button button--ghost"
+                      className={`button import-review__next-button ${reviewIndex >= totalReviews - 1 ? "button--primary" : "button--ghost"}`}
                       onClick={() => {
-                        setStep("select_file");
+                        if (reviewIndex >= totalReviews - 1) {
+                          setStep("summary");
+                          return;
+                        }
+                        setReviewIndex((current) => Math.min(totalReviews - 1, current + 1));
                       }}
-                      disabled={busy}
+                      disabled={busy || totalReviews === 0}
                     >
-                      ↩️ {STR.views.import.stepBackToSelection}
+                      {reviewIndex >= totalReviews - 1 ? STR.views.import.summaryNext : `${STR.views.import.reviewNextEntry} ➡️`}
                     </button>
                   </div>
                 </div>
                 {activeReview ? (
                   <div className="import-review import-review--cards-scroll">
-                    <div className="import-review__incoming">
-                      <h2>{STR.views.import.reviewEntryProgress(reviewIndex + 1, totalReviews)}</h2>
+                    <section
+                      className="import-review__incoming"
+                      aria-label={STR.views.import.reviewIncomingEyebrow}
+                    >
+                      <header className="import-review__incoming-header">
+                        <span className="import-review__incoming-eyebrow">
+                          {STR.views.import.reviewIncomingEyebrow}
+                        </span>
+                        <h2>{STR.views.import.reviewEntryProgress(reviewIndex + 1, totalReviews)}</h2>
+                      </header>
                       <div className="import-review__incoming-lines">
                         {(() => {
                           const inc = activeReview.incoming;
@@ -626,9 +663,43 @@ export function ImportPage() {
                           );
                         })()}
                       </div>
-                    </div>
+                      <p className="import-review__incoming-cta">
+                        {STR.views.import.reviewIncomingCta}
+                      </p>
+                    </section>
 
                     <div className="import-review__cards">
+                      <div className="import-review__matches-heading">
+                        <h3>{STR.views.import.reviewMatchesHeading}</h3>
+                      </div>
+                      {visibleCandidates.map((candidate) => {
+                        const isSelected = currentDecision?.candidateId === candidate.candidateId;
+                        return (
+                          <ImportCandidateCard
+                            key={candidate.candidateId}
+                            candidate={candidate}
+                            incoming={activeReview.incoming}
+                            isSelected={isSelected}
+                            isDoubles={isDoublesReview}
+                            disabled={busy}
+                            onSelect={() => {
+                              stageReviewDecision("merge", candidate.candidateId);
+                            }}
+                          />
+                        );
+                      })}
+                      {visibleCandidates.length === 0 ? (
+                        <div className="import-review__empty-candidates">
+                          {STR.views.import.noVisibleCandidates}
+                        </div>
+                      ) : null}
+                      <div
+                        className="import-review__fallback-divider"
+                        role="separator"
+                        aria-label={STR.views.import.reviewFallbackDivider}
+                      >
+                        <span>{STR.views.import.reviewFallbackDivider}</span>
+                      </div>
                       <button
                         type="button"
                         className={`import-candidate import-candidate--new ${currentDecision?.action === "create_new" ? "is-selected" : ""}`}
@@ -646,28 +717,6 @@ export function ImportPage() {
                         </div>
                         <small>{STR.views.import.reviewCreateNewDescription}</small>
                       </button>
-                      {visibleCandidates.map((candidate) => {
-                        const isSelected = currentDecision?.candidateId === candidate.candidateId;
-                        return (
-                          <ImportCandidateCard
-                            key={candidate.candidateId}
-                            candidate={candidate}
-                            incoming={activeReview.incoming}
-                            isSelected={isSelected}
-                            isDoubles={isDoublesReview}
-                            disabled={busy}
-                            onSelect={() => {
-                              stageReviewDecision("merge", candidate.candidateId);
-                            }}
-                            recommendedLabel={STR.views.import.reviewRecommended}
-                          />
-                        );
-                      })}
-                      {visibleCandidates.length === 0 ? (
-                        <div className="import-review__empty-candidates">
-                          {STR.views.import.noVisibleCandidates}
-                        </div>
-                      ) : null}
                     </div>
 
                   </div>
