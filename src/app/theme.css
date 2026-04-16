@@ -571,45 +571,138 @@ textarea {
   text-align: center !important;
 }
 
-.ui-table--standings td:nth-child(2) {
-  min-width: 14rem;
+.ui-table--standings-detail {
+  --standings-header-bg: #eef3e4;
+  --standings-header-border: #8a8f96;
+  --standings-grid: #b8bcc5;
+  --standings-row-odd: #f8f8f8;
+  --standings-row-even: #ffffff;
+  --standings-podium: #dce8f9;
+  --standings-total-bg: #edf3e4;
+  --standings-header-row-primary-height: 2.4rem;
+  --standings-header-row-secondary-height: 2rem;
+  --standings-header-row-units-height: 2rem;
+  --standings-sticky-top-secondary: var(--standings-header-row-primary-height);
+  --standings-sticky-top-units: calc(
+    var(--standings-header-row-primary-height) + var(--standings-header-row-secondary-height)
+  );
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  width: max-content;
+  min-width: max-content;
+  font-size: 0.92rem;
 }
 
-.ui-table--standings-detail td:last-child,
-.ui-table--standings-detail th:last-child,
-.ui-table--standings-detail td:nth-last-child(2),
-.ui-table--standings-detail th:nth-last-child(2) {
+.table-wrap--standings-detail {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.ui-table--standings-detail th,
+.ui-table--standings-detail td {
+  border: 0;
+  border-right: 1px solid var(--standings-grid);
+  border-bottom: 1px solid var(--standings-grid);
+  padding: 6px 10px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.ui-table--standings-detail th:nth-child(n + 5),
+.ui-table--standings-detail td:nth-child(n + 5) {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.ui-table--standings-detail tr > *:first-child {
+  border-left: 1px solid var(--standings-grid);
+}
+
+.ui-table--standings-detail thead th {
+  background: var(--standings-header-bg);
+  border-color: var(--standings-header-border);
+  font-weight: 700;
+  text-align: center;
   position: sticky;
-  right: 0;
+  z-index: 2;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
-.ui-table--standings-detail tbody td:last-child,
-.ui-table--standings-detail tbody td:nth-last-child(2) {
+.ui-table--standings-detail__header-row--primary th {
+  top: 0;
+  z-index: 6;
+  height: var(--standings-header-row-primary-height);
+}
+
+.ui-table--standings-detail__header-row--secondary th {
+  top: var(--standings-sticky-top-secondary);
+  z-index: 5;
+  height: var(--standings-header-row-secondary-height);
+}
+
+.ui-table--standings-detail__header-row--units th {
+  top: var(--standings-sticky-top-units);
+  z-index: 4;
+  height: var(--standings-header-row-units-height);
+}
+
+.ui-table--standings-detail thead tr:first-child th {
+  border-top: 1px solid var(--standings-grid);
+}
+
+.ui-table--standings-detail thead tr:last-child th {
+  border-bottom: 3px double #7a7f86;
+}
+
+.ui-table--standings-detail__group {
+  color: #b3261e;
+}
+
+.ui-table--standings-detail__header-blank {
+  color: transparent;
+}
+
+.ui-table--standings-detail tbody tr {
+  --ui-table-row-bg: var(--standings-row-even);
+}
+
+.ui-table--standings-detail tbody tr:nth-child(odd) {
+  --ui-table-row-bg: var(--standings-row-odd);
+}
+
+.ui-table--standings-detail tbody tr:nth-child(-n + 3) {
+  --ui-table-row-bg: var(--standings-podium);
+}
+
+.ui-table--standings-detail tbody td {
   background: var(--ui-table-row-bg);
 }
 
-.ui-table--standings-detail thead th:last-child,
-.ui-table--standings-detail thead th:nth-last-child(2) {
-  background: #dfe2e8;
+.ui-table--standings-detail tbody tr.is-excluded td {
+  color: #4f5359;
 }
 
-.ui-table--standings-detail td:nth-last-child(2),
-.ui-table--standings-detail th:nth-last-child(2) {
-  right: 7.5rem;
+.ui-table--standings-detail th:nth-child(4),
+.ui-table--standings-detail td:nth-child(4) {
+  border-right: 2px solid #7a7f86;
 }
 
-.ui-table--standings-detail td:nth-child(3),
-.ui-table--standings-detail th:nth-child(3) {
-  min-width: 16rem;
+.ui-table--standings-detail tbody td:nth-last-child(2),
+.ui-table--standings-detail tbody td:last-child {
+  background: color-mix(in srgb, var(--ui-table-row-bg) 82%, var(--standings-total-bg) 18%);
+  font-weight: 600;
 }
 
-.ui-table--standings-detail td:nth-child(2),
-.ui-table--standings-detail th:nth-child(2) {
-  width: 3.5rem;
-  min-width: 3.5rem;
-  max-width: 3.5rem;
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
+.ui-table--standings-detail__points {
+  font-weight: 600;
+}
+
+.ui-table--standings-detail input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 
 .category-grid {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { ExportActionDescriptor, StandingsData, StandingsRow } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { formatKm } from "@/app/format.ts";
@@ -6,18 +6,14 @@ import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
 import { EmptyState } from "@/components/feedback/EmptyState.tsx";
 import { PageHeader } from "@/components/layout/PageHeader.tsx";
-import { DataTable, type DataTableColumn } from "@/components/tables/DataTable.tsx";
 import { useStandingsStore } from "@/stores/standings.ts";
 import { useStatusStore } from "@/stores/status.ts";
 
 type CategoryGroupKey = "single" | "couples";
 type PdfLayoutPreset = "default" | "compact";
 type RaceResult = { distanceKm: number; points: number } | null;
-type StandingsViewRow = StandingsRow & {
-  yob?: number;
-  yobPair?: string;
-  raceResults: RaceResult[];
-};
+type StandingsViewRow = StandingsRow & { raceResults: RaceResult[] };
+type StandingsColumnWidth = { key: string; width: string };
 
 const CATEGORY_GROUPS: Array<{
   key: CategoryGroupKey;
@@ -52,15 +48,31 @@ function categoryButtonLabel(key: string): string {
   return `${durationLabel} - ${divisionLabel}`;
 }
 
-function isCouplesCategory(categoryKey: string): boolean {
-  return categoryKey.includes("couples_");
+function formatPoints(points: number): string {
+  return points.toLocaleString("de-DE");
 }
 
-function formatRaceCell(result: RaceResult): string {
-  if (!result) {
-    return "—";
+function formatStandingsName(row: StandingsRow): string {
+  const yobLabel = row.yobPair ?? (typeof row.yob === "number" ? String(row.yob) : "");
+  return yobLabel ? `${row.team} (${yobLabel})` : row.team;
+}
+
+function buildStandingsColumnWidths(maxRaceColumns: number): StandingsColumnWidth[] {
+  const widths: StandingsColumnWidth[] = [
+    { key: "rank", width: "4.25rem" },
+    { key: "excluded", width: "3.5rem" },
+    { key: "name", width: "18rem" },
+    { key: "club", width: "14rem" },
+  ];
+
+  for (let index = 0; index < maxRaceColumns; index += 1) {
+    widths.push({ key: `race-km-${index + 1}`, width: "5.1rem" });
+    widths.push({ key: `race-points-${index + 1}`, width: "5.1rem" });
   }
-  return `${formatKm(result.distanceKm)} km / ${result.points.toLocaleString("de-DE")} P`;
+
+  widths.push({ key: "total-km", width: "5.1rem" });
+  widths.push({ key: "total-points", width: "5.1rem" });
+  return widths;
 }
 
 function buildRaceResults(row: StandingsRow): RaceResult[] {
@@ -86,18 +98,12 @@ export function StandingsPage() {
   const selectedCategoryKey = useStandingsStore((state) => state.selectedCategoryKey);
   const selectCategory = useStandingsStore((state) => state.selectCategory);
   const [data, setData] = useState<StandingsData | null>(null);
-  const [loading, setLoading] = useState(false);
   const [pendingExcludedRows, setPendingExcludedRows] = useState<Record<string, boolean>>({});
   const [pdfLayoutPreset, setPdfLayoutPreset] = useState<PdfLayoutPreset>("compact");
 
   const loadStandings = useCallback(async (seasonId: string) => {
-    setLoading(true);
-    try {
-      const next = await api.getStandings(seasonId);
-      setData(next);
-    } finally {
-      setLoading(false);
-    }
+    const next = await api.getStandings(seasonId);
+    setData(next);
   }, [api]);
 
   useEffect(() => {
@@ -138,45 +144,11 @@ export function StandingsPage() {
     [selectedRows],
   );
 
-  const summaryViewRows = useMemo<StandingsViewRow[]>(
-    () => selectedViewRows.filter((row) => !row.excluded),
-    [selectedViewRows],
-  );
-
   const maxRaceColumns = useMemo(
     () => selectedCategory?.importedRuns ?? Math.max(0, ...selectedViewRows.map((row) => row.raceResults.length)),
     [selectedCategory?.importedRuns, selectedViewRows],
   );
-
-  const summaryColumns = useMemo<DataTableColumn<StandingsViewRow>[]>(
-    () => {
-      const couples = selectedCategory ? isCouplesCategory(selectedCategory.key) : false;
-      return [
-        { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => row.rank ?? "—" },
-        { key: "team", header: STR.views.standings.headerName, cell: (row) => row.team },
-        {
-          key: "yob",
-          header: STR.views.standings.headerYob,
-          align: "right",
-          cell: (row) => (couples ? row.yobPair ?? "—" : row.yob?.toString() ?? "—"),
-        },
-        { key: "club", header: STR.views.standings.club, cell: (row) => row.club || "—" },
-        {
-          key: "distanceKm",
-          header: STR.views.standings.headerTotalDistanceKm,
-          align: "right",
-          cell: (row) => formatKm(row.distanceKm),
-        },
-        {
-          key: "points",
-          header: STR.views.standings.headerTotalPoints,
-          align: "right",
-          cell: (row) => row.points.toLocaleString("de-DE"),
-        },
-      ];
-    },
-    [selectedCategory],
-  );
+  const detailColumnWidths = useMemo(() => buildStandingsColumnWidths(maxRaceColumns), [maxRaceColumns]);
 
   const handleExcludedChange = useCallback(
     async (row: StandingsViewRow, excluded: boolean) => {
@@ -204,56 +176,16 @@ export function StandingsPage() {
         });
       } finally {
         setPendingExcludedRows((prev) => {
-          const next = { ...prev };
-          delete next[exclusionKey];
-          return next;
+          return Object.fromEntries(
+            Object.entries(prev).filter(([key]) => key !== exclusionKey),
+          );
         });
       }
     },
     [api, loadStandings, selectedCategory?.key, setStatus, shellData.selectedSeasonId],
   );
 
-  const detailedColumns = useMemo<DataTableColumn<StandingsViewRow>[]>(
-    () => [
-      { key: "rank", header: STR.views.standings.headerRank, align: "right", cell: (row) => (row.excluded ? "—" : row.rank) },
-      {
-        key: "excluded",
-        header: STR.views.standings.headerExcluded,
-        align: "center",
-        cell: (row) => {
-          const categoryPrefix = selectedCategory?.key ?? "unknown";
-          const exclusionKey = `${categoryPrefix}:${row.teamId ?? row.team}`;
-          return (
-            <input
-              type="checkbox"
-              checked={Boolean(row.excluded)}
-              onChange={(event) => {
-                const checked = event.currentTarget.checked;
-                void handleExcludedChange(row, checked);
-              }}
-              aria-label={STR.views.standings.excludedAria(row.team)}
-              disabled={Boolean(pendingExcludedRows[exclusionKey])}
-            />
-          );
-        },
-      },
-      { key: "team", header: STR.views.standings.headerName, cell: (row) => row.team },
-      ...Array.from({ length: maxRaceColumns }, (_, index) => ({
-        key: `race_${index + 1}`,
-        header: `Lauf ${index + 1}`,
-        align: "right" as const,
-        cell: (row: StandingsViewRow) => formatRaceCell(row.raceResults[index] ?? null),
-      })),
-      { key: "distanceKm", header: STR.views.standings.headerTotalDistance, align: "right", cell: (row) => formatKm(row.distanceKm) },
-      {
-        key: "points",
-        header: STR.views.standings.headerTotalPoints,
-        align: "right",
-        cell: (row) => row.points.toLocaleString("de-DE"),
-      },
-    ],
-    [handleExcludedChange, pendingExcludedRows, maxRaceColumns, selectedCategory?.key],
-  );
+  const detailColumnCount = 6 + maxRaceColumns * 2;
 
   const handleExport = useCallback(
     async (action: ExportActionDescriptor) => {
@@ -391,23 +323,104 @@ export function StandingsPage() {
               <p>{selectedCategory?.description ?? STR.views.standings.placeholder}</p>
             </div>
           </div>
-          <DataTable
-            className="ui-table--standings"
-            columns={summaryColumns}
-            rows={summaryViewRows}
-            rowKey={(row) => row.teamId ?? row.team}
-            emptyMessage={STR.views.standings.noRows}
-          />
           <div className="surface-card__section">
             <h3>{STR.views.standings.detailResultsTitle}</h3>
           </div>
-          <DataTable
-            className="ui-table--standings ui-table--standings-detail"
-            columns={detailedColumns}
-            rows={selectedViewRows}
-            rowKey={(row) => `${row.teamId ?? row.team}-detail`}
-            emptyMessage={STR.views.standings.noRows}
-          />
+          <div className="table-wrap table-wrap--standings-detail">
+            <table className="ui-table ui-table--standings ui-table--standings-detail">
+              <colgroup>
+                {detailColumnWidths.map((column) => (
+                  <col key={column.key} style={{ width: column.width }} />
+                ))}
+              </colgroup>
+              <thead>
+                <tr className="ui-table--standings-detail__header-row ui-table--standings-detail__header-row--primary">
+                  <th className="ui-table__cell--right">{STR.views.standings.headerRank}</th>
+                  <th className="ui-table__cell--center">{STR.views.standings.headerExcluded}</th>
+                  <th>{STR.views.standings.headerName}</th>
+                  <th>{STR.views.standings.club}</th>
+                  {Array.from({ length: maxRaceColumns }, (_, index) => (
+                    <th
+                      key={`group-race-${index + 1}`}
+                      colSpan={2}
+                      className="ui-table--standings-detail__group"
+                    >
+                      {index + 1}. Lauf
+                    </th>
+                  ))}
+                  <th colSpan={2} className="ui-table--standings-detail__group">Gesamt</th>
+                </tr>
+                <tr className="ui-table--standings-detail__header-row ui-table--standings-detail__header-row--secondary">
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  {Array.from({ length: maxRaceColumns + 1 }, (_, index) => (
+                    <Fragment key={`detail-subhead-${index}`}>
+                      <th>Laufstr.</th>
+                      <th>Wertung</th>
+                    </Fragment>
+                  ))}
+                </tr>
+                <tr className="ui-table--standings-detail__header-row ui-table--standings-detail__header-row--units">
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  <th aria-hidden="true" className="ui-table--standings-detail__header-blank" />
+                  {Array.from({ length: maxRaceColumns + 1 }, (_, index) => (
+                    <Fragment key={`detail-units-${index}`}>
+                      <th>(km)</th>
+                      <th>(Punkte)</th>
+                    </Fragment>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {selectedViewRows.length > 0 ? selectedViewRows.map((row) => {
+                  const categoryPrefix = selectedCategory?.key ?? "unknown";
+                  const exclusionKey = `${categoryPrefix}:${row.teamId ?? row.team}`;
+                  return (
+                    <tr key={`${row.teamId ?? row.team}-detail`} className={row.excluded ? "is-excluded" : ""}>
+                      <td className="ui-table__cell--right">{row.excluded ? "—" : row.rank}</td>
+                      <td className="ui-table__cell--center">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(row.excluded)}
+                          onChange={(event) => {
+                            const checked = event.currentTarget.checked;
+                            void handleExcludedChange(row, checked);
+                          }}
+                          aria-label={STR.views.standings.excludedAria(row.team)}
+                          disabled={Boolean(pendingExcludedRows[exclusionKey])}
+                        />
+                      </td>
+                      <td>{formatStandingsName(row)}</td>
+                      <td>{row.club || "—"}</td>
+                      {Array.from({ length: maxRaceColumns }, (_, index) => {
+                        const result = row.raceResults[index] ?? null;
+                        return (
+                          <Fragment key={`${row.teamId ?? row.team}-race-${index + 1}`}>
+                            <td className="ui-table__cell--right">{result ? formatKm(result.distanceKm) : "—"}</td>
+                            <td className="ui-table__cell--right ui-table--standings-detail__points">
+                              {result ? formatPoints(result.points) : "—"}
+                            </td>
+                          </Fragment>
+                        );
+                      })}
+                      <td className="ui-table__cell--right">{formatKm(row.distanceKm)}</td>
+                      <td className="ui-table__cell--right ui-table--standings-detail__points">
+                        {formatPoints(row.points)}
+                      </td>
+                    </tr>
+                  );
+                }) : (
+                  <tr>
+                    <td colSpan={detailColumnCount}>{STR.views.standings.noRows}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
     </div>

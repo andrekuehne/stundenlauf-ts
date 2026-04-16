@@ -139,7 +139,7 @@ describe("StandingsPage", () => {
   it("runs PDF export with compact preset by default and emits status", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0); });
+    await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
 
     await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
     const latestSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
@@ -158,7 +158,7 @@ describe("StandingsPage", () => {
   it("runs PDF export with normal preset when selected", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0); });
+    await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
 
     await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
     const firstSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
@@ -182,7 +182,7 @@ describe("StandingsPage", () => {
   it("renders exclusion state and persists checkbox changes", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getAllByText("Anna Team").length).toBeGreaterThan(0); });
+    await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
 
     const checkbox = screen.getByRole("checkbox", { name: "a.W. Anna Team" });
     expect(checkbox).toBeChecked();
@@ -198,7 +198,7 @@ describe("StandingsPage", () => {
     });
   });
 
-  it("keeps the standings tables visible while exclusion refresh is pending", async () => {
+  it("keeps the standings detail table visible while exclusion refresh is pending", async () => {
     selectedCategoryKey = "half_hour:women";
     let resolveReload: ((value: StandingsData) => void) | null = null;
     apiMock = {
@@ -227,36 +227,53 @@ describe("StandingsPage", () => {
       });
     });
 
-    expect(screen.getAllByRole("table")).toHaveLength(2);
+    expect(screen.getAllByRole("table")).toHaveLength(1);
     expect(screen.getByText("Detailergebnisse")).toBeInTheDocument();
-    expect(screen.getByText("Anna Team")).toBeInTheDocument();
+    expect(screen.getByText(/Anna Team/)).toBeInTheDocument();
     expect(screen.queryByText("Wertungen werden geladen...")).not.toBeInTheDocument();
 
     resolveReload?.(standingsData);
     await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledTimes(2); });
   });
 
-  it("removes excluded rows from overview rankings but keeps them in details", async () => {
+  it("renders the standings detail table like the PDF overview while keeping exclusion toggles", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getByText("Detailergebnisse")).toBeInTheDocument(); });
 
     const tables = screen.getAllByRole("table");
-    const overviewTable = tables[0] as HTMLTableElement;
-    const detailTable = tables[1] as HTMLTableElement;
+    expect(tables).toHaveLength(1);
+    const detailTable = tables[0] as HTMLTableElement;
+    const detailCols = Array.from(detailTable.querySelectorAll("col"));
 
-    expect(within(overviewTable).queryByText("Anna Team")).not.toBeInTheDocument();
-    expect(within(overviewTable).getByText("Bea Team")).toBeInTheDocument();
-    expect(within(overviewTable).getByText("Clara Team")).toBeInTheDocument();
-    expect(within(detailTable).getByText("Anna Team")).toBeInTheDocument();
-    expect(within(detailTable).getByText("Bea Team")).toBeInTheDocument();
-    expect(within(detailTable).getByText("Clara Team")).toBeInTheDocument();
+    expect(detailCols).toHaveLength(10);
+    expect(detailCols.slice(4).every((col) => col.style.width === "5.1rem")).toBe(true);
 
-    const detailRows = within(detailTable).getAllByRole("row").slice(1);
+    expect(within(detailTable).getByRole("columnheader", { name: "Verein" })).toBeInTheDocument();
+    expect(within(detailTable).getByRole("columnheader", { name: "1. Lauf" })).toHaveAttribute("colspan", "2");
+    expect(within(detailTable).getByRole("columnheader", { name: "2. Lauf" })).toHaveAttribute("colspan", "2");
+    expect(within(detailTable).getByRole("columnheader", { name: "Gesamt" })).toHaveAttribute("colspan", "2");
+    expect(within(detailTable).getAllByRole("columnheader", { name: "Laufstr." })).toHaveLength(3);
+    expect(within(detailTable).getAllByRole("columnheader", { name: "Wertung" })).toHaveLength(3);
+    expect(within(detailTable).getAllByRole("columnheader", { name: "(km)" })).toHaveLength(3);
+    expect(within(detailTable).getAllByRole("columnheader", { name: "(Punkte)" })).toHaveLength(3);
+    const [primaryHeaderRow, secondaryHeaderRow, unitsHeaderRow] = Array.from(detailTable.tHead?.rows ?? []);
+    expect(primaryHeaderRow).toHaveClass("ui-table--standings-detail__header-row--primary");
+    expect(secondaryHeaderRow).toHaveClass("ui-table--standings-detail__header-row--secondary");
+    expect(unitsHeaderRow).toHaveClass("ui-table--standings-detail__header-row--units");
+    expect(detailTable.querySelectorAll("[class*='ui-table--standings-detail__sticky-cell--']")).toHaveLength(0);
+
+    expect(within(detailTable).getByText(/Anna Team/)).toBeInTheDocument();
+    expect(within(detailTable).getByText(/Bea Team/)).toBeInTheDocument();
+    expect(within(detailTable).getByText(/Clara Team/)).toBeInTheDocument();
+    expect(within(detailTable).getAllByText("SV")).toHaveLength(3);
+    expect(within(detailTable).getByRole("checkbox", { name: "a.W. Anna Team" })).toBeInTheDocument();
+
+    const detailRows = Array.from(detailTable.tBodies[0]?.rows ?? []);
     expect(detailRows.map((row) => within(row).getAllByRole("cell")[2]?.textContent)).toEqual([
-      "Bea Team",
-      "Anna Team",
-      "Clara Team",
+      "Bea Team (1991)",
+      "Anna Team (1990)",
+      "Clara Team (1992)",
     ]);
     expect(within(detailRows[1]!).getAllByRole("cell")[0]?.textContent).toBe("—");
   });
