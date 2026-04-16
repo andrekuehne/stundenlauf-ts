@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { DataTable, type DataTableColumn } from "@/components/tables/DataTable.tsx";
 import { AppShell } from "@/components/layout/AppShell.tsx";
+import { ContentSplitLayout } from "@/components/layout/ContentSplitLayout.tsx";
 vi.mock("react-router-dom", async () => {
   const mod = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return {
@@ -49,5 +50,15 @@ describe("shared UI components", () => {
     expect(screen.queryByText("Offene Prüfungen:")).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "s2" } });
     expect(onSeasonChange).toHaveBeenCalledWith("s2");
+  });
+
+  it("passes side max width through css variable", () => {
+    const { container } = render(
+      <ContentSplitLayout main={<div>Main</div>} side={<div>Side</div>} sideMaxWidth={420} />,
+    );
+
+    const grid = container.querySelector(".content-split-layout__grid");
+    expect(grid).not.toBeNull();
+    expect(grid).toHaveStyle("--content-split-side-max-width: 420px");
   });
 });

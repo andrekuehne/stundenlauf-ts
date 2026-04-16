@@ -357,6 +357,40 @@ describe("ImportPage", () => {
     expect(selectedBestCandidate).toBeInTheDocument();
   });
 
+  it("opens and closes matching settings via a single button", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("4"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("dialog", { name: "Matching-Optionen" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Matching-Einstellungen" }));
+
+    expect(screen.getByRole("dialog", { name: "Matching-Optionen" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
+
+    expect(screen.queryByRole("dialog", { name: "Matching-Optionen" })).not.toBeInTheDocument();
+  });
+
   it("uses 0 as slider minimum for matching thresholds", async () => {
     const unresolvedDraft = buildDraftWithUnresolvedReview({
       seasonId: "season-1",
@@ -379,6 +413,9 @@ describe("ImportPage", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
     });
+
+    fireEvent.click(screen.getByRole("button", { name: "Matching-Einstellungen" }));
+    expect(screen.getByRole("dialog", { name: "Matching-Optionen" })).toBeInTheDocument();
 
     const sliders = screen.getAllByRole("slider");
     expect(sliders.length).toBeGreaterThanOrEqual(2);

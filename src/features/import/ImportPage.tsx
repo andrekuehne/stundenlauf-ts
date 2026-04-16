@@ -89,6 +89,7 @@ export function ImportPage() {
   const [busy, setBusy] = useState(false);
   const [matchingMode, setMatchingMode] = useState<MatchingMode>("fuzzy_automatik");
   const [fuzzySubMode, setFuzzySubMode] = useState<FuzzySubMode>("perfect");
+  const [isMatchingSettingsOpen, setIsMatchingSettingsOpen] = useState(false);
   const [matchingModeSettings, setMatchingModeSettings] =
     useState<Record<MatchingMode, MatchingModeSettings>>(MATCHING_MODE_DEFAULTS);
   const [stagedDecisions, setStagedDecisions] = useState<
@@ -320,6 +321,7 @@ export function ImportPage() {
       setSelectedFile(null);
       setCategory("singles");
       setReviewIndex(0);
+      setIsMatchingSettingsOpen(false);
       setStep("select_file");
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : STR.views.import.importFailed;
@@ -639,128 +641,16 @@ export function ImportPage() {
                   <p>{STR.views.import.openCount(openReviews)}</p>
                 </InfoCard>
                 <InfoCard title={STR.views.import.matchingOptionsTitle}>
-                  <div className="matching-options">
-                    <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeAria}>
-                      <button
-                        type="button"
-                        className={`button button--tab ${matchingMode === "strict" ? "is-active" : ""}`}
-                        onClick={() => {
-                          setMatchingMode("strict");
-                        }}
-                        disabled={busy}
-                      >
-                        {STR.views.import.matchingModeStrict}
-                      </button>
-                      <button
-                        type="button"
-                        className={`button button--tab ${matchingMode === "fuzzy_automatik" ? "is-active" : ""}`}
-                        onClick={() => {
-                          setMatchingMode("fuzzy_automatik");
-                        }}
-                        disabled={busy}
-                      >
-                        {STR.views.import.matchingModeShortFuzzy}
-                      </button>
-                      <button
-                        type="button"
-                        className={`button button--tab ${matchingMode === "manuell" ? "is-active" : ""}`}
-                        onClick={() => {
-                          setMatchingMode("manuell");
-                        }}
-                        disabled={busy}
-                      >
-                        {STR.views.import.matchingModeManual}
-                      </button>
-                    </div>
-                    <div className="matching-options__summary">
-                      <span>
-                        Effektive Auto-Schwelle: <strong>{thresholdLabel(effectiveAutoThreshold)}</strong>
-                      </span>
-                    </div>
-                    {matchingMode === "fuzzy_automatik" ? (
-                      <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeFuzzy}>
-                        <button
-                          type="button"
-                          className={`button button--tab ${fuzzySubMode === "perfect" ? "is-active" : ""}`}
-                          onClick={() => {
-                            setFuzzySubMode("perfect");
-                          }}
-                          disabled={busy}
-                        >
-                          {STR.views.import.matchingFuzzySubPerfect}
-                        </button>
-                        <button
-                          type="button"
-                          className={`button button--tab ${fuzzySubMode === "threshold" ? "is-active" : ""}`}
-                          onClick={() => {
-                            setFuzzySubMode("threshold");
-                          }}
-                          disabled={busy}
-                        >
-                          {STR.views.import.matchingFuzzySubThreshold}
-                        </button>
-                      </div>
-                    ) : null}
-                    <label className="matching-options__slider">
-                      <span>{STR.views.import.autoThresholdLabel(thresholdLabel(activeMatchingSettings.autoThreshold))}</span>
-                      <input
-                        type="range"
-                        min={MATCHING_THRESHOLD_MIN}
-                        max={MATCHING_THRESHOLD_MAX}
-                        step={MATCHING_THRESHOLD_STEP}
-                        value={activeMatchingSettings.autoThreshold}
-                        disabled={busy || matchingMode !== "fuzzy_automatik" || fuzzySubMode === "perfect"}
-                        onChange={(event) => {
-                          const nextValue = clampThreshold(Number(event.target.value));
-                          setMatchingModeSettings((current) => ({
-                            ...current,
-                            [matchingMode]: {
-                              ...current[matchingMode],
-                              autoThreshold: nextValue,
-                            },
-                          }));
-                        }}
-                      />
-                    </label>
-                    <label className="matching-options__slider">
-                      <span>{STR.views.import.reviewThresholdLabel(thresholdLabel(cappedReviewThreshold))}</span>
-                      <input
-                        type="range"
-                        min={MATCHING_THRESHOLD_MIN}
-                        max={MATCHING_THRESHOLD_MAX}
-                        step={MATCHING_THRESHOLD_STEP}
-                        value={cappedReviewThreshold}
-                        disabled={busy}
-                        onChange={(event) => {
-                          const nextValue = clampThreshold(Number(event.target.value));
-                          const maxReview = effectiveAutoThresholdFromConfig({
-                            autoMergeEnabled: matchingMode === "fuzzy_automatik" && fuzzySubMode === "threshold",
-                            perfectMatchAutoMerge: matchingMode === "fuzzy_automatik",
-                            autoMin: activeMatchingSettings.autoThreshold,
-                          });
-                          setMatchingModeSettings((current) => ({
-                            ...current,
-                            [matchingMode]: {
-                              ...current[matchingMode],
-                              reviewThreshold: Math.min(nextValue, maxReview),
-                            },
-                          }));
-                        }}
-                      />
-                    </label>
-                    <p className="matching-options__hint">
-                      {matchingMode === "strict"
-                        ? STR.views.import.matchingModeHintStrict
-                        : matchingMode === "manuell"
-                          ? STR.views.import.matchingModeHintManual
-                          : modeMayAutoMerge
-                            ? STR.views.import.matchingModeHintAutoZone
-                            : STR.views.import.matchingModeHintReviewList}
-                    </p>
-                    <p className="matching-options__hint">
-                      {STR.views.import.visibleCandidatesCount(visibleCandidates.length, orderedCandidates.length)}
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => {
+                      setIsMatchingSettingsOpen(true);
+                    }}
+                    disabled={busy}
+                  >
+                    {STR.views.import.matchingSettings}
+                  </button>
                 </InfoCard>
                 <InfoCard title={STR.views.import.hintsTitle}>
                   <ul className="support-list">
@@ -863,6 +753,151 @@ export function ImportPage() {
           />
         ) : null}
       </section>
+
+      {step === "review_matches" && draft && isMatchingSettingsOpen ? (
+        <div className="confirm-modal__backdrop" role="presentation">
+          <div className="confirm-modal" role="dialog" aria-modal="true" aria-label={STR.views.import.matchingOptionsTitle}>
+            <div className="confirm-modal__header">
+              <h2>{STR.views.import.matchingOptionsTitle}</h2>
+            </div>
+            <div className="confirm-modal__body">
+              <div className="matching-options">
+                <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeAria}>
+                  <button
+                    type="button"
+                    className={`button button--tab ${matchingMode === "strict" ? "is-active" : ""}`}
+                    onClick={() => {
+                      setMatchingMode("strict");
+                    }}
+                    disabled={busy}
+                  >
+                    {STR.views.import.matchingModeStrict}
+                  </button>
+                  <button
+                    type="button"
+                    className={`button button--tab ${matchingMode === "fuzzy_automatik" ? "is-active" : ""}`}
+                    onClick={() => {
+                      setMatchingMode("fuzzy_automatik");
+                    }}
+                    disabled={busy}
+                  >
+                    {STR.views.import.matchingModeShortFuzzy}
+                  </button>
+                  <button
+                    type="button"
+                    className={`button button--tab ${matchingMode === "manuell" ? "is-active" : ""}`}
+                    onClick={() => {
+                      setMatchingMode("manuell");
+                    }}
+                    disabled={busy}
+                  >
+                    {STR.views.import.matchingModeManual}
+                  </button>
+                </div>
+                <div className="matching-options__summary">
+                  <span>
+                    Effektive Auto-Schwelle: <strong>{thresholdLabel(effectiveAutoThreshold)}</strong>
+                  </span>
+                </div>
+                {matchingMode === "fuzzy_automatik" ? (
+                  <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeFuzzy}>
+                    <button
+                      type="button"
+                      className={`button button--tab ${fuzzySubMode === "perfect" ? "is-active" : ""}`}
+                      onClick={() => {
+                        setFuzzySubMode("perfect");
+                      }}
+                      disabled={busy}
+                    >
+                      {STR.views.import.matchingFuzzySubPerfect}
+                    </button>
+                    <button
+                      type="button"
+                      className={`button button--tab ${fuzzySubMode === "threshold" ? "is-active" : ""}`}
+                      onClick={() => {
+                        setFuzzySubMode("threshold");
+                      }}
+                      disabled={busy}
+                    >
+                      {STR.views.import.matchingFuzzySubThreshold}
+                    </button>
+                  </div>
+                ) : null}
+                <label className="matching-options__slider">
+                  <span>{STR.views.import.autoThresholdLabel(thresholdLabel(activeMatchingSettings.autoThreshold))}</span>
+                  <input
+                    type="range"
+                    min={MATCHING_THRESHOLD_MIN}
+                    max={MATCHING_THRESHOLD_MAX}
+                    step={MATCHING_THRESHOLD_STEP}
+                    value={activeMatchingSettings.autoThreshold}
+                    disabled={busy || matchingMode !== "fuzzy_automatik" || fuzzySubMode === "perfect"}
+                    onChange={(event) => {
+                      const nextValue = clampThreshold(Number(event.target.value));
+                      setMatchingModeSettings((current) => ({
+                        ...current,
+                        [matchingMode]: {
+                          ...current[matchingMode],
+                          autoThreshold: nextValue,
+                        },
+                      }));
+                    }}
+                  />
+                </label>
+                <label className="matching-options__slider">
+                  <span>{STR.views.import.reviewThresholdLabel(thresholdLabel(cappedReviewThreshold))}</span>
+                  <input
+                    type="range"
+                    min={MATCHING_THRESHOLD_MIN}
+                    max={MATCHING_THRESHOLD_MAX}
+                    step={MATCHING_THRESHOLD_STEP}
+                    value={cappedReviewThreshold}
+                    disabled={busy}
+                    onChange={(event) => {
+                      const nextValue = clampThreshold(Number(event.target.value));
+                      const maxReview = effectiveAutoThresholdFromConfig({
+                        autoMergeEnabled: matchingMode === "fuzzy_automatik" && fuzzySubMode === "threshold",
+                        perfectMatchAutoMerge: matchingMode === "fuzzy_automatik",
+                        autoMin: activeMatchingSettings.autoThreshold,
+                      });
+                      setMatchingModeSettings((current) => ({
+                        ...current,
+                        [matchingMode]: {
+                          ...current[matchingMode],
+                          reviewThreshold: Math.min(nextValue, maxReview),
+                        },
+                      }));
+                    }}
+                  />
+                </label>
+                <p className="matching-options__hint">
+                  {matchingMode === "strict"
+                    ? STR.views.import.matchingModeHintStrict
+                    : matchingMode === "manuell"
+                      ? STR.views.import.matchingModeHintManual
+                      : modeMayAutoMerge
+                        ? STR.views.import.matchingModeHintAutoZone
+                        : STR.views.import.matchingModeHintReviewList}
+                </p>
+                <p className="matching-options__hint">
+                  {STR.views.import.visibleCandidatesCount(visibleCandidates.length, orderedCandidates.length)}
+                </p>
+              </div>
+            </div>
+            <div className="confirm-modal__actions">
+              <button
+                type="button"
+                className="button"
+                onClick={() => {
+                  setIsMatchingSettingsOpen(false);
+                }}
+              >
+                {STR.actions.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

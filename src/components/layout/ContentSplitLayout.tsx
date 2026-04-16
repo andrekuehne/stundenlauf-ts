@@ -4,7 +4,7 @@ type ContentSplitLayoutProps = {
   header?: ReactNode;
   main: ReactNode;
   side?: ReactNode;
-  sideWidth?: number;
+  sideMaxWidth?: number;
   fillHeight?: boolean;
   stickySide?: boolean;
 };
@@ -13,12 +13,12 @@ export function ContentSplitLayout({
   header,
   main,
   side,
-  sideWidth = 360,
+  sideMaxWidth = 360,
   fillHeight = false,
   stickySide = false,
 }: ContentSplitLayoutProps) {
   const gridStyle = {
-    "--content-split-side-width": `${sideWidth}px`,
+    "--content-split-side-max-width": `${sideMaxWidth}px`,
   } as CSSProperties;
   const rootClass = `content-split-layout ${fillHeight ? "content-split-layout--fill" : ""}`.trim();
   const sideClass = `content-split-layout__side ${stickySide ? "content-split-layout__side--sticky" : ""}`.trim();

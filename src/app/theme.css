@@ -114,8 +114,10 @@ textarea {
 }
 
 .shell-body {
+  --shell-sidebar-max-width: 390px;
+  --shell-main-min-width: min(56rem, 100%);
   display: grid;
-  grid-template-columns: 390px minmax(0, 1fr);
+  grid-template-columns: fit-content(var(--shell-sidebar-max-width)) minmax(var(--shell-main-min-width), 1fr);
   min-height: 0;
   overflow: hidden;
 }
@@ -333,15 +335,32 @@ textarea {
   display: grid;
   gap: var(--spacing-lg);
   align-content: start;
+  min-width: 0;
 }
 
 .sidebar-controls__section {
   display: grid;
   gap: var(--spacing-sm);
+  min-width: 0;
 }
 
 .sidebar-controls__section h4 {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.shell-sidebar__controls .sidebar-controls .button,
+.shell-sidebar__controls .sidebar-controls select,
+.shell-sidebar__controls .sidebar-controls input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.shell-sidebar__controls .sidebar-controls .button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
 }
 
 .category-matrix {
@@ -877,9 +896,9 @@ textarea {
 }
 
 .content-split-layout__grid {
-  --content-split-side-width: 360px;
+  --content-split-side-max-width: 360px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, var(--content-split-side-width));
+  grid-template-columns: minmax(min(42rem, 100%), 1fr) fit-content(var(--content-split-side-max-width));
   gap: var(--spacing-lg);
   align-items: start;
 }
@@ -1378,6 +1397,7 @@ textarea {
 .confirm-modal__backdrop {
   position: fixed;
   inset: 0;
+  z-index: 1200;
   background: rgb(0 0 0 / 40%);
   display: grid;
   place-items: center;
