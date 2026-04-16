@@ -22,10 +22,11 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
     <div className="shell-layout">
       <header className="shell-topbar">
         <div className="shell-topbar__title">
+          <span className="shell-topbar__eyebrow">Stundenlauf</span>
           <h1>{STR.shell.appTitle}</h1>
         </div>
         <div className="shell-topbar__controls">
-          <label className="shell-inline-field">
+          <label className="shell-inline-field shell-topbar__season-field">
             <span>{STR.shell.seasonSelectLabel}</span>
             <select
               value={shellData.selectedSeasonId ?? ""}
@@ -59,7 +60,8 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
                     `shell-nav-link ${isActive ? "is-active" : ""} ${route === "standings" && !shellData.selectedSeasonId ? "is-disabled" : ""}`
                   }
                 >
-                  <span>{STR.shell.tabs[route]}</span>
+                  <span className="shell-nav-link__rail" aria-hidden="true" />
+                  <span className="shell-nav-link__label">{STR.shell.tabs[route]}</span>
                 </NavLink>
               ))}
             </nav>

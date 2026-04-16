@@ -17,9 +17,16 @@ let shellData: ShellData = {
 
 const standingsData: StandingsData = {
   seasonId: "season-1",
-  summary: { seasonLabel: "Saison 1", totalTeams: 2, totalParticipants: 2, totalRuns: 2, lastUpdatedAt: new Date().toISOString() },
+  summary: {
+    seasonLabel: "Saison 2025",
+    totalTeams: 5,
+    totalParticipants: 5,
+    totalRuns: 6,
+    lastUpdatedAt: "2025-04-08T12:34:00Z",
+  },
   categories: [
-    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 2, importedRuns: 2 },
+    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 3, importedRuns: 2 },
+    { key: "hour:women", label: "Frauen 1", description: "desc", participantCount: 2, importedRuns: 4 },
   ],
   rowsByCategory: {
     "half_hour:women": [
@@ -28,7 +35,7 @@ const standingsData: StandingsData = {
         team: "Bea Team",
         teamId: "team-bea",
         yob: 1991,
-        club: "SV",
+        club: "SV Musterstadt",
         distanceKm: 9,
         points: 18,
         races: 2,
@@ -39,7 +46,7 @@ const standingsData: StandingsData = {
         team: "Anna Team",
         teamId: "team-anna",
         yob: 1990,
-        club: "SV",
+        club: "SV Musterstadt",
         distanceKm: 10,
         points: 20,
         races: 2,
@@ -50,10 +57,34 @@ const standingsData: StandingsData = {
         team: "Clara Team",
         teamId: "team-clara",
         yob: 1992,
-        club: "SV",
+        club: "SV Musterstadt",
         distanceKm: 8,
         points: 16,
         races: 2,
+        excluded: false,
+      },
+    ],
+    "hour:women": [
+      {
+        rank: 1,
+        team: "Doro Team",
+        teamId: "team-doro",
+        yob: 1985,
+        club: "SV Anders",
+        distanceKm: 14,
+        points: 28,
+        races: 4,
+        excluded: false,
+      },
+      {
+        rank: 2,
+        team: "Eva Team",
+        teamId: "team-eva",
+        yob: 1986,
+        club: "SV Anders",
+        distanceKm: 12,
+        points: 24,
+        races: 4,
         excluded: false,
       },
     ],
@@ -136,6 +167,37 @@ describe("StandingsPage", () => {
     await waitFor(() => { expect(selectCategory).toHaveBeenCalledWith("half_hour:women"); });
   });
 
+  it("renders only a quiet meta line (season + last-updated), without an Auswertung eyebrow or category headline", async () => {
+    selectedCategoryKey = "half_hour:women";
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+
+    expect(screen.queryByText(/^Auswertung$/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "1/2 h - Frauen" })).not.toBeInTheDocument();
+
+    const meta = screen.getByTestId("standings-meta");
+    expect(meta.textContent).toContain("Saison 2025");
+    expect(meta.textContent).toContain("zuletzt aktualisiert");
+  });
+
+  it("renders three KPI cards with team count, races progress and excluded count", async () => {
+    selectedCategoryKey = "half_hour:women";
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+
+    const teamsCard = screen.getByTestId("standings-kpi-teams");
+    expect(within(teamsCard).getByText("Teams in Wertung")).toBeInTheDocument();
+    expect(within(teamsCard).getByText("2")).toBeInTheDocument();
+
+    const racesCard = screen.getByTestId("standings-kpi-races");
+    expect(within(racesCard).getByText("Läufe importiert")).toBeInTheDocument();
+    expect(within(racesCard).getByText("2 / 5")).toBeInTheDocument();
+
+    const excludedCard = screen.getByTestId("standings-kpi-excluded");
+    expect(within(excludedCard).getByText("Außer Wertung")).toBeInTheDocument();
+    expect(within(excludedCard).getByText("1")).toBeInTheDocument();
+  });
+
   it("renders export buttons in main content and uses compact PDF preset", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
@@ -153,22 +215,19 @@ describe("StandingsPage", () => {
 
   it("runs excel export from main content export controls", async () => {
     selectedCategoryKey = "half_hour:women";
+    const exportActions: StandingsData["exportActions"] = [
+      { id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" },
+      { id: "export_excel", label: "Excel", description: "Excel export", availability: "ready" },
+    ];
     apiMock = {
       ...apiMock,
       getStandings: vi.fn(async () => ({
         ...standingsData,
-        exportActions: [
-          { id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" },
-          { id: "export_excel", label: "Excel", description: "Excel export", availability: "ready" },
-        ],
+        exportActions,
       })),
     };
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
-    expect(screen.getByRole("button", { name: "Excel exportieren" })).toHaveStyle({
-      gridColumnStart: "6",
-      gridRowStart: "2",
-    });
     fireEvent.click(screen.getByRole("button", { name: "Excel exportieren" }));
 
     await waitFor(() =>
@@ -177,134 +236,132 @@ describe("StandingsPage", () => {
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
   });
 
-  it("renders exclusion state and persists checkbox changes", async () => {
+  it("does not render the exclusion checkbox column anymore", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
 
-    const checkbox = screen.getByRole("checkbox", { name: "a.W. Anna Team" });
-    expect(checkbox).toBeChecked();
-
-    fireEvent.click(checkbox);
-
-    await waitFor(() => {
-      expect(apiMock.setStandingsRowExcluded).toHaveBeenCalledWith("season-1", {
-        categoryKey: "half_hour:women",
-        teamId: "team-anna",
-        excluded: false,
-      });
-    });
+    expect(screen.queryByRole("checkbox", { name: /Anna Team/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "a.W." })).not.toBeInTheDocument();
   });
 
-  it("keeps the standings detail table visible while exclusion refresh is pending", async () => {
+  it("uses the same column count for every category in the season (season-max race columns)", async () => {
     selectedCategoryKey = "half_hour:women";
-    let resolveReload: ((value: StandingsData) => void) | null = null;
+    const { rerender } = render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+
+    const halfHourCols = Array.from(screen.getByRole("table").querySelectorAll("col"));
+    selectedCategoryKey = "hour:women";
+    rerender(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByText(/Doro Team/)).toBeInTheDocument(); });
+    const hourCols = Array.from(screen.getByRole("table").querySelectorAll("col"));
+
+    expect(halfHourCols.length).toBe(hourCols.length);
+    expect(halfHourCols.length).toBe(3 + 2 * 5 + 2);
+  });
+
+  it("falls back to a 5-race floor when no category has imported runs yet", async () => {
     apiMock = {
       ...apiMock,
-      getStandings: vi
-        .fn()
-        .mockResolvedValueOnce(standingsData)
-        .mockImplementationOnce(
-          () =>
-            new Promise<StandingsData>((resolve) => {
-              resolveReload = resolve;
-            }),
-        ),
+      getStandings: vi.fn(async () => ({
+        ...standingsData,
+        categories: [
+          { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 0, importedRuns: 0 },
+        ],
+        rowsByCategory: { "half_hour:women": [] },
+      })),
     };
-
-    render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
-
-    fireEvent.click(screen.getByRole("checkbox", { name: "a.W. Anna Team" }));
-
-    await waitFor(() => {
-      expect(apiMock.setStandingsRowExcluded).toHaveBeenCalledWith("season-1", {
-        categoryKey: "half_hour:women",
-        teamId: "team-anna",
-        excluded: false,
-      });
-    });
-
-    expect(screen.getAllByRole("table")).toHaveLength(1);
-    expect(screen.getByText(/Anna Team/)).toBeInTheDocument();
-    expect(screen.queryByText("Wertungen werden geladen...")).not.toBeInTheDocument();
-
-    resolveReload?.(standingsData);
-    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledTimes(2); });
-  });
-
-  it("renders the standings detail table like the PDF overview while keeping exclusion toggles", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
 
-    const tables = screen.getAllByRole("table");
-    expect(tables).toHaveLength(1);
-    const detailTable = tables[0] as HTMLTableElement;
-    const detailCols = Array.from(detailTable.querySelectorAll("col"));
-
-    expect(detailCols).toHaveLength(10);
-    expect(detailCols.slice(4, 8).every((col) => col.style.width === "4.1rem")).toBe(true);
-    expect(detailCols.slice(8).every((col) => col.style.width === "5.1rem")).toBe(true);
-
-    expect(within(detailTable).getByRole("columnheader", { name: "Verein" })).toBeInTheDocument();
-    expect(within(detailTable).getByRole("columnheader", { name: "1. Lauf" })).toHaveAttribute("colspan", "2");
-    expect(within(detailTable).getByRole("columnheader", { name: "2. Lauf" })).toHaveAttribute("colspan", "2");
-    expect(within(detailTable).getByRole("columnheader", { name: "Gesamt" })).toHaveAttribute("colspan", "2");
-    expect(within(detailTable).getAllByRole("columnheader", { name: "Laufstr." })).toHaveLength(3);
-    expect(within(detailTable).getAllByRole("columnheader", { name: "Wertung" })).toHaveLength(3);
-    expect(within(detailTable).getAllByRole("columnheader", { name: "(km)" })).toHaveLength(3);
-    expect(within(detailTable).getAllByRole("columnheader", { name: "(Punkte)" })).toHaveLength(3);
-    const [primaryHeaderRow, secondaryHeaderRow, unitsHeaderRow] = Array.from(detailTable.tHead?.rows ?? []);
-    expect(primaryHeaderRow).toHaveClass("ui-table--standings-detail__header-row--primary");
-    expect(secondaryHeaderRow).toHaveClass("ui-table--standings-detail__header-row--secondary");
-    expect(unitsHeaderRow).toHaveClass("ui-table--standings-detail__header-row--units");
-    expect(detailTable.querySelectorAll("[class*='ui-table--standings-detail__sticky-cell--']")).toHaveLength(0);
-
-    expect(within(detailTable).getByText(/Anna Team/)).toBeInTheDocument();
-    expect(within(detailTable).getByText(/Bea Team/)).toBeInTheDocument();
-    expect(within(detailTable).getByText(/Clara Team/)).toBeInTheDocument();
-    expect(within(detailTable).getAllByText("SV")).toHaveLength(3);
-    expect(within(detailTable).getByRole("checkbox", { name: "a.W. Anna Team" })).toBeInTheDocument();
-
-    const detailRows = Array.from(detailTable.tBodies[0]?.rows ?? []);
-    expect(detailRows.map((row) => within(row).getAllByRole("cell")[2]?.textContent)).toEqual([
-      "Bea Team (1991)",
-      "Anna Team (1990)",
-      "Clara Team (1992)",
-    ]);
-    expect(within(detailRows[1]!).getAllByRole("cell")[0]?.textContent).toBe("—");
+    const cols = Array.from(screen.getByRole("table").querySelectorAll("col"));
+    expect(cols.length).toBe(3 + 2 * 5 + 2);
   });
 
-  it("renders category buttons above table and removes redundant headings", async () => {
+  it("renders the standings detail table with two header rows and stacked team name + YOB", async () => {
+    selectedCategoryKey = "hour:women";
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByText(/Doro Team/)).toBeInTheDocument(); });
+
+    const table = screen.getByRole("table") as HTMLTableElement;
+    const headerRows = Array.from(table.tHead?.rows ?? []);
+    expect(headerRows).toHaveLength(2);
+    expect(headerRows[0]).toHaveClass("ui-table--standings-detail__header-row--primary");
+    expect(headerRows[1]).toHaveClass("ui-table--standings-detail__header-row--units");
+    expect(table.querySelector(".ui-table--standings-detail__header-row--secondary")).toBeNull();
+
+    expect(within(table).getByRole("columnheader", { name: "1. Lauf" })).toHaveAttribute("colspan", "2");
+    expect(within(table).getByRole("columnheader", { name: "Gesamt" })).toHaveAttribute("colspan", "2");
+    expect(within(table).getAllByRole("columnheader", { name: "km" })).toHaveLength(6);
+    expect(within(table).getAllByRole("columnheader", { name: "Pkt" })).toHaveLength(6);
+
+    const doroRow = within(table).getByText("Doro Team").closest("tr") as HTMLTableRowElement;
+    expect(within(doroRow).getByText("Doro Team")).toBeInTheDocument();
+    expect(within(doroRow).getByText("(1985)")).toBeInTheDocument();
+    expect(within(doroRow).queryByText("Doro Team (1985)")).not.toBeInTheDocument();
+  });
+
+  it("places excluded rows at the bottom of the list with rank dash and muted styling", async () => {
+    selectedCategoryKey = "half_hour:women";
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByText(/Anna Team/)).toBeInTheDocument(); });
+
+    const bodyRows = Array.from((screen.getByRole("table") as HTMLTableElement).tBodies[0]?.rows ?? []);
+    const teamOrder = bodyRows.map((row) => within(row).getByTestId("standings-team-name").textContent?.trim());
+    expect(teamOrder).toEqual(["Bea Team", "Clara Team", "Anna Team"]);
+
+    const annaRow = bodyRows[2]!;
+    expect(annaRow).toHaveClass("is-excluded");
+    expect(within(annaRow).getAllByRole("cell")[0]?.textContent?.trim()).toBe("—");
+  });
+
+  it("renders category buttons in two rows with row labels, plus an export cluster on the right", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
 
+    expect(screen.getByText("Halbstunde")).toBeInTheDocument();
+    expect(screen.getByText("Stunde")).toBeInTheDocument();
+
+    const categoryButtons = screen.getAllByRole("button", { name: /Frauen|Männer|Paare/ });
+    expect(categoryButtons).toHaveLength(10);
+
+    const pdfButton = screen.getByRole("button", { name: "PDF exportieren" });
+    expect(pdfButton).toBeInTheDocument();
+    expect(pdfButton).toHaveClass("standings-overview__export-button");
+    expect(pdfButton).toHaveClass("standings-overview__export-button--pdf");
+    expect(screen.queryByRole("heading", { name: "Exporte" })).not.toBeInTheDocument();
     expect(screen.queryByText("Aktuelle Wertung")).not.toBeInTheDocument();
     expect(screen.queryByText("Detailergebnisse")).not.toBeInTheDocument();
-    expect(screen.queryByText("Frauen 1/2")).not.toBeInTheDocument();
-    expect(screen.queryByText("desc")).not.toBeInTheDocument();
+  });
 
-    const categoryButtons = screen.getAllByRole("button", { name: /1\/2 h|1 h|Paare/ });
-    expect(categoryButtons).toHaveLength(10);
-    expect(categoryButtons.map((button) => button.textContent?.trim())).toEqual([
-      "1/2 h - Frauen",
-      "1/2 h - Männer",
-      "1/2 h - Paare F",
-      "1/2 h - Paare M",
-      "1/2 h - Paare Mix",
-      "1 h - Frauen",
-      "1 h - Männer",
-      "1 h - Paare F",
-      "1 h - Paare M",
-      "1 h - Paare Mix",
-    ]);
-    expect(screen.getByRole("button", { name: "PDF exportieren" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "PDF exportieren" })).toHaveStyle({
-      gridColumnStart: "6",
-      gridRowStart: "1",
-    });
-    expect(screen.queryByRole("heading", { name: "Exporte" })).not.toBeInTheDocument();
+  it("renders the export cluster with a divider class so it can be visually separated from the category chips", async () => {
+    selectedCategoryKey = "half_hour:women";
+    apiMock = {
+      ...apiMock,
+      getStandings: vi.fn(async () => ({
+        ...standingsData,
+        exportActions: [
+          { id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" },
+          { id: "export_excel", label: "Excel", description: "Excel export", availability: "ready" },
+        ] as StandingsData["exportActions"],
+      })),
+    };
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+
+    const pdfButton = screen.getByRole("button", { name: "PDF exportieren" });
+    const excelButton = screen.getByRole("button", { name: "Excel exportieren" });
+
+    expect(pdfButton).toHaveClass("standings-overview__export-button--pdf");
+    expect(excelButton).toHaveClass("standings-overview__export-button--excel");
+    expect(pdfButton.className).not.toContain("standings-overview__export-button--excel");
+    expect(excelButton.className).not.toContain("standings-overview__export-button--pdf");
+
+    const cluster = pdfButton.closest(".standings-overview__exports") as HTMLElement | null;
+    expect(cluster).not.toBeNull();
+    expect(cluster).toHaveClass("standings-overview__exports--divided");
+    expect(cluster?.contains(excelButton)).toBe(true);
   });
 });

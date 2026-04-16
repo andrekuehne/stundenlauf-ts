@@ -114,7 +114,7 @@ beforeEach(() => {
 describe("SeasonPage", () => {
   it("does not inject season sidebar controls", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getByText("Saison 1")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
     expect(setSidebarControls).not.toHaveBeenCalled();
   });
 
@@ -131,7 +131,7 @@ describe("SeasonPage", () => {
 
   it("opens already active season and still navigates based on imported events", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getByText("Saison 1")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
 
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[0] as HTMLButtonElement);
@@ -164,7 +164,7 @@ describe("SeasonPage", () => {
 
   it("styles delete action as danger button", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getByText("Saison 1")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
 
     const deleteButton = screen.getAllByRole("button", { name: "Löschen" })[0] as HTMLButtonElement;
     expect(deleteButton.className).toContain("button--danger");
@@ -231,7 +231,7 @@ describe("SeasonPage", () => {
 
   it("runs season row exports with compact PDF default", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getByText("Saison 1")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
 
     fireEvent.click(screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement);
     await waitFor(() => expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"));
@@ -241,5 +241,63 @@ describe("SeasonPage", () => {
       expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", { pdfLayoutPreset: "compact" }),
     );
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season" }));
+  });
+
+  it("renders an overview meta line with season count and last-modified context", async () => {
+    render(<SeasonPage />);
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+
+    const meta = screen.getByTestId("season-meta");
+    expect(meta).toHaveClass("season-overview__meta");
+    expect(meta.textContent).toContain("3 Saisons");
+    expect(meta.textContent).toContain("zuletzt geändert");
+  });
+
+  it("renders three KPI cards for total seasons, active season and imported runs", async () => {
+    render(<SeasonPage />);
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+
+    const totalCard = screen.getByTestId("season-kpi-total");
+    expect(totalCard).toHaveClass("summary-card");
+    expect(within(totalCard).getByText("Saisons gesamt")).toBeInTheDocument();
+    expect(within(totalCard).getByText("3")).toBeInTheDocument();
+
+    const activeCard = screen.getByTestId("season-kpi-active");
+    expect(activeCard).toHaveClass("summary-card");
+    expect(within(activeCard).getByText("Aktive Saison")).toBeInTheDocument();
+    expect(within(activeCard).getByText("Saison 1")).toBeInTheDocument();
+
+    const runsCard = screen.getByTestId("season-kpi-runs");
+    expect(runsCard).toHaveClass("summary-card");
+    expect(within(runsCard).getByText("Importierte Läufe")).toBeInTheDocument();
+    expect(within(runsCard).getByText("5")).toBeInTheDocument();
+  });
+
+  it("wraps the season list in the Auswertung-styled surface + detail table", async () => {
+    const { container } = render(<SeasonPage />);
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+
+    expect(container.querySelector(".season-overview")).not.toBeNull();
+
+    const table = screen.getByRole("table");
+    expect(table).toHaveClass("ui-table--seasons");
+
+    const activeRow = within(table).getByText("Saison 1").closest("tr");
+    expect(activeRow).toHaveClass("is-active-season");
+
+    const inactiveRow = within(table).getByText("Saison 2").closest("tr");
+    expect(inactiveRow).not.toHaveClass("is-active-season");
+  });
+
+  it("styles Excel and PDF row exports with distinct accent classes", async () => {
+    render(<SeasonPage />);
+    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+
+    const excelButton = screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement;
+    const pdfButton = screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement;
+
+    expect(excelButton.className).toContain("season-row-action--excel");
+    expect(pdfButton.className).toContain("season-row-action--pdf");
+    expect(excelButton.className).not.toContain("season-row-action--pdf");
   });
 });

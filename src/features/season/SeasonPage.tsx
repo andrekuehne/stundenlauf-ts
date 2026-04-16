@@ -4,7 +4,6 @@ import type { SeasonListItem } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
-import { DataTable, type DataTableColumn } from "@/components/tables/DataTable.tsx";
 import { useStatusStore } from "@/stores/status.ts";
 
 function formatDateTime(value: string): string {
@@ -12,6 +11,19 @@ function formatDateTime(value: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function findMostRecentModification(seasons: SeasonListItem[]): SeasonListItem | null {
+  if (seasons.length === 0) {
+    return null;
+  }
+  let recent = seasons[0]!;
+  for (const candidate of seasons.slice(1)) {
+    if (new Date(candidate.lastModifiedAt).getTime() > new Date(recent.lastModifiedAt).getTime()) {
+      recent = candidate;
+    }
+  }
+  return recent;
 }
 
 export function SeasonPage() {
@@ -41,90 +53,13 @@ export function SeasonPage() {
     void loadSeasons();
   }, [loadSeasons]);
 
-  const columns = useMemo<DataTableColumn<SeasonListItem>[]>(
-    () => [
-      {
-        key: "label",
-        header: STR.views.season.nameHeader,
-        cell: (row) => (
-          <div className="season-table__name">
-            <strong>{row.label}</strong>
-            {row.isActive ? <span className="season-pill">{STR.views.season.activeTag}</span> : null}
-          </div>
-        ),
-      },
-      {
-        key: "importedEvents",
-        header: STR.views.season.importedEvents,
-        cell: (row) => row.importedEvents,
-      },
-      {
-        key: "lastModifiedAt",
-        header: STR.views.season.lastModified,
-        cell: (row) => formatDateTime(row.lastModifiedAt),
-      },
-      {
-        key: "actions",
-        header: STR.views.season.actions,
-        cell: (row) => (
-          <div className="inline-actions">
-            <button
-              type="button"
-              className="button button--primary"
-              disabled={actionSeasonId === row.seasonId}
-              onClick={() => {
-                void handleOpen(row);
-              }}
-            >
-              {STR.views.season.openAction}
-            </button>
-            <button
-              type="button"
-              className="button"
-              disabled={actionSeasonId === row.seasonId}
-              onClick={() => {
-                void handleSeasonCommand("export_backup", row);
-              }}
-            >
-              {STR.views.season.exportAction}
-            </button>
-            <button
-              type="button"
-              className="button"
-              disabled={actionSeasonId === row.seasonId}
-              onClick={() => {
-                void handleExport(row.seasonId, "export_excel");
-              }}
-            >
-              {STR.views.season.exportExcelAction}
-            </button>
-            <button
-              type="button"
-              className="button"
-              disabled={actionSeasonId === row.seasonId}
-              onClick={() => {
-                void handleExport(row.seasonId, "export_pdf");
-              }}
-            >
-              {STR.views.season.exportPdfAction}
-            </button>
-            <button
-              type="button"
-              className="button button--danger"
-              disabled={actionSeasonId === row.seasonId}
-              onClick={() => {
-                setDeleteConfirmInput("");
-                setSeasonPendingDelete(row);
-              }}
-            >
-              {STR.views.season.deleteAction}
-            </button>
-          </div>
-        ),
-      },
-    ],
-    [actionSeasonId],
+  const totalSeasons = seasons.length;
+  const activeSeason = useMemo(() => seasons.find((entry) => entry.isActive) ?? null, [seasons]);
+  const totalImportedRuns = useMemo(
+    () => seasons.reduce((sum, entry) => sum + (entry.importedEvents ?? 0), 0),
+    [seasons],
   );
+  const lastModifiedSeason = useMemo(() => findMostRecentModification(seasons), [seasons]);
 
   async function refreshAll() {
     await refreshShellData();
@@ -236,10 +171,59 @@ export function SeasonPage() {
     }
   }, [api, navigate, newSeasonLabel, setStatus]);
 
+  const activeSeasonLabel = activeSeason?.label ?? "—";
+  const lastModifiedLabel = lastModifiedSeason
+    ? formatDateTime(lastModifiedSeason.lastModifiedAt)
+    : null;
+
   return (
     <div className="page-stack">
-      <section className="surface-card">
-        <div className="surface-card__header">
+      <section className="surface-card season-overview">
+        <p className="season-overview__meta" data-testid="season-meta">
+          <span>{`${totalSeasons} Saisons`}</span>
+          {lastModifiedLabel ? (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{`zuletzt geändert ${lastModifiedLabel}`}</span>
+            </>
+          ) : null}
+          {!activeSeason ? (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{STR.views.season.noActiveSeason}</span>
+            </>
+          ) : null}
+        </p>
+
+        <div
+          className="season-overview__kpis"
+          role="group"
+          aria-label={STR.views.season.existingSeasonsTitle}
+        >
+          <div
+            className="summary-card season-overview__kpi season-overview__kpi--total"
+            data-testid="season-kpi-total"
+          >
+            <span>Saisons gesamt</span>
+            <strong>{totalSeasons}</strong>
+          </div>
+          <div
+            className="summary-card season-overview__kpi season-overview__kpi--active"
+            data-testid="season-kpi-active"
+          >
+            <span>Aktive Saison</span>
+            <strong title={activeSeasonLabel}>{activeSeasonLabel}</strong>
+          </div>
+          <div
+            className="summary-card season-overview__kpi season-overview__kpi--runs"
+            data-testid="season-kpi-runs"
+          >
+            <span>Importierte Läufe</span>
+            <strong>{totalImportedRuns}</strong>
+          </div>
+        </div>
+
+        <div className="surface-card__header season-overview__header">
           <div>
             <h2>{STR.views.season.existingSeasonsTitle}</h2>
             <p>{STR.views.season.existingSeasonsDescription}</p>
@@ -266,7 +250,110 @@ export function SeasonPage() {
             </button>
           </div>
         </div>
-        <DataTable columns={columns} rows={seasons} emptyMessage={STR.views.season.noSeasons} />
+
+        <div className="table-wrap table-wrap--seasons">
+          <table className="ui-table ui-table--seasons">
+            <thead>
+              <tr className="ui-table--seasons__header-row">
+                <th>{STR.views.season.nameHeader}</th>
+                <th className="ui-table__cell--right">
+                  {STR.views.season.importedEvents}
+                </th>
+                <th className="ui-table__cell--right">
+                  {STR.views.season.lastModified}
+                </th>
+                <th>{STR.views.season.actions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seasons.length > 0 ? (
+                seasons.map((row) => {
+                  const isBusy = actionSeasonId === row.seasonId;
+                  const rowClass = row.isActive ? "is-active-season" : "";
+                  return (
+                    <tr key={row.seasonId} className={rowClass}>
+                      <td className="ui-table--seasons__name">
+                        <div className="season-table__name">
+                          <strong>{row.label}</strong>
+                          {row.isActive ? (
+                            <span className="season-pill">
+                              {STR.views.season.activeTag}
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="ui-table__cell--right ui-table--seasons__numeric">
+                        {row.importedEvents}
+                      </td>
+                      <td className="ui-table__cell--right ui-table--seasons__numeric">
+                        {formatDateTime(row.lastModifiedAt)}
+                      </td>
+                      <td>
+                        <div className="season-row-actions">
+                          <button
+                            type="button"
+                            className="button button--primary season-row-action season-row-action--open"
+                            disabled={isBusy}
+                            onClick={() => {
+                              void handleOpen(row);
+                            }}
+                          >
+                            {STR.views.season.openAction}
+                          </button>
+                          <button
+                            type="button"
+                            className="button season-row-action season-row-action--backup"
+                            disabled={isBusy}
+                            onClick={() => {
+                              void handleSeasonCommand("export_backup", row);
+                            }}
+                          >
+                            {STR.views.season.exportAction}
+                          </button>
+                          <button
+                            type="button"
+                            className="button season-row-action season-row-action--excel"
+                            disabled={isBusy}
+                            onClick={() => {
+                              void handleExport(row.seasonId, "export_excel");
+                            }}
+                          >
+                            {STR.views.season.exportExcelAction}
+                          </button>
+                          <button
+                            type="button"
+                            className="button season-row-action season-row-action--pdf"
+                            disabled={isBusy}
+                            onClick={() => {
+                              void handleExport(row.seasonId, "export_pdf");
+                            }}
+                          >
+                            {STR.views.season.exportPdfAction}
+                          </button>
+                          <button
+                            type="button"
+                            className="button button--danger season-row-action season-row-action--delete"
+                            disabled={isBusy}
+                            onClick={() => {
+                              setDeleteConfirmInput("");
+                              setSeasonPendingDelete(row);
+                            }}
+                          >
+                            {STR.views.season.deleteAction}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={4}>{STR.views.season.noSeasons}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
         {loading ? <p className="surface-card__note">{STR.views.season.loading}</p> : null}
       </section>
 

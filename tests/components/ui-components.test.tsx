@@ -52,6 +52,51 @@ describe("shared UI components", () => {
     expect(onSeasonChange).toHaveBeenCalledWith("s2");
   });
 
+  it("wraps the AppShell topbar season field in a polished chip-style container", () => {
+    const { container } = render(
+      <AppShell
+        activeRoute="season"
+        shellData={{
+          selectedSeasonId: "s1",
+          selectedSeasonLabel: "S1",
+          unresolvedReviews: 0,
+          availableSeasons: [{ seasonId: "s1", label: "S1" }],
+        }}
+        onSeasonChange={vi.fn()}
+      >
+        <div>Child</div>
+      </AppShell>,
+    );
+
+    const seasonField = container.querySelector(".shell-topbar__season-field");
+    expect(seasonField).not.toBeNull();
+    expect(seasonField?.querySelector("select")).not.toBeNull();
+  });
+
+  it("renders AppShell sidebar navigation with an accent rail on each nav link", () => {
+    const { container } = render(
+      <AppShell
+        activeRoute="season"
+        shellData={{
+          selectedSeasonId: "s1",
+          selectedSeasonLabel: "S1",
+          unresolvedReviews: 0,
+          availableSeasons: [{ seasonId: "s1", label: "S1" }],
+        }}
+        onSeasonChange={vi.fn()}
+      >
+        <div>Child</div>
+      </AppShell>,
+    );
+
+    const navLinks = container.querySelectorAll(".shell-nav-link");
+    expect(navLinks.length).toBeGreaterThan(0);
+    navLinks.forEach((link) => {
+      const rail = link.querySelector(".shell-nav-link__rail");
+      expect(rail).not.toBeNull();
+    });
+  });
+
   it("passes side max width through css variable", () => {
     const { container } = render(
       <ContentSplitLayout main={<div>Main</div>} side={<div>Side</div>} sideMaxWidth={420} />,
