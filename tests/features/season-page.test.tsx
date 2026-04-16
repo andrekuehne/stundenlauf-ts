@@ -112,17 +112,10 @@ beforeEach(() => {
 });
 
 describe("SeasonPage", () => {
-  function latestNonNullSidebar() {
-    return [...setSidebarControls.mock.calls].reverse().map((call) => call[0]).find(Boolean);
-  }
-
-  it("provides sidebar controls through shell context", async () => {
+  it("does not inject season sidebar controls", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
-    const latestSidebar = latestNonNullSidebar();
-    render(<>{latestSidebar}</>);
-    expect(screen.getByText("Aktive Saison")).toBeInTheDocument();
-    expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getByText("Saison 1")).toBeInTheDocument());
+    expect(setSidebarControls).not.toHaveBeenCalled();
   });
 
   it("opens another season and refreshes shell", async () => {
@@ -169,13 +162,32 @@ describe("SeasonPage", () => {
     expect(navigateMock).toHaveBeenCalledWith("/import");
   });
 
-  it("deletes a season after confirmation", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+  it("styles delete action as danger button", async () => {
+    render(<SeasonPage />);
+    await waitFor(() => expect(screen.getByText("Saison 1")).toBeInTheDocument());
+
+    const deleteButton = screen.getAllByRole("button", { name: "Löschen" })[0] as HTMLButtonElement;
+    expect(deleteButton.className).toContain("button--danger");
+  });
+
+  it("requires typing season label before delete confirmation", async () => {
     render(<SeasonPage />);
     await waitFor(() => expect(screen.getByText("Saison 2")).toBeInTheDocument());
 
     const deleteButtons = screen.getAllByRole("button", { name: /Löschen/i });
     fireEvent.click(deleteButtons[1] as HTMLButtonElement);
+    const dialog = screen.getByRole("dialog", { name: /Saison löschen/i });
+    const confirmButton = within(dialog).getByRole("button", { name: /Bestätigen/i });
+
+    fireEvent.click(confirmButton);
+    expect(apiMock.deleteSeason).not.toHaveBeenCalled();
+
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Falscher Name" } });
+    fireEvent.click(confirmButton);
+    expect(apiMock.deleteSeason).not.toHaveBeenCalled();
+
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Saison 2" } });
+    fireEvent.click(confirmButton);
 
     await waitFor(() => { expect(apiMock.deleteSeason).toHaveBeenCalledWith("season-2"); });
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ severity: "success", source: "season" }));
@@ -215,5 +227,19 @@ describe("SeasonPage", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: /Neue Saison erstellen/i }));
     await waitFor(() => { expect(apiMock.createSeason).toHaveBeenCalledWith({ label: "Neue Saison" }); });
     expect(navigateMock).toHaveBeenCalledWith("/import");
+  });
+
+  it("runs season row exports with compact PDF default", async () => {
+    render(<SeasonPage />);
+    await waitFor(() => expect(screen.getByText("Saison 1")).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement);
+    await waitFor(() => expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"));
+
+    fireEvent.click(screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement);
+    await waitFor(() =>
+      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", { pdfLayoutPreset: "compact" }),
+    );
+    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season" }));
   });
 });

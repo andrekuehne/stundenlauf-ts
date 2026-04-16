@@ -6,6 +6,7 @@ import { App } from "@/app/App.tsx";
 
 const navigateMock = vi.fn();
 const setStatus = vi.fn();
+let currentPathname = "/season";
 
 let shellData: ShellData = {
   selectedSeasonId: "season-1",
@@ -33,7 +34,7 @@ function buildCommandResult(message: string): AppCommandResult {
 }
 
 vi.mock("react-router-dom", () => ({
-  useLocation: () => ({ pathname: "/season" }),
+  useLocation: () => ({ pathname: currentPathname }),
   useNavigate: () => navigateMock,
   Outlet: () => null,
   NavLink: ({ to, className, children }: { to: string; className?: ((args: { isActive: boolean }) => string) | string; children: ReactNode }) => {
@@ -60,6 +61,7 @@ vi.mock("@/devtools/ImportSeasonWalkthroughHarness.tsx", () => ({ ImportSeasonWa
 vi.mock("@/devtools/LegacyLayoutParityPage.tsx", () => ({ LegacyLayoutParityPage: () => null }));
 
 beforeEach(() => {
+  currentPathname = "/season";
   shellData = {
     selectedSeasonId: "season-1",
     selectedSeasonLabel: "Saison 1",
@@ -104,6 +106,29 @@ beforeEach(() => {
 });
 
 describe("App season selector routing", () => {
+  it("hides season fallback sidebar heading and hint", async () => {
+    render(<App />);
+    await screen.findByLabelText("Aktuelle Saison:");
+    expect(screen.queryByRole("heading", { name: "Saison" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Bereichsspezifische Saison-Steuerungen erscheinen hier.")).not.toBeInTheDocument();
+  });
+
+  it("hides standings fallback sidebar heading and hint", async () => {
+    currentPathname = "/standings";
+    render(<App />);
+    await screen.findByLabelText("Aktuelle Saison:");
+    expect(screen.queryByRole("heading", { name: "Auswertung" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Steuerungen fuer die Auswertung werden geladen.")).not.toBeInTheDocument();
+  });
+
+  it("hides import fallback sidebar heading and hint", async () => {
+    currentPathname = "/import";
+    render(<App />);
+    await screen.findByLabelText("Aktuelle Saison:");
+    expect(screen.queryByRole("heading", { name: "Import" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Bereichsspezifische Import-Steuerungen erscheinen hier.")).not.toBeInTheDocument();
+  });
+
   it("navigates to standings when opened season has runs", async () => {
     render(<App />);
     const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");

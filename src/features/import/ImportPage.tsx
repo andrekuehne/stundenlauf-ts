@@ -1,14 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ImportDraftState, ImportReviewAction, ImportedRunRow } from "@/api/contracts/index.ts";
+import type { ImportDraftState, ImportReviewAction, ImportReviewItem, ImportedRunRow } from "@/api/contracts/index.ts";
 import { rememberImportFile } from "@/api/import-file-registry.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
 import { ContentSplitLayout } from "@/components/layout/ContentSplitLayout.tsx";
-import { InfoCard } from "@/components/layout/InfoCard.tsx";
 import { PageHeader } from "@/components/layout/PageHeader.tsx";
-import { SupportPanel } from "@/components/layout/SupportPanel.tsx";
 import { ImportCandidateCard } from "@/features/import/ImportCandidateCard.tsx";
+import { splitPairToken } from "@/features/import/split-pair-token.ts";
 import { detectSourceType, parseRaceNo } from "@/ingestion/helpers.ts";
 import { DEFAULT_AUTO_MIN, DEFAULT_REVIEW_MIN } from "@/matching/config.ts";
 import { useStatusStore } from "@/stores/status.ts";
@@ -58,6 +57,64 @@ function clampThreshold(value: number): number {
 
 function thresholdLabel(value: number): string {
   return value.toFixed(2);
+}
+
+function incomingYobParen(yob: number): string {
+  return Number.isFinite(yob) && yob > 0 ? `(${yob})` : "(—)";
+}
+
+function incomingStartNrLabel(startNumber: number): string {
+  return startNumber > 0 ? `Startnr. ${startNumber}` : "Startnr. —";
+}
+
+function parseYobToken(token: string, fallback: number): number {
+  const trimmed = token.replace(/\s+/g, " ").trim();
+  if (!trimmed || trimmed === "—") {
+    return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+  }
+  const match = /-?\d+/.exec(trimmed);
+  const n = match ? Number.parseInt(match[0], 10) : Number.NaN;
+  if (Number.isFinite(n) && n > 0 && n < 3000) {
+    return n;
+  }
+  return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+}
+
+function pairYobsFromReview(incomingYob: number, review: ImportReviewItem): [number, number] {
+  const yobComp = review.candidates[0]?.fieldComparisons.find((comparison) => comparison.fieldKey === "yob");
+  const raw = yobComp?.incomingValue?.trim();
+  if (!raw) {
+    const shared = Number.isFinite(incomingYob) && incomingYob > 0 ? incomingYob : 0;
+    return [shared, shared];
+  }
+  const [leftToken, rightToken] = splitPairToken(raw);
+  const leftYob = parseYobToken(leftToken, incomingYob);
+  const rightYob =
+    rightToken === "—" ? (Number.isFinite(incomingYob) && incomingYob > 0 ? incomingYob : leftYob) : parseYobToken(rightToken, incomingYob);
+  return [leftYob, rightYob];
+}
+
+function formatSoloIncomingSummaryLine(
+  displayName: string,
+  yob: number,
+  startNumber: number,
+  resultLabel: string,
+): string {
+  const name = displayName.trim() || "—";
+  return `${name} ${incomingYobParen(yob)} | ${incomingStartNrLabel(startNumber)} | ${resultLabel.trim() || "—"}`;
+}
+
+function formatDoublesIncomingSummaryLine(
+  leftName: string,
+  rightName: string,
+  yobLeft: number,
+  yobRight: number,
+  startNumber: number,
+  resultLabel: string,
+): string {
+  const left = `${leftName.trim() || "—"} ${incomingYobParen(yobLeft)}`;
+  const right = `${rightName.trim() || "—"} ${incomingYobParen(yobRight)}`;
+  return `${left} / ${right} | ${incomingStartNrLabel(startNumber)} | ${resultLabel.trim() || "—"}`;
 }
 
 function effectiveAutoThresholdFromConfig(config: {
@@ -203,14 +260,6 @@ export function ImportPage() {
     matchingMode === "fuzzy_automatik" &&
     visibleCandidates.length > 0 &&
     (visibleCandidates[0]?.confidence ?? 0) >= effectiveAutoThreshold;
-  const fileSelected = fileName.trim().length > 0;
-  const parsedRace = Number.parseInt(raceNumber, 10);
-  const raceValid = Number.isFinite(parsedRace) && parsedRace > 0;
-  const raceOccupied = isRunOccupied(importedRuns, category, raceNumber);
-  const resolvedReviews = draft
-    ? draft.reviewItems.filter((item) => stagedDecisions[item.reviewId] != null).length
-    : 0;
-  const openReviews = Math.max(0, totalReviews - resolvedReviews);
   const isDoublesReview = draft?.category === "doubles";
 
   const visibleSummary = useMemo(() => {
@@ -339,39 +388,36 @@ export function ImportPage() {
     );
   }
 
-  const flowSidebar = (
-    <section className="import-support__flow">
-      <ol className="import-flowbar import-flowbar--vertical" aria-label={STR.views.import.flowCurrent}>
-        {FLOW_STEPS.map((entry, index) => {
-          const currentIdx = FLOW_STEPS.findIndex((stepEntry) => stepEntry.key === step);
-          const isDone = index < currentIdx;
-          const isCurrent = index === currentIdx;
-          return (
-            <li
-              key={entry.key}
-              className={`import-flowbar__step ${isDone ? "is-done" : ""} ${isCurrent ? "is-current" : ""}`.trim()}
-            >
-              <span className="import-flowbar__label">
-                {entry.label}
-                {isDone ? <span className="import-flowbar__emoji"> ✅</span> : null}
-                {isCurrent ? <span className="import-flowbar__emoji"> 👉</span> : null}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
+  const flowSteps = (
+    <ol className="import-flowbar" aria-label={STR.views.import.flowCurrent}>
+      {FLOW_STEPS.map((entry, index) => {
+        const currentIdx = FLOW_STEPS.findIndex((stepEntry) => stepEntry.key === step);
+        const isDone = index < currentIdx;
+        const isCurrent = index === currentIdx;
+        return (
+          <li
+            key={entry.key}
+            className={`import-flowbar__step ${isDone ? "is-done" : ""} ${isCurrent ? "is-current" : ""}`.trim()}
+          >
+            <span className="import-flowbar__label">
+              {entry.label}
+              {isDone ? <span className="import-flowbar__emoji"> ✅</span> : null}
+              {isCurrent ? <span className="import-flowbar__emoji"> 👉</span> : null}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 
   return (
     <div className={`page-stack ${step === "review_matches" ? "page-stack--fill" : ""}`.trim()}>
-      <PageHeader title={STR.views.import.title} description={STR.views.import.subtitle} />
-
       <section className={`import-workflow ${step === "review_matches" ? "import-workflow--fill" : ""}`.trim()}>
         {step === "select_file" ? (
           <ContentSplitLayout
             main={
               <article className="surface-card import-step import-step--narrow">
+                {flowSteps}
                 <div className="import-select-grid">
                   <section className="surface-card import-select-form">
                     <div className="surface-card__header">
@@ -478,26 +524,6 @@ export function ImportPage() {
                 </div>
               </article>
             }
-            side={
-              <SupportPanel>
-                {flowSidebar}
-                <div className="import-support__separator" />
-                <InfoCard title={STR.views.import.helpTitle}>
-                  <p>{STR.views.import.helpDescription}</p>
-                </InfoCard>
-                <InfoCard title={STR.views.import.fileCheckTitle}>
-                  <ul className="support-list">
-                    <li>{fileSelected ? STR.views.import.fileDetected : STR.views.import.fileMissing}</li>
-                    <li>{fileSelected ? STR.views.import.fileTypeValid : STR.views.import.fileTypePending}</li>
-                    <li>{raceValid ? STR.views.import.raceSelected(parsedRace) : STR.views.import.raceMissing}</li>
-                    <li>{raceValid ? (raceOccupied ? STR.views.import.raceOccupied : STR.views.import.raceFree) : STR.views.import.racePending}</li>
-                  </ul>
-                </InfoCard>
-                <InfoCard title={STR.views.import.nextStepTitle}>
-                  <p>{STR.views.import.nextStepDescription}</p>
-                </InfoCard>
-              </SupportPanel>
-            }
           />
         ) : null}
 
@@ -507,9 +533,19 @@ export function ImportPage() {
             stickySide
             main={
               <article className="surface-card import-step import-step--fill">
-                <div className="surface-card__header">
-                  <h2>{STR.views.import.reviewTitle}</h2>
+                {flowSteps}
+                <div className="surface-card__header import-review__toolbar">
                   <div className="import-review__header-actions">
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={() => {
+                        setIsMatchingSettingsOpen(true);
+                      }}
+                      disabled={busy}
+                    >
+                      {STR.views.import.matchingSettings}
+                    </button>
                     <button
                       type="button"
                       className="button button--ghost"
@@ -561,26 +597,35 @@ export function ImportPage() {
                 {activeReview ? (
                   <div className="import-review import-review--cards-scroll">
                     <div className="import-review__incoming">
-                      <h3>{STR.views.import.incomingHeading}</h3>
-                      <p className="import-review__incoming-name">{activeReview.incoming.displayName}</p>
-                      <dl>
-                        <div>
-                          <dt>{STR.views.import.reviewYob}</dt>
-                          <dd>{activeReview.incoming.yob}</dd>
-                        </div>
-                        <div>
-                          <dt>{STR.views.import.reviewClub}</dt>
-                          <dd>{activeReview.incoming.club || "—"}</dd>
-                        </div>
-                        <div>
-                          <dt>{STR.views.import.incomingStartNumber}</dt>
-                          <dd>{activeReview.incoming.startNumber}</dd>
-                        </div>
-                        <div>
-                          <dt>{STR.views.import.incomingResult}</dt>
-                          <dd>{activeReview.incoming.resultLabel}</dd>
-                        </div>
-                      </dl>
+                      <h2>{STR.views.import.reviewEntryProgress(reviewIndex + 1, totalReviews)}</h2>
+                      <div className="import-review__incoming-lines">
+                        {(() => {
+                          const inc = activeReview.incoming;
+                          if (isDoublesReview) {
+                            const [leftName, rightName] = splitPairToken(inc.displayName);
+                            if (rightName !== "—") {
+                              const [yLeft, yRight] = pairYobsFromReview(inc.yob, activeReview);
+                              return (
+                                <p className="import-review__incoming-line">
+                                  {formatDoublesIncomingSummaryLine(
+                                    leftName,
+                                    rightName,
+                                    yLeft,
+                                    yRight,
+                                    inc.startNumber,
+                                    inc.resultLabel,
+                                  )}
+                                </p>
+                              );
+                            }
+                          }
+                          return (
+                            <p className="import-review__incoming-line">
+                              {formatSoloIncomingSummaryLine(inc.displayName, inc.yob, inc.startNumber, inc.resultLabel)}
+                            </p>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     <div className="import-review__cards">
@@ -631,36 +676,6 @@ export function ImportPage() {
                 )}
               </article>
             }
-            side={
-              <SupportPanel>
-                {flowSidebar}
-                <div className="import-support__separator" />
-                <InfoCard title={STR.views.import.progressTitle}>
-                  <p>{STR.views.import.reviewProgressShort(totalReviews === 0 ? 0 : reviewIndex + 1, totalReviews)}</p>
-                  <p>{STR.views.import.completedCount(resolvedReviews)}</p>
-                  <p>{STR.views.import.openCount(openReviews)}</p>
-                </InfoCard>
-                <InfoCard title={STR.views.import.matchingOptionsTitle}>
-                  <button
-                    type="button"
-                    className="button"
-                    onClick={() => {
-                      setIsMatchingSettingsOpen(true);
-                    }}
-                    disabled={busy}
-                  >
-                    {STR.views.import.matchingSettings}
-                  </button>
-                </InfoCard>
-                <InfoCard title={STR.views.import.hintsTitle}>
-                  <ul className="support-list">
-                    <li>{STR.views.import.hintCheckYob}</li>
-                    <li>{STR.views.import.hintClubChanged}</li>
-                    <li>{STR.views.import.hintNextCase}</li>
-                  </ul>
-                </InfoCard>
-              </SupportPanel>
-            }
           />
         ) : null}
 
@@ -668,6 +683,7 @@ export function ImportPage() {
           <ContentSplitLayout
             main={
               <article className="surface-card import-step">
+                {flowSteps}
                 <div className="surface-card__header">
                   <h2>{STR.views.import.summaryTitle}</h2>
                   <p>{STR.views.import.summaryHint}</p>
@@ -737,18 +753,6 @@ export function ImportPage() {
                   </button>
                 </div>
               </article>
-            }
-            side={
-              <SupportPanel>
-                {flowSidebar}
-                <div className="import-support__separator" />
-                <InfoCard title={STR.views.import.resultTitle}>
-                  <p>{STR.views.import.resultDescription}</p>
-                </InfoCard>
-                <InfoCard title={STR.views.import.noteTitle}>
-                  <p>{STR.views.import.noteDescription}</p>
-                </InfoCard>
-              </SupportPanel>
             }
           />
         ) : null}

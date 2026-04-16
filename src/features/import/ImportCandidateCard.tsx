@@ -1,5 +1,6 @@
 import type { ImportIncomingRecord, ImportReviewCandidate } from "@/api/contracts/index.ts";
 import { STR } from "@/app/strings.ts";
+import { splitPairToken } from "@/features/import/split-pair-token.ts";
 
 type ImportCandidateCardProps = {
   candidate: ImportReviewCandidate;
@@ -10,24 +11,6 @@ type ImportCandidateCardProps = {
   onSelect: () => void;
   recommendedLabel: string;
 };
-
-function splitPairToken(value: string | null | undefined): [string, string] {
-  if (!value || value === "—") {
-    return ["—", "—"];
-  }
-
-  const normalized = value.replace(/\s+/g, " ").trim();
-  const parts = normalized
-    .split(/\s*(?:\+|\/|&| und )\s*/i)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (parts.length >= 2) {
-    return [parts[0] ?? "—", parts[1] ?? "—"];
-  }
-
-  return [normalized, "—"];
-}
 
 function normalizeForMatch(value: string): string {
   if (value === "—") {

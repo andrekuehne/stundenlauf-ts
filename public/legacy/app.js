@@ -2362,11 +2362,10 @@
           </div>
         </aside>
         <section class="card import-review-column">
-        <h3>${iv.reviewTitle}</h3>
         ${
           !review
             ? `<p class="ok">${iv.noOpenReviews}</p>`
-            : `<p>${iv.reviewProgress(state.reviewIndex + 1, state.reviewQueue.length)}</p>
+            : `<h3>${iv.reviewEntryProgress(state.reviewIndex + 1, state.reviewQueue.length)}</h3>
                <p class="hint">${iv.reviewHintLayout}</p>
                <p class="hint">${iv.reviewHintNoMatch}</p>
                <p class="hint">${FMT.reviewConfidenceHtml(confidenceLabel(review.confidence), confidencePct)}</p>

@@ -282,14 +282,13 @@
         "Automatische Zuordnung ab dem eingestellten Mindest-Ähnlichkeitswert. Darunter bleiben Einträge in der Prüfung oder werden als neue Person geführt.",
       matchingHintManual:
         "Keine automatische Zuordnung über Ähnlichkeit: alle unsicheren Fälle landen in der Prüfung.",
-      reviewTitle: "Zusammenführungen prüfen",
+      reviewEntryProgress: (current, total) => `Eintrag ${current}/${total}`,
       noOpenReviews: "Keine offenen Prüfungen.",
       reviewProgress: (current, total) => `Prüfung ${current} von ${total}`,
       reviewHintLayout:
         "Oben sehen Sie den eingehenden Eintrag. Darunter die vorhandenen Kandidaten in absteigender Treffersicherheit. Abweichende Felder sind rot hervorgehoben.",
       reviewHintNoMatch:
         'Wenn kein Kandidat dieselbe reale Person/dasselbe reale Team ist, wählen Sie "Keine passt: neue Person anlegen".',
-      incomingHeading: "Neuer eingehender Eintrag",
       candidatesHeading: "Mögliche Treffer (beste Übereinstimmung zuerst)",
       thRank: "Rang",
       thMatch: "Treffer %",

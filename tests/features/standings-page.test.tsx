@@ -136,16 +136,12 @@ describe("StandingsPage", () => {
     await waitFor(() => { expect(selectCategory).toHaveBeenCalledWith("half_hour:women"); });
   });
 
-  it("runs PDF export with compact preset by default and emits status", async () => {
+  it("renders export buttons in main content and uses compact PDF preset", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
 
-    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
-    const latestSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
-    render(<>{latestSidebar}</>);
-    const exportButton = screen.getByRole("button", { name: /PDF/i });
-    fireEvent.click(exportButton);
+    fireEvent.click(screen.getByRole("button", { name: "PDF exportieren" }));
 
     await waitFor(() =>
       { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
@@ -155,26 +151,28 @@ describe("StandingsPage", () => {
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
   });
 
-  it("runs PDF export with normal preset when selected", async () => {
+  it("runs excel export from main content export controls", async () => {
     selectedCategoryKey = "half_hour:women";
+    apiMock = {
+      ...apiMock,
+      getStandings: vi.fn(async () => ({
+        ...standingsData,
+        exportActions: [
+          { id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" },
+          { id: "export_excel", label: "Excel", description: "Excel export", availability: "ready" },
+        ],
+      })),
+    };
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
-
-    await waitFor(() => { expect(setSidebarControls).toHaveBeenCalled(); });
-    const firstSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
-    render(<>{firstSidebar}</>);
-
-    fireEvent.change(screen.getByLabelText("PDF-Stil"), { target: { value: "default" } });
-
-    await waitFor(() => { expect(setSidebarControls.mock.calls.length).toBeGreaterThan(1); });
-    const updatedSidebar = setSidebarControls.mock.calls.at(-1)?.[0];
-    render(<>{updatedSidebar}</>);
-    fireEvent.click(screen.getAllByRole("button", { name: /PDF/i }).at(-1)!);
+    expect(screen.getByRole("button", { name: "Excel exportieren" })).toHaveStyle({
+      gridColumnStart: "6",
+      gridRowStart: "2",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Excel exportieren" }));
 
     await waitFor(() =>
-      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
-        pdfLayoutPreset: "default",
-      }); },
+      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"); },
     );
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
   });
@@ -215,7 +213,7 @@ describe("StandingsPage", () => {
     };
 
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByText("Detailergebnisse")).toBeInTheDocument(); });
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
 
     fireEvent.click(screen.getByRole("checkbox", { name: "a.W. Anna Team" }));
 
@@ -228,7 +226,6 @@ describe("StandingsPage", () => {
     });
 
     expect(screen.getAllByRole("table")).toHaveLength(1);
-    expect(screen.getByText("Detailergebnisse")).toBeInTheDocument();
     expect(screen.getByText(/Anna Team/)).toBeInTheDocument();
     expect(screen.queryByText("Wertungen werden geladen...")).not.toBeInTheDocument();
 
@@ -239,7 +236,7 @@ describe("StandingsPage", () => {
   it("renders the standings detail table like the PDF overview while keeping exclusion toggles", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByText("Detailergebnisse")).toBeInTheDocument(); });
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
 
     const tables = screen.getAllByRole("table");
     expect(tables).toHaveLength(1);
@@ -247,7 +244,8 @@ describe("StandingsPage", () => {
     const detailCols = Array.from(detailTable.querySelectorAll("col"));
 
     expect(detailCols).toHaveLength(10);
-    expect(detailCols.slice(4).every((col) => col.style.width === "5.1rem")).toBe(true);
+    expect(detailCols.slice(4, 8).every((col) => col.style.width === "4.1rem")).toBe(true);
+    expect(detailCols.slice(8).every((col) => col.style.width === "5.1rem")).toBe(true);
 
     expect(within(detailTable).getByRole("columnheader", { name: "Verein" })).toBeInTheDocument();
     expect(within(detailTable).getByRole("columnheader", { name: "1. Lauf" })).toHaveAttribute("colspan", "2");
@@ -276,5 +274,37 @@ describe("StandingsPage", () => {
       "Clara Team (1992)",
     ]);
     expect(within(detailRows[1]!).getAllByRole("cell")[0]?.textContent).toBe("—");
+  });
+
+  it("renders category buttons above table and removes redundant headings", async () => {
+    selectedCategoryKey = "half_hour:women";
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+
+    expect(screen.queryByText("Aktuelle Wertung")).not.toBeInTheDocument();
+    expect(screen.queryByText("Detailergebnisse")).not.toBeInTheDocument();
+    expect(screen.queryByText("Frauen 1/2")).not.toBeInTheDocument();
+    expect(screen.queryByText("desc")).not.toBeInTheDocument();
+
+    const categoryButtons = screen.getAllByRole("button", { name: /1\/2 h|1 h|Paare/ });
+    expect(categoryButtons).toHaveLength(10);
+    expect(categoryButtons.map((button) => button.textContent?.trim())).toEqual([
+      "1/2 h - Frauen",
+      "1/2 h - Männer",
+      "1/2 h - Paare F",
+      "1/2 h - Paare M",
+      "1/2 h - Paare Mix",
+      "1 h - Frauen",
+      "1 h - Männer",
+      "1 h - Paare F",
+      "1 h - Paare M",
+      "1 h - Paare Mix",
+    ]);
+    expect(screen.getByRole("button", { name: "PDF exportieren" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PDF exportieren" })).toHaveStyle({
+      gridColumnStart: "6",
+      gridRowStart: "1",
+    });
+    expect(screen.queryByRole("heading", { name: "Exporte" })).not.toBeInTheDocument();
   });
 });

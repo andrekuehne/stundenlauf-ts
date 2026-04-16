@@ -18,6 +18,9 @@ const NAV_ITEMS: AppRoute[] = ["season", "standings", "import", "corrections", "
 const DEFAULT_CONTROL_HINT: Record<AppRoute, string> = STR.shell.defaultControlHint;
 
 export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarControls, children, footer }: AppShellProps) {
+  const showSidebarControls =
+    Boolean(sidebarControls) || (activeRoute !== "season" && activeRoute !== "standings" && activeRoute !== "import");
+
   return (
     <div className="shell-layout">
       <header className="shell-topbar">
@@ -65,14 +68,16 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
             </nav>
           </div>
 
-          <div className="shell-sidebar__controls">
-            <h3>{STR.shell.tabs[activeRoute]}</h3>
-            {sidebarControls ? (
-              sidebarControls
-            ) : (
-              <p className="shell-sidebar__controls-hint">{DEFAULT_CONTROL_HINT[activeRoute]}</p>
-            )}
-          </div>
+          {showSidebarControls ? (
+            <div className="shell-sidebar__controls">
+              <h3>{STR.shell.tabs[activeRoute]}</h3>
+              {sidebarControls ? (
+                sidebarControls
+              ) : (
+                <p className="shell-sidebar__controls-hint">{DEFAULT_CONTROL_HINT[activeRoute]}</p>
+              )}
+            </div>
+          ) : null}
         </aside>
 
         <main className="shell-main">{children}</main>

@@ -125,6 +125,62 @@ function buildDraftWithReviewItems(input: ImportDraftInput): ImportDraftState {
   };
 }
 
+function buildDoublesDraftWithUnresolvedReview(input: ImportDraftInput): ImportDraftState {
+  return {
+    draftId: "draft-doubles-review",
+    seasonId: input.seasonId,
+    fileName: input.fileName,
+    category: "doubles",
+    raceNumber: input.raceNumber,
+    step: "review_matches",
+    reviewItems: [
+      {
+        reviewId: "review-pair-1",
+        incoming: {
+          displayName: "Lea + Tom",
+          yob: 1992,
+          club: "Greifswald Laufteam",
+          startNumber: 7,
+          resultLabel: "12,2 km / 14 P",
+        },
+        candidates: [
+          {
+            candidateId: "pair-1",
+            displayName: "Lea + Tom",
+            confidence: 0.9,
+            isRecommended: true,
+            fieldComparisons: [
+              {
+                fieldKey: "name",
+                label: "Name",
+                incomingValue: "Lea + Tom",
+                candidateValue: "Lea + Tom",
+                isMatch: true,
+              },
+              {
+                fieldKey: "yob",
+                label: "Jahrgang",
+                incomingValue: "1992 / 1990",
+                candidateValue: "1992 / 1990",
+                isMatch: true,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    decisions: [],
+    summary: {
+      importedEntries: 1,
+      mergedEntries: 0,
+      newPersonsCreated: 0,
+      typoCorrections: 0,
+      infos: [],
+      warnings: [],
+    },
+  };
+}
+
 function buildDraftWithUnresolvedReview(input: ImportDraftInput): ImportDraftState {
   return {
     draftId: "draft-unresolved-review",
@@ -204,6 +260,7 @@ beforeEach(() => {
     deleteSeason: vi.fn(async () => {}),
     runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => emptyStandings),
+    setStandingsRowExcluded: vi.fn(async () => {}),
     runExportAction: vi.fn(async () => buildCommandResult("ok")),
     createImportDraft: vi.fn(async (input: ImportDraftInput) => buildDraftWithNoReviews(input)),
     getImportDraft: vi.fn(async () => {
@@ -279,7 +336,6 @@ describe("ImportPage", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Import-Zusammenfassung" })).toBeInTheDocument();
     });
-    expect(screen.getByText("Hinweise")).toBeInTheDocument();
     expect(screen.getByText("24 Einträge wurden aus früheren Zuordnungen automatisch zugeordnet.")).toBeInTheDocument();
     expect(screen.getByText("Keine Warnungen.")).toBeInTheDocument();
   });
@@ -309,7 +365,7 @@ describe("ImportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /Eintrag 1\/1/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /Neue Person anlegen/i }));
@@ -330,6 +386,91 @@ describe("ImportPage", () => {
         candidateId: null,
       });
     });
+  });
+
+  it("shows a compact pipe-separated incoming summary without Verein for singles", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("4"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const incoming = container.querySelector(".import-review__incoming");
+    expect(incoming).toBeTruthy();
+    expect(incoming).toHaveTextContent("Kathi Mueller (1993) | Startnr. 10 | 10,1 km / 12 P");
+    expect(incoming?.textContent).not.toMatch(/Verein/i);
+  });
+
+  it("shows one incoming summary line for doubles with shared Startnr. and result", async () => {
+    const doublesDraft = buildDoublesDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste Paare Lauf 1.xlsx",
+      category: "doubles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => doublesDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste Paare Lauf 1.xlsx" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("4"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Paare" }));
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const line = container.querySelector(".import-review__incoming-line");
+    expect(line?.textContent).toBe("Lea (1992) / Tom (1990) | Startnr. 7 | 12,2 km / 14 P");
+    expect(container.querySelector(".import-review__incoming")?.textContent).not.toMatch(/Greifswald|Verein/i);
+  });
+
+  it("uses a three-part fill layout on merge review so the toolbar is separate from the scroll region", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("4"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const article = container.querySelector("article.import-step--fill");
+    expect(article).toBeTruthy();
+    expect(article!.querySelector(".import-review--cards-scroll")).toBeTruthy();
+    const children = Array.from(article!.children);
+    expect(children.length).toBe(3);
+    expect(children[0]?.classList.contains("import-flowbar")).toBe(true);
+    expect(children[1]?.classList.contains("surface-card__header")).toBe(true);
+    expect(children[2]?.classList.contains("import-review")).toBe(true);
   });
 
   it("auto-selects the best visible candidate when no decision exists yet", async () => {
@@ -377,7 +518,7 @@ describe("ImportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /Eintrag 1\/1/i })).toBeInTheDocument();
     });
 
     expect(screen.queryByRole("dialog", { name: "Matching-Optionen" })).not.toBeInTheDocument();
@@ -411,7 +552,7 @@ describe("ImportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /Eintrag 1\/1/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Matching-Einstellungen" }));
@@ -478,7 +619,7 @@ describe("ImportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Zusammenführungen prüfen" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /Eintrag 1\/1/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /Zusammenfassung/i }));
@@ -487,5 +628,17 @@ describe("ImportPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Import abschließen" }));
     expect(finalizeSpy).not.toHaveBeenCalled();
+  });
+
+  it("renders step indicators in the top header and no helper sidebar cards", () => {
+    render(<ImportPage />);
+
+    expect(screen.getByLabelText("Aktueller Schritt")).toBeInTheDocument();
+    expect(screen.getByText("1. Datei auswählen")).toBeInTheDocument();
+    expect(screen.getByText("2. Zuordnungen prüfen")).toBeInTheDocument();
+    expect(screen.getByText("3. Zusammenfassung")).toBeInTheDocument();
+    expect(screen.queryByText("Hilfe")).not.toBeInTheDocument();
+    expect(screen.queryByText("Datei-Prüfung")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nächster Schritt")).not.toBeInTheDocument();
   });
 });

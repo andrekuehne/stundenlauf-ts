@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { SeasonListItem } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
-import { PageHeader } from "@/components/layout/PageHeader.tsx";
 import { DataTable, type DataTableColumn } from "@/components/tables/DataTable.tsx";
 import { useStatusStore } from "@/stores/status.ts";
 
@@ -18,13 +17,15 @@ function formatDateTime(value: string): string {
 export function SeasonPage() {
   const api = useAppApi();
   const navigate = useNavigate();
-  const { shellData, refreshShellData, setSidebarControls } = useAppShellContext();
+  const { shellData, refreshShellData } = useAppShellContext();
   const setStatus = useStatusStore((state) => state.setStatus);
   const [seasons, setSeasons] = useState<SeasonListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [actionSeasonId, setActionSeasonId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [seasonPendingDelete, setSeasonPendingDelete] = useState<SeasonListItem | null>(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [newSeasonLabel, setNewSeasonLabel] = useState("");
 
   const loadSeasons = useCallback(async () => {
@@ -89,10 +90,31 @@ export function SeasonPage() {
             </button>
             <button
               type="button"
-              className="button button--ghost"
+              className="button"
               disabled={actionSeasonId === row.seasonId}
               onClick={() => {
-                void handleDelete(row);
+                void handleExport(row.seasonId, "export_excel");
+              }}
+            >
+              {STR.views.season.exportExcelAction}
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={actionSeasonId === row.seasonId}
+              onClick={() => {
+                void handleExport(row.seasonId, "export_pdf");
+              }}
+            >
+              {STR.views.season.exportPdfAction}
+            </button>
+            <button
+              type="button"
+              className="button button--danger"
+              disabled={actionSeasonId === row.seasonId}
+              onClick={() => {
+                setDeleteConfirmInput("");
+                setSeasonPendingDelete(row);
               }}
             >
               {STR.views.season.deleteAction}
@@ -101,7 +123,7 @@ export function SeasonPage() {
         ),
       },
     ],
-    [],
+    [actionSeasonId],
   );
 
   async function refreshAll() {
@@ -125,20 +147,25 @@ export function SeasonPage() {
     }
   }
 
-  async function handleDelete(row: SeasonListItem) {
-    if (!window.confirm(`${STR.views.season.deleteConfirmTitle}\n\n${STR.views.season.deleteConfirmBody}`)) {
+  async function handleDelete() {
+    if (!seasonPendingDelete) {
+      return;
+    }
+    if (deleteConfirmInput !== seasonPendingDelete.label) {
       return;
     }
 
-    setActionSeasonId(row.seasonId);
+    setActionSeasonId(seasonPendingDelete.seasonId);
     try {
-      await api.deleteSeason(row.seasonId);
+      await api.deleteSeason(seasonPendingDelete.seasonId);
       await refreshAll();
       setStatus({
         severity: "success",
         message: STR.views.season.deletedDone,
         source: "season",
       });
+      setSeasonPendingDelete(null);
+      setDeleteConfirmInput("");
     } finally {
       setActionSeasonId(null);
     }
@@ -159,6 +186,26 @@ export function SeasonPage() {
       }
     },
     [api, setStatus, shellData.selectedSeasonId],
+  );
+
+  const handleExport = useCallback(
+    async (seasonId: string, actionId: "export_excel" | "export_pdf") => {
+      setActionSeasonId(seasonId);
+      try {
+        const result =
+          actionId === "export_pdf"
+            ? await api.runExportAction(seasonId, actionId, { pdfLayoutPreset: "compact" })
+            : await api.runExportAction(seasonId, actionId);
+        setStatus({
+          severity: result.severity,
+          message: result.message,
+          source: "season",
+        });
+      } finally {
+        setActionSeasonId(null);
+      }
+    },
+    [api, setStatus],
   );
 
   const handleCreate = useCallback(async () => {
@@ -189,28 +236,8 @@ export function SeasonPage() {
     }
   }, [api, navigate, newSeasonLabel, setStatus]);
 
-  useLayoutEffect(() => {
-    setSidebarControls(
-      <div className="sidebar-controls">
-        <section className="sidebar-controls__section season-side-note">
-          <h4>{STR.views.season.activeSeasonTitle}</h4>
-          <p>{shellData.selectedSeasonLabel ?? STR.views.season.noActiveSeason}</p>
-          <p className="surface-card__note">
-            {STR.views.season.backupNote}
-          </p>
-        </section>
-      </div>,
-    );
-
-    return () => {
-      setSidebarControls(null);
-    };
-  }, [setSidebarControls, shellData.selectedSeasonLabel]);
-
   return (
     <div className="page-stack">
-      <PageHeader title={STR.views.season.title} description={STR.views.season.subtitle} />
-
       <section className="surface-card">
         <div className="surface-card__header">
           <div>
@@ -285,6 +312,57 @@ export function SeasonPage() {
               </button>
               <button type="submit" className="button button--primary" disabled={creating}>
                 {STR.views.season.createAction}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+      {seasonPendingDelete ? (
+        <div className="confirm-modal__backdrop" role="presentation">
+          <form
+            className="confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={STR.views.season.deleteConfirmTitle}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleDelete();
+            }}
+          >
+            <div className="confirm-modal__header">
+              <h2>{STR.views.season.deleteConfirmTitle}</h2>
+            </div>
+            <div className="confirm-modal__body">
+              <p>{STR.views.season.deleteConfirmTypePrompt(seasonPendingDelete.label)}</p>
+              <label className="field-stack">
+                <span>{STR.views.season.deleteConfirmInputLabel}</span>
+                <input
+                  autoFocus
+                  type="text"
+                  value={deleteConfirmInput}
+                  onChange={(event) => {
+                    setDeleteConfirmInput(event.target.value);
+                  }}
+                />
+              </label>
+            </div>
+            <div className="confirm-modal__actions">
+              <button
+                type="button"
+                className="button"
+                onClick={() => {
+                  setDeleteConfirmInput("");
+                  setSeasonPendingDelete(null);
+                }}
+              >
+                {STR.confirmModal.cancel}
+              </button>
+              <button
+                type="submit"
+                className="button button--danger"
+                disabled={deleteConfirmInput !== seasonPendingDelete.label || actionSeasonId === seasonPendingDelete.seasonId}
+              >
+                {STR.confirmModal.confirm}
               </button>
             </div>
           </form>

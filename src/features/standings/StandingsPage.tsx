@@ -5,46 +5,38 @@ import { formatKm } from "@/app/format.ts";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
 import { EmptyState } from "@/components/feedback/EmptyState.tsx";
-import { PageHeader } from "@/components/layout/PageHeader.tsx";
 import { useStandingsStore } from "@/stores/standings.ts";
 import { useStatusStore } from "@/stores/status.ts";
 
-type CategoryGroupKey = "single" | "couples";
-type PdfLayoutPreset = "default" | "compact";
 type RaceResult = { distanceKm: number; points: number } | null;
 type StandingsViewRow = StandingsRow & { raceResults: RaceResult[] };
 type StandingsColumnWidth = { key: string; width: string };
 
-const CATEGORY_GROUPS: Array<{
-  key: CategoryGroupKey;
-  title: string;
-  rows: string[][];
-}> = [
-  {
-    key: "single",
-    title: STR.views.standings.sectionSingles,
-    rows: [
-      ["half_hour:women", "hour:women"],
-      ["half_hour:men", "hour:men"],
-    ],
-  },
-  {
-    key: "couples",
-    title: STR.views.standings.sectionCouples,
-    rows: [
-      ["half_hour:couples_women", "hour:couples_women"],
-      ["half_hour:couples_men", "hour:couples_men"],
-      ["half_hour:couples_mixed", "hour:couples_mixed"],
-    ],
-  },
+const CATEGORY_BUTTON_KEYS = [
+  "half_hour:women",
+  "half_hour:men",
+  "half_hour:couples_women",
+  "half_hour:couples_men",
+  "half_hour:couples_mixed",
+  "hour:women",
+  "hour:men",
+  "hour:couples_women",
+  "hour:couples_men",
+  "hour:couples_mixed",
 ];
 
 function categoryButtonLabel(key: string): string {
   const [duration, division] = key.split(":");
   const durationLabel = duration === "half_hour" ? "1/2 h" : "1 h";
-  const normalizedDivision = division?.replace("couples_", "") ?? division ?? "";
-  const divisionLabel =
-    normalizedDivision === "women" ? "Frauen" : normalizedDivision === "men" ? "Männer" : "Mix";
+  const divisionLabel = division?.startsWith("couples_")
+    ? division === "couples_women"
+      ? "Paare F"
+      : division === "couples_men"
+        ? "Paare M"
+        : "Paare Mix"
+    : division === "women"
+      ? "Frauen"
+      : "Männer";
   return `${durationLabel} - ${divisionLabel}`;
 }
 
@@ -99,7 +91,6 @@ export function StandingsPage() {
   const selectCategory = useStandingsStore((state) => state.selectCategory);
   const [data, setData] = useState<StandingsData | null>(null);
   const [pendingExcludedRows, setPendingExcludedRows] = useState<Record<string, boolean>>({});
-  const [pdfLayoutPreset, setPdfLayoutPreset] = useState<PdfLayoutPreset>("compact");
 
   const loadStandings = useCallback(async (seasonId: string) => {
     const next = await api.getStandings(seasonId);
@@ -153,11 +144,11 @@ export function StandingsPage() {
   const handleExcludedChange = useCallback(
     async (row: StandingsViewRow, excluded: boolean) => {
       const seasonId = shellData.selectedSeasonId;
-      const categoryKey = selectedCategory?.key;
-      const teamId = row.teamId;
-      if (!seasonId || !categoryKey || !teamId) {
+      if (!seasonId || !selectedCategory || typeof row.teamId !== "string") {
         return;
       }
+      const categoryKey = selectedCategory.key;
+      const teamId = row.teamId;
       const exclusionKey = `${categoryKey}:${teamId}`;
       setPendingExcludedRows((prev) => ({ ...prev, [exclusionKey]: true }));
       try {
@@ -188,127 +179,29 @@ export function StandingsPage() {
   const detailColumnCount = 6 + maxRaceColumns * 2;
 
   const handleExport = useCallback(
-    async (action: ExportActionDescriptor) => {
-      if (!shellData.selectedSeasonId) {
-        setStatus({
-          severity: "warn",
-          message: STR.views.standings.noSeason,
-          source: "standings",
-        });
-        return;
-      }
-
+    async (seasonId: string, action: ExportActionDescriptor) => {
       const result =
         action.id === "export_pdf"
-          ? await api.runExportAction(shellData.selectedSeasonId, action.id, { pdfLayoutPreset })
-          : await api.runExportAction(shellData.selectedSeasonId, action.id);
+          ? await api.runExportAction(seasonId, action.id, { pdfLayoutPreset: "compact" })
+          : await api.runExportAction(seasonId, action.id);
       setStatus({
         severity: result.severity,
         message: result.message,
         source: "standings",
       });
     },
-    [api, pdfLayoutPreset, setStatus, shellData.selectedSeasonId],
+    [api, setStatus],
   );
 
   useLayoutEffect(() => {
-    if (!shellData.selectedSeasonId) {
-      setSidebarControls(null);
-      return;
-    }
-
-    setSidebarControls(
-      <div className="sidebar-controls">
-        <section className="sidebar-controls__section">
-          <h4>{STR.views.standings.sectionSingles}</h4>
-          <div className="category-matrix">
-            {CATEGORY_GROUPS[0]?.rows.flat().map((categoryKey) => {
-              const category = data?.categories.find((entry) => entry.key === categoryKey) ?? null;
-              const isDisabled = !category || category.participantCount === 0;
-              return (
-                <button
-                  key={categoryKey}
-                  type="button"
-                  className={`category-button category-button--compact ${selectedCategory?.key === categoryKey ? "is-active" : ""}`}
-                  disabled={isDisabled}
-                  onClick={() => {
-                    if (category) {
-                      selectCategory(category.key);
-                    }
-                  }}
-                >
-                  <strong>{categoryButtonLabel(categoryKey)}</strong>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="sidebar-controls__section">
-          <h4>{STR.views.standings.sectionCouples}</h4>
-          <div className="category-matrix">
-            {CATEGORY_GROUPS[1]?.rows.flat().map((categoryKey) => {
-              const category = data?.categories.find((entry) => entry.key === categoryKey) ?? null;
-              const isDisabled = !category || category.participantCount === 0;
-              return (
-                <button
-                  key={categoryKey}
-                  type="button"
-                  className={`category-button category-button--compact ${selectedCategory?.key === categoryKey ? "is-active" : ""}`}
-                  disabled={isDisabled}
-                  onClick={() => {
-                    if (category) {
-                      selectCategory(category.key);
-                    }
-                  }}
-                >
-                  <strong>{categoryButtonLabel(categoryKey)}</strong>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="sidebar-controls__section">
-          <h4>{STR.views.standings.exportTitle}</h4>
-          {data?.exportActions.some((action) => action.id === "export_pdf") ? (
-            <label className="field-stack">
-              <span>{STR.views.standings.pdfStyleLabel}</span>
-              <select
-                aria-label={STR.views.standings.pdfStyleLabel}
-                value={pdfLayoutPreset}
-                onChange={(event) => { setPdfLayoutPreset(event.currentTarget.value as PdfLayoutPreset); }}
-              >
-                <option value="default">{STR.views.standings.pdfStyleNormal}</option>
-                <option value="compact">{STR.views.standings.pdfStyleCompact}</option>
-              </select>
-            </label>
-          ) : null}
-          <div className="stack-actions">
-            {data?.exportActions.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                className={`button ${action.availability === "ready" ? "button--primary" : ""}`}
-                onClick={() => void handleExport(action)}
-              >
-                {action.id === "export_pdf" ? STR.views.standings.exportPdfLong : STR.views.standings.exportExcelLong}
-              </button>
-            ))}
-          </div>
-        </section>
-      </div>,
-    );
-
+    setSidebarControls(null);
     return () => {
       setSidebarControls(null);
     };
-  }, [data, handleExport, selectCategory, selectedCategory?.key, setSidebarControls, shellData.selectedSeasonId]);
+  }, [setSidebarControls]);
 
   return (
     <div className="page-stack">
-      <PageHeader title={STR.views.standings.title} description={STR.views.standings.subtitle} />
-
       {!shellData.selectedSeasonId ? (
         <EmptyState title={STR.views.standings.title} message={STR.views.standings.noSeason} />
       ) : !data ? (
@@ -317,14 +210,42 @@ export function StandingsPage() {
         </section>
       ) : (
         <section className="surface-card">
-          <div className="surface-card__header">
-            <div>
-              <h2>{selectedCategory?.label ?? STR.views.standings.title}</h2>
-              <p>{selectedCategory?.description ?? STR.views.standings.placeholder}</p>
+          <div className="surface-card__section surface-card__section--divider-bottom">
+            <div className="standings-category-grid" role="group" aria-label={STR.views.standings.categoriesTitle}>
+              {CATEGORY_BUTTON_KEYS.map((categoryKey, categoryIndex) => {
+                const gridColumnStart = (categoryIndex % 5) + 1;
+                const gridRowStart = Math.floor(categoryIndex / 5) + 1;
+                const category = data.categories.find((entry) => entry.key === categoryKey) ?? null;
+                const isDisabled = !category || category.participantCount === 0;
+                return (
+                  <button
+                    key={categoryKey}
+                    type="button"
+                    className={`category-button category-button--compact ${selectedCategory?.key === categoryKey ? "is-active" : ""}`}
+                    style={{ gridColumnStart, gridRowStart }}
+                    disabled={isDisabled}
+                    onClick={() => {
+                      if (category) {
+                        selectCategory(category.key);
+                      }
+                    }}
+                  >
+                    <strong>{categoryButtonLabel(categoryKey)}</strong>
+                  </button>
+                );
+              })}
+              {data.exportActions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className={`button ${action.availability === "ready" ? "button--primary" : ""}`}
+                    style={{ gridColumnStart: 6, gridRowStart: action.id === "export_pdf" ? 1 : 2 }}
+                  onClick={() => void handleExport(data.seasonId, action)}
+                >
+                  {action.id === "export_pdf" ? STR.views.standings.exportPdf : STR.views.standings.exportExcel}
+                </button>
+              ))}
             </div>
-          </div>
-          <div className="surface-card__section">
-            <h3>{STR.views.standings.detailResultsTitle}</h3>
           </div>
           <div className="table-wrap table-wrap--standings-detail">
             <table className="ui-table ui-table--standings ui-table--standings-detail">

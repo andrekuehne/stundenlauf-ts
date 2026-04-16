@@ -139,7 +139,6 @@ export const STR = {
         "Automatische Zuordnung ab eingestellter Schwelle, darunter Prüfliste oder neue Identität.",
       matchingHintManual:
         "Keine automatische Zuordnung über Ähnlichkeit, alle unsicheren Fälle landen in der Prüfliste.",
-      reviewTitle: "Zusammenführungen prüfen",
       noOpenReviews: "Keine offenen Prüfungen.",
       reviewProgress: (current: number, total: number) => `Prüfung ${current} von ${total}`,
       reviewProgressShort: (current: number, total: number) => `Zuordnung ${current} von ${total}`,
@@ -154,7 +153,7 @@ export const STR = {
       reviewCreateNewDescription:
         "Die importierte Person wird als neuer Datensatz übernommen. Es erfolgt keine Zusammenführung.",
       reviewRecommended: "Empfohlen",
-      incomingHeading: "Neuer eingehender Eintrag",
+      reviewEntryProgress: (current: number, total: number) => `Eintrag ${current}/${total}`,
       candidatesHeading: "Mögliche Treffer (beste Übereinstimmung zuerst)",
       mergeAccept: "Mit ausgewählter Person/Team zusammenführen",
       mergeNewIdentity: "Keine passt: neue Person anlegen",
@@ -304,7 +303,9 @@ export const STR = {
       deleteAction: "Löschen",
       resetAction: "Zurücksetzen",
       importAction: "Saison importieren",
-      exportAction: "Saison exportieren",
+      exportAction: "Datensicherung",
+      exportPdfAction: "PDF",
+      exportExcelAction: "Excel",
       noSeasons: "Noch keine Saisons vorhanden.",
       activeTag: "Aktiv",
       importedEvents: "Importierte Läufe",
@@ -312,6 +313,9 @@ export const STR = {
       actions: "Aktionen",
       deleteConfirmTitle: "Saison löschen?",
       deleteConfirmBody: "Diese Saison wird dauerhaft entfernt.",
+      deleteConfirmTypePrompt: (label: string) =>
+        `Bitte geben Sie "${label}" ein um die Saison unwiderruflich zu löschen.`,
+      deleteConfirmInputLabel: "Saisonname zur Bestätigung",
       resetConfirmTitle: "Saison zurücksetzen?",
       resetConfirmBody: "Alle Event-Daten der Saison werden gelöscht.",
       exportHint: "Export folgt in F-TS07/F-TS08.",
