@@ -1607,7 +1607,9 @@ textarea {
 }
 
 .import-review__next-button {
-  min-width: min(15.5rem, 100%);
+  width: fit-content;
+  max-width: 100%;
+  flex: 0 0 auto;
   justify-content: center;
   white-space: nowrap;
 }

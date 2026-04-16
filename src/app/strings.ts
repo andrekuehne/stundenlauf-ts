@@ -165,8 +165,8 @@ export const STR = {
         "Oben sehen Sie den eingehenden Eintrag. Darunter vorhandene Kandidaten nach Treffersicherheit.",
       reviewHintNoMatch:
         'Wenn kein Kandidat passt, wählen Sie "Keine passt: neue Person anlegen".',
-      reviewBackEntry: "Vorherige Zuordnung",
-      reviewNextEntry: "Nächste Zuordnung",
+      reviewBackEntry: "Vorige",
+      reviewNextEntry: "Nächste",
       reviewTypoFix: "Zusammenführen und Namen korrigieren",
       reviewCreateNewTitle: "Neue Person anlegen",
       reviewCreateNewDescription:

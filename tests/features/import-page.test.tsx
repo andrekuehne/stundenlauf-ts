@@ -9,6 +9,7 @@ import type {
   ShellData,
   StandingsData,
 } from "@/api/contracts/index.ts";
+import "@/app/theme.css";
 import { ImportPage } from "@/features/import/ImportPage.tsx";
 
 const setSidebarControls = vi.fn();
@@ -635,7 +636,7 @@ describe("ImportPage", () => {
 
     for (let i = 0; i < 3; i++) {
       const next = screen.getByRole("button", {
-        name: /Nächste Zuordnung|Zusammenfassung ➡/i,
+        name: /Nächste|Zusammenfassung ➡/i,
       });
       fireEvent.click(next);
     }
@@ -1078,11 +1079,36 @@ describe("ImportPage", () => {
 
     expect(left!.textContent).toMatch(/Zurück zu Datei/);
     expect(left!.textContent).toMatch(/Einstellungen/);
-    expect(left!.textContent).not.toMatch(/Vorherige Zuordnung/);
+    expect(left!.textContent).not.toMatch(/Vorige/);
 
-    expect(right!.textContent).toMatch(/Vorherige Zuordnung/);
+    expect(right!.textContent).toMatch(/Vorige/);
     expect(right!.textContent).toMatch(/Daten korrigieren/);
-    expect(right!.textContent).toMatch(/Zusammenfassung|Nächste Zuordnung/);
+    expect(right!.textContent).toMatch(/Zusammenfassung|Nächste/);
+  });
+
+  it("does not force a wide min-width on the forward review button", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const next = container.querySelector(".import-review__next-button") as HTMLElement | null;
+    expect(next).toBeTruthy();
+    const minWidth = window.getComputedStyle(next!).minWidth;
+    const px = minWidth.endsWith("px") ? Number.parseFloat(minWidth) : Number.NaN;
+    expect(Number.isNaN(px) || px < 200).toBe(true);
   });
 
   it("frames the incoming entry as a current-entry callout with context eyebrow and a call-to-action to act below", async () => {
