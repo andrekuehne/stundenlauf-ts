@@ -66,8 +66,8 @@ function buildStandingsColumnWidths(maxRaceColumns: number): StandingsColumnWidt
   ];
 
   for (let index = 0; index < maxRaceColumns; index += 1) {
-    widths.push({ key: `race-km-${index + 1}`, width: "5.1rem" });
-    widths.push({ key: `race-points-${index + 1}`, width: "5.1rem" });
+    widths.push({ key: `race-km-${index + 1}`, width: "4.1rem" });
+    widths.push({ key: `race-points-${index + 1}`, width: "4.1rem" });
   }
 
   widths.push({ key: "total-km", width: "5.1rem" });

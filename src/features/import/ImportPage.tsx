@@ -52,14 +52,6 @@ function isRunOccupied(importedRuns: ImportedRunRow[], category: "singles" | "do
   });
 }
 
-function raceNumberFromLabel(label: string): number | null {
-  const value = Number.parseInt(label.toLowerCase().replace("lauf", "").trim(), 10);
-  if (!Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-  return value;
-}
-
 function clampThreshold(value: number): number {
   return Math.min(MATCHING_THRESHOLD_MAX, Math.max(MATCHING_THRESHOLD_MIN, value));
 }
@@ -219,36 +211,6 @@ export function ImportPage() {
     : 0;
   const openReviews = Math.max(0, totalReviews - resolvedReviews);
   const isDoublesReview = draft?.category === "doubles";
-  const maxImportedRace = useMemo(
-    () =>
-      importedRuns.reduce((max, entry) => {
-        const race = raceNumberFromLabel(entry.raceLabel);
-        return race ? Math.max(max, race) : max;
-      }, 0),
-    [importedRuns],
-  );
-  const raceColumns = useMemo(() => {
-    const total = Math.max(5, maxImportedRace);
-    return Array.from({ length: total }, (_, index) => index + 1);
-  }, [maxImportedRace]);
-  const importedRunState = useMemo(() => {
-    const result: Record<number, { singles: boolean; doubles: boolean }> = {};
-    for (const race of raceColumns) {
-      result[race] = { singles: false, doubles: false };
-    }
-    for (const entry of importedRuns) {
-      const race = raceNumberFromLabel(entry.raceLabel);
-      if (!race || !result[race]) {
-        continue;
-      }
-      if (entry.categoryLabel.includes("Paare")) {
-        result[race].doubles = true;
-      } else {
-        result[race].singles = true;
-      }
-    }
-    return result;
-  }, [importedRuns, raceColumns]);
 
   const visibleSummary = useMemo(() => {
     if (!draft) {
@@ -409,43 +371,6 @@ export function ImportPage() {
             main={
               <article className="surface-card import-step import-step--narrow">
                 <div className="import-select-grid">
-                  <section className="surface-card import-existing-runs">
-                    <div className="surface-card__header">
-                      <h3>{STR.views.standings.importedRunsTitle}</h3>
-                    </div>
-                    <div className="table-wrap">
-                      <table className="ui-table">
-                        <thead>
-                          <tr>
-                            <th>{STR.views.standings.importedRunsRaceCol}</th>
-                            {raceColumns.map((race) => (
-                              <th key={`race-col-${race}`} className="ui-table__cell--center">
-                                {race}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <th>{STR.views.standings.importedRunsRowSingles}</th>
-                            {raceColumns.map((race) => (
-                              <td key={`single-${race}`} className="ui-table__cell--center">
-                                {importedRunState[race]?.singles ? "✅" : "—"}
-                              </td>
-                            ))}
-                          </tr>
-                          <tr>
-                            <th>{STR.views.standings.importedRunsRowCouples}</th>
-                            {raceColumns.map((race) => (
-                              <td key={`doubles-${race}`} className="ui-table__cell--center">
-                                {importedRunState[race]?.doubles ? "✅" : "—"}
-                              </td>
-                            ))}
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </section>
                   <section className="surface-card import-select-form">
                     <div className="surface-card__header">
                       <h2>{STR.views.import.selectFileTitle}</h2>

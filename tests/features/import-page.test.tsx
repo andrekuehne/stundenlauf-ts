@@ -231,6 +231,12 @@ beforeEach(() => {
 });
 
 describe("ImportPage", () => {
+  it("does not render imported runs table on file selection step", () => {
+    render(<ImportPage />);
+
+    expect(screen.queryByRole("heading", { name: "Importierte Läufe" })).not.toBeInTheDocument();
+  });
+
   it("auto-detects race number and pairs category from typed filename", () => {
     render(<ImportPage />);
 

@@ -1029,9 +1029,10 @@ textarea {
 }
 
 .import-select-grid {
-  width: min(1120px, 100%);
+  width: 100%;
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(420px, 1fr);
+  grid-template-columns: minmax(420px, 680px);
+  justify-content: center;
   gap: var(--spacing-lg);
   align-items: start;
 }
