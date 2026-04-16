@@ -988,6 +988,71 @@ describe("ImportPage", () => {
     expect(screen.queryByText("Nächster Schritt")).not.toBeInTheDocument();
   });
 
+  it("does not render an Eintrag x/y progress chip in the review toolbar", async () => {
+    const resolvedDraft = buildDraftWithMultipleResolvedReviews({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => resolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/3/i });
+
+    const toolbarLeft = container.querySelector(".import-review__toolbar-left");
+    expect(toolbarLeft).toBeTruthy();
+    expect(container.querySelector(".import-review__progress")).toBeNull();
+    expect(toolbarLeft!.textContent).not.toMatch(/Eintrag\s+\d+\s*\/\s*\d+/i);
+  });
+
+  it("makes the review white box take the full available vertical space", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const pageStack = container.querySelector(".page-stack--fill");
+    expect(pageStack).toBeTruthy();
+    const directChildren = Array.from(pageStack!.children);
+    expect(directChildren.length).toBe(1);
+    const onlyChild = directChildren[0]!;
+    expect(onlyChild.classList.contains("import-workflow--fill")).toBe(true);
+
+    const article = container.querySelector("article.import-step--fill");
+    expect(article).toBeTruthy();
+    expect(article!.classList.contains("surface-card")).toBe(true);
+  });
+
+  it("renders a compact meta line atop the file-selection step with season context", async () => {
+    const { container } = render(<ImportPage />);
+
+    await waitFor(() => {
+      expect(container.querySelector(".import-select-meta")).toBeTruthy();
+    });
+
+    const meta = container.querySelector(".import-select-meta");
+    expect(meta!.textContent).toMatch(/Saison 1/);
+  });
+
   it("groups review-step toolbar buttons into a secondary-left and forward-right cluster", async () => {
     const unresolvedDraft = buildDraftWithUnresolvedReview({
       seasonId: "season-1",

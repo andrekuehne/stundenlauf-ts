@@ -59,6 +59,88 @@ describe("ImportCandidateCard doubles comparison", () => {
   });
 });
 
+describe("ImportCandidateCard header chrome", () => {
+  it("does not render a confidence percentage badge", () => {
+    const incoming: ImportIncomingRecord = {
+      displayName: "John Doe",
+      yob: 1993,
+      club: "Club Alpha",
+      startNumber: 44,
+      resultLabel: "7,2 km / 20 P",
+    };
+
+    const candidate: ImportReviewCandidate = {
+      candidateId: "single-1",
+      displayName: "Jon Doe",
+      confidence: 0.84,
+      isRecommended: true,
+      fieldComparisons: [
+        {
+          fieldKey: "name",
+          label: "Name",
+          incomingValue: "John Doe",
+          candidateValue: "Jon Doe",
+          isMatch: false,
+        },
+      ],
+    };
+
+    const { container } = render(
+      <ImportCandidateCard
+        candidate={candidate}
+        incoming={incoming}
+        isSelected={false}
+        isDoubles={false}
+        disabled={false}
+        onSelect={() => {}}
+      />,
+    );
+
+    expect(container.querySelector(".import-candidate__confidence")).toBeNull();
+    expect(container.textContent ?? "").not.toMatch(/\d+\s*%/);
+  });
+
+  it("does not render a 'Empfohlen' recommendation badge", () => {
+    const incoming: ImportIncomingRecord = {
+      displayName: "Jane Roe",
+      yob: 1990,
+      club: "SV Ost",
+      startNumber: 3,
+      resultLabel: "6,0 km / 10 P",
+    };
+
+    const candidate: ImportReviewCandidate = {
+      candidateId: "cand-best",
+      displayName: "Jane Roe",
+      confidence: 0.99,
+      isRecommended: true,
+      fieldComparisons: [
+        {
+          fieldKey: "name",
+          label: "Name",
+          incomingValue: "Jane Roe",
+          candidateValue: "Jane Roe",
+          isMatch: true,
+        },
+      ],
+    };
+
+    const { container } = render(
+      <ImportCandidateCard
+        candidate={candidate}
+        incoming={incoming}
+        isSelected={false}
+        isDoubles={false}
+        disabled={false}
+        onSelect={() => {}}
+      />,
+    );
+
+    expect(container.querySelector(".import-candidate__recommend")).toBeNull();
+    expect(container.textContent ?? "").not.toMatch(/empfohlen/i);
+  });
+});
+
 describe("ImportCandidateCard mismatch highlighting", () => {
   it("highlights mismatching words for incoming and existing values", () => {
     const incoming: ImportIncomingRecord = {

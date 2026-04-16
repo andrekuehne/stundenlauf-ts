@@ -77,17 +77,26 @@ function ComparisonRow({
   candidateValue: string;
 }) {
   return (
-    <div className="import-candidate__row">
+    <div className={`import-candidate__row ${isMatch ? "is-match" : "is-mismatch"}`}>
       <strong className="import-candidate__field">{label}</strong>
-      <span className={`import-candidate__status ${isMatch ? "is-match" : "is-mismatch"}`}>{isMatch ? "✅" : "❌"}</span>
+      <span
+        className={`import-candidate__status ${isMatch ? "is-match" : "is-mismatch"}`}
+        aria-label={isMatch ? "Übereinstimmung" : "Abweichung"}
+      >
+        {isMatch ? "✅" : "❌"}
+      </span>
       <div className="import-candidate__values">
         <div className="import-candidate__value-row">
           <span className="import-candidate__value-label">{STR.importCandidate.incomingLabel}</span>
-          <span>{isMatch ? incomingValue : renderWordDiff(incomingValue, candidateValue)}</span>
+          <span className="import-candidate__value-text">
+            {isMatch ? incomingValue : renderWordDiff(incomingValue, candidateValue)}
+          </span>
         </div>
         <div className="import-candidate__value-row">
           <span className="import-candidate__value-label">{STR.importCandidate.existingLabel}</span>
-          <span>{isMatch ? candidateValue : renderWordDiff(candidateValue, incomingValue)}</span>
+          <span className="import-candidate__value-text">
+            {isMatch ? candidateValue : renderWordDiff(candidateValue, incomingValue)}
+          </span>
         </div>
       </div>
     </div>
@@ -116,7 +125,9 @@ function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCan
   return (
     <div className="import-candidate__pair-grid">
       <div className="import-candidate__pair-pane">
-        <h4>{incomingLeftName === "—" ? STR.importCandidate.participantA : incomingLeftName}</h4>
+        <h4 className="import-candidate__pair-title">
+          {incomingLeftName === "—" ? STR.importCandidate.participantA : incomingLeftName}
+        </h4>
         <div className="import-candidate__comparison">
           <ComparisonRow
             label={STR.importCandidate.name}
@@ -139,7 +150,9 @@ function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCan
         </div>
       </div>
       <div className="import-candidate__pair-pane">
-        <h4>{incomingRightName === "—" ? STR.importCandidate.participantB : incomingRightName}</h4>
+        <h4 className="import-candidate__pair-title">
+          {incomingRightName === "—" ? STR.importCandidate.participantB : incomingRightName}
+        </h4>
         <div className="import-candidate__comparison">
           <ComparisonRow
             label={STR.importCandidate.name}
@@ -183,9 +196,12 @@ export function ImportCandidateCard({
       className={`import-candidate ${isSelected ? "is-selected" : ""}`}
       onClick={onSelect}
       disabled={disabled}
+      aria-pressed={isSelected}
     >
       <div className="import-candidate__head">
-        <strong>{displayName}</strong>
+        <div className="import-candidate__identity">
+          <strong className="import-candidate__name">{displayName}</strong>
+        </div>
       </div>
       <small className="import-candidate__hint">
         {STR.importCandidate.assignmentHint}

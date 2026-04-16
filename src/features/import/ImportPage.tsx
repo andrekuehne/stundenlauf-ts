@@ -426,6 +426,13 @@ export function ImportPage() {
             main={
               <article className="surface-card import-step import-step--narrow">
                 {flowSteps}
+                <p className="import-select-meta" data-testid="import-select-meta">
+                  <span className="import-select-meta__eyebrow">
+                    {STR.views.import.flowStepSelect.replace(/^\d+\.\s*/, "")}
+                  </span>
+                  <span aria-hidden="true"> · </span>
+                  <span>{shellData.selectedSeasonLabel ?? STR.views.season.noActiveSeason}</span>
+                </p>
                 <div className="import-select-grid import-select-grid--with-overview">
                   <ImportSeasonOverview
                     importedRuns={importedRuns}
@@ -566,39 +573,42 @@ export function ImportPage() {
                   <div className="import-review__toolbar-left">
                     <button
                       type="button"
-                      className="button button--ghost"
+                      className="button button--ghost import-review__action"
                       onClick={() => {
                         setStep("select_file");
                       }}
                       disabled={busy}
                     >
-                      ↩️ {STR.views.import.stepBackToSelection}
+                      <span className="import-review__action-icon" aria-hidden="true">↩️</span>
+                      {STR.views.import.stepBackToSelection}
                     </button>
                     <button
                       type="button"
-                      className="button"
+                      className="button import-review__action"
                       onClick={() => {
                         setIsMatchingSettingsOpen(true);
                       }}
                       disabled={busy}
                     >
+                      <span className="import-review__action-icon" aria-hidden="true">⚙️</span>
                       {STR.views.import.matchingSettings}
                     </button>
                   </div>
                   <div className="import-review__toolbar-right">
                     <button
                       type="button"
-                      className="button button--ghost"
+                      className="button button--ghost import-review__action"
                       onClick={() => {
                         setReviewIndex((current) => Math.max(0, current - 1));
                       }}
                       disabled={reviewIndex === 0 || busy}
                     >
-                      ⬅️ {STR.views.import.reviewBackEntry}
+                      <span className="import-review__action-icon" aria-hidden="true">⬅️</span>
+                      {STR.views.import.reviewBackEntry}
                     </button>
                     <button
                       type="button"
-                      className="button"
+                      className="button import-review__action import-review__action--correct"
                       disabled={!currentDecision?.candidateId || busy}
                       onClick={() => {
                         if (currentDecision?.candidateId) {
@@ -610,7 +620,7 @@ export function ImportPage() {
                     </button>
                     <button
                       type="button"
-                      className={`button import-review__next-button ${reviewIndex >= totalReviews - 1 ? "button--primary" : "button--ghost"}`}
+                      className={`button import-review__next-button import-review__action ${reviewIndex >= totalReviews - 1 ? "button--primary" : "button--ghost"}`}
                       onClick={() => {
                         if (reviewIndex >= totalReviews - 1) {
                           setStep("summary");
