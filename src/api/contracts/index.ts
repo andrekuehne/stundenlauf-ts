@@ -191,6 +191,25 @@ export interface ImportDraftState {
   summary: ImportDraftSummary;
 }
 
+export interface StandingsRowIdentityMember {
+  personId: string;
+  name: string;
+  yob: number;
+  club: string;
+}
+
+export interface StandingsRowIdentity {
+  teamId: string;
+  teamKind: "solo" | "couple";
+  members: StandingsRowIdentityMember[];
+}
+
+export interface StandingsRowIdentityCorrectionInput {
+  categoryKey: string;
+  teamId: string;
+  members: StandingsRowIdentityMember[];
+}
+
 export type HistoryScope = "race" | "batch" | "season";
 export type HistoryRollbackMode = "atomic" | "grouped";
 
@@ -274,6 +293,14 @@ export interface AppApi {
     seasonId: string,
     input: { categoryKey: string; teamId: string; excluded: boolean },
   ): Promise<void>;
+  getStandingsRowIdentity(
+    seasonId: string,
+    input: { categoryKey: string; teamId: string },
+  ): Promise<StandingsRowIdentity>;
+  correctStandingsRowIdentity(
+    seasonId: string,
+    input: StandingsRowIdentityCorrectionInput,
+  ): Promise<AppCommandResult>;
   createImportDraft(input: ImportDraftInput): Promise<ImportDraftState>;
   getImportDraft(draftId: string): Promise<ImportDraftState>;
   setImportReviewDecision(draftId: string, decision: ImportReviewDecision): Promise<ImportDraftState>;

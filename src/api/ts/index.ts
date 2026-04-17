@@ -47,6 +47,8 @@ import type {
   SeasonListItem,
   StandingsData,
   StandingsRow,
+  StandingsRowIdentity,
+  StandingsRowIdentityCorrectionInput,
 } from "../contracts/index.ts";
 
 export const TS_APP_API_METHOD_MAP = {
@@ -61,6 +63,9 @@ export const TS_APP_API_METHOD_MAP = {
   deleteSeason: ["SeasonRepository.deleteSeason(seasonId)"],
   runSeasonCommand: ["exportSeason()", "importSeason()"],
   getStandings: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "computeStandings()"],
+  setStandingsRowExcluded: ["appendEvents()", "ranking.eligibility_set"],
+  getStandingsRowIdentity: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "team + person lookup"],
+  correctStandingsRowIdentity: ["appendEvents()", "person.corrected per member"],
   runExportAction: ["exportLaufuebersichtDualPdfs()", "exportGesamtwertungWorkbook()"],
   getHistory: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "legacy timeline synthesis adapter"],
   previewHistoryState: ["SeasonRepository.getEventLog(seasonId)", "projectState(seasonId, eventsPrefix)"],
@@ -956,6 +961,88 @@ class TsAppApi implements AppApi {
         app_version: APP_VERSION,
       },
     }]);
+  }
+
+  async getStandingsRowIdentity(
+    seasonId: string,
+    input: { categoryKey: string; teamId: string },
+  ): Promise<StandingsRowIdentity> {
+    const snapshot = await this.loadSnapshot(seasonId);
+    const team = snapshot.state.teams.get(input.teamId);
+    if (!team) {
+      throw new Error("Der gewählte Wertungseintrag wurde nicht gefunden.");
+    }
+    const members = team.member_person_ids.map((personId) => {
+      const person = snapshot.state.persons.get(personId);
+      if (!person) {
+        throw new Error(`Person ${personId} wurde nicht gefunden.`);
+      }
+      return {
+        personId: person.person_id,
+        name: person.display_name,
+        yob: person.yob,
+        club: person.club ?? "",
+      };
+    });
+    return {
+      teamId: input.teamId,
+      teamKind: team.team_kind === "couple" ? "couple" : "solo",
+      members,
+    };
+  }
+
+  async correctStandingsRowIdentity(
+    seasonId: string,
+    input: StandingsRowIdentityCorrectionInput,
+  ): Promise<AppCommandResult> {
+    const snapshot = await this.loadSnapshot(seasonId);
+    const team = snapshot.state.teams.get(input.teamId);
+    if (!team) {
+      throw new Error("Der gewählte Wertungseintrag wurde nicht gefunden.");
+    }
+
+    const repo = await this.repo();
+    const currentEvents = await repo.getEventLog(seasonId);
+    let seqCursor = currentEvents.reduce((max, ev) => Math.max(max, ev.seq), -1) + 1;
+    const events: DomainEvent[] = [];
+
+    for (const member of input.members) {
+      const existing = snapshot.state.persons.get(member.personId);
+      if (!existing) {
+        throw new Error(`Person ${member.personId} wurde nicht gefunden.`);
+      }
+      const [givenName, familyName] = splitDisplayNameParts(member.name);
+      const names = canonicalizePersonNames({
+        given_name: givenName,
+        family_name: familyName || member.name,
+        display_name: member.name,
+      });
+      const club = canonicalizeClub({ club: member.club || null });
+      events.push({
+        event_id: crypto.randomUUID(),
+        seq: seqCursor++,
+        recorded_at: new Date().toISOString(),
+        type: "person.corrected",
+        schema_version: 1,
+        payload: {
+          person_id: member.personId,
+          updated_fields: {
+            given_name: names.given_name,
+            family_name: names.family_name,
+            display_name: names.display_name,
+            name_normalized: names.name_normalized,
+            yob: member.yob,
+            club: club.club,
+            club_normalized: club.club_normalized,
+          },
+          rationale: "Korrektur über Korrekturen-Ansicht",
+        },
+        metadata: { app_version: APP_VERSION },
+      });
+    }
+
+    await repo.appendEvents(seasonId, events);
+    return asSuccess("Teilnehmerdaten gespeichert.");
   }
 
   async createImportDraft(input: ImportDraftInput) {

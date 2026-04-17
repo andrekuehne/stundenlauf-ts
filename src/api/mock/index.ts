@@ -18,6 +18,8 @@ import type {
   SeasonCommand,
   SeasonListItem,
   StandingsData,
+  StandingsRowIdentity,
+  StandingsRowIdentityCorrectionInput,
 } from "../contracts/index.ts";
 
 type MockSeasonRecord = SeasonListItem & {
@@ -784,6 +786,65 @@ class MockAppApi implements AppApi {
       candidate.rank = eligibleRank;
     }
     return Promise.resolve();
+  }
+
+  getStandingsRowIdentity(
+    seasonId: string,
+    input: { categoryKey: string; teamId: string },
+  ): Promise<StandingsRowIdentity> {
+    const season = this.seasons.find((entry) => entry.seasonId === seasonId);
+    if (!season) {
+      return Promise.reject(new Error("Bitte zuerst eine Saison auswählen."));
+    }
+    const rows = season.standings.rowsByCategory[input.categoryKey] ?? [];
+    const row = rows.find((entry) => (entry.teamId ?? entry.team) === input.teamId);
+    if (!row) {
+      return Promise.reject(new Error("Der gewählte Wertungseintrag wurde nicht gefunden."));
+    }
+    const teamName = row.team;
+    const isCouple = teamName.includes(" + ");
+    if (isCouple) {
+      const [nameA = teamName, nameB = ""] = teamName.split(" + ");
+      return Promise.resolve({
+        teamId: input.teamId,
+        teamKind: "couple",
+        members: [
+          { personId: `mock-person-a-${input.teamId}`, name: nameA, yob: 1990, club: row.club },
+          { personId: `mock-person-b-${input.teamId}`, name: nameB, yob: 1991, club: row.club },
+        ],
+      });
+    }
+    return Promise.resolve({
+      teamId: input.teamId,
+      teamKind: "solo",
+      members: [
+        { personId: `mock-person-${input.teamId}`, name: teamName, yob: 1990, club: row.club },
+      ],
+    });
+  }
+
+  correctStandingsRowIdentity(
+    seasonId: string,
+    input: StandingsRowIdentityCorrectionInput,
+  ): Promise<AppCommandResult> {
+    const season = this.seasons.find((entry) => entry.seasonId === seasonId);
+    if (!season) {
+      return Promise.reject(new Error("Bitte zuerst eine Saison auswählen."));
+    }
+    const newName =
+      input.members.length === 2
+        ? `${input.members[0]?.name ?? ""} + ${input.members[1]?.name ?? ""}`
+        : (input.members[0]?.name ?? "");
+    const newClub = input.members[0]?.club ?? "";
+    for (const rows of Object.values(season.standings.rowsByCategory)) {
+      for (const row of rows) {
+        if ((row.teamId ?? row.team) === input.teamId) {
+          row.team = newName;
+          row.club = newClub;
+        }
+      }
+    }
+    return Promise.resolve({ severity: "success", message: "Teilnehmerdaten gespeichert." });
   }
 
   createImportDraft(input: ImportDraftInput) {

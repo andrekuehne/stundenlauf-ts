@@ -135,6 +135,10 @@ beforeEach(() => {
     getStandings: vi.fn(async () => standingsData),
     runExportAction: vi.fn(async () => buildCommandResult("ok")),
     setStandingsRowExcluded: vi.fn(async () => {}),
+    getStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    correctStandingsRowIdentity: vi.fn(async () => buildCommandResult("ok")),
     createImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
