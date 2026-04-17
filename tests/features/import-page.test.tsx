@@ -386,8 +386,15 @@ beforeEach(() => {
 });
 
 describe("ImportPage", () => {
-  it("does not render imported runs table on file selection step", () => {
+  async function waitForImportPageReady(): Promise<void> {
+    await waitFor(() => {
+      expect(apiMock.getStandings).toHaveBeenCalledWith("season-1");
+    });
+  }
+
+  it("does not render imported runs table on file selection step", async () => {
     render(<ImportPage />);
+    await waitForImportPageReady();
 
     expect(screen.queryByRole("heading", { name: "Importierte Läufe" })).not.toBeInTheDocument();
   });
@@ -462,8 +469,9 @@ describe("ImportPage", () => {
     expect(singlesChip4?.classList.contains("is-selected")).toBe(false);
   });
 
-  it("auto-detects race number and pairs category from typed filename and highlights the matching chip", () => {
+  it("auto-detects race number and pairs category from typed filename and highlights the matching chip", async () => {
     const { container } = render(<ImportPage />);
+    await waitForImportPageReady();
 
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW_Paare Lauf 2.xlsx" },
@@ -479,8 +487,9 @@ describe("ImportPage", () => {
     expect(singlesChip2?.classList.contains("is-selected")).toBe(false);
   });
 
-  it("auto-detects race number and singles category from picked filename and highlights the matching chip", () => {
+  it("auto-detects race number and singles category from picked filename and highlights the matching chip", async () => {
     const { container } = render(<ImportPage />);
+    await waitForImportPageReady();
 
     const fileInput = document.querySelector<HTMLInputElement>("input[type='file']");
     expect(fileInput).not.toBeNull();
@@ -500,16 +509,18 @@ describe("ImportPage", () => {
     expect(doublesChip5?.classList.contains("is-selected")).toBe(false);
   });
 
-  it("does not render a duplicate category toggle or race number input in the file selector form", () => {
+  it("does not render a duplicate category toggle or race number input in the file selector form", async () => {
     render(<ImportPage />);
+    await waitForImportPageReady();
 
     expect(screen.queryByPlaceholderText("4")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Einzel" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Paare" })).not.toBeInTheDocument();
   });
 
-  it("shows a confirmation status when the filename auto-detection succeeds", () => {
+  it("shows a confirmation status when the filename auto-detection succeeds", async () => {
     const { container } = render(<ImportPage />);
+    await waitForImportPageReady();
 
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "Ergebnisliste MW Lauf 3.xlsx" },
@@ -523,8 +534,9 @@ describe("ImportPage", () => {
     expect(status?.classList.contains("is-detected")).toBe(true);
   });
 
-  it("guides the user to pick a slot in the overview when no race number is in the filename", () => {
+  it("guides the user to pick a slot in the overview when no race number is in the filename", async () => {
     const { container } = render(<ImportPage />);
+    await waitForImportPageReady();
 
     fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
       target: { value: "ergebnisliste-mw.xlsx" },
@@ -712,6 +724,9 @@ describe("ImportPage", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Import abschließen" }));
+    await waitFor(() => {
+      expect(apiMock.finalizeImportDraft).toHaveBeenCalled();
+    });
 
     await waitFor(() => {
       const chip = container.querySelector(
@@ -763,6 +778,9 @@ describe("ImportPage", () => {
         action: "create_new",
         candidateId: null,
       });
+    });
+    await waitFor(() => {
+      expect(apiMock.finalizeImportDraft).toHaveBeenCalled();
     });
   });
 
@@ -1068,10 +1086,12 @@ describe("ImportPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Import abschließen" }));
     expect(finalizeSpy).not.toHaveBeenCalled();
+    await waitForImportPageReady();
   });
 
-  it("renders step indicators in the top header and no helper sidebar cards", () => {
+  it("renders step indicators in the top header and no helper sidebar cards", async () => {
     render(<ImportPage />);
+    await waitForImportPageReady();
 
     expect(screen.getByLabelText("Aktueller Schritt")).toBeInTheDocument();
     expect(screen.getByText("1. Datei auswählen")).toBeInTheDocument();

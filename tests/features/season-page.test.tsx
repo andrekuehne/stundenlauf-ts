@@ -133,8 +133,12 @@ describe("SeasonPage", () => {
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[1] as HTMLButtonElement);
     await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
-    expect(refreshShellData).toHaveBeenCalled();
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season", severity: "info" }));
+    await waitFor(() => {
+      expect(refreshShellData).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season", severity: "info" }));
+    });
   });
 
   it("opens already active season and still navigates based on imported events", async () => {
@@ -234,7 +238,9 @@ describe("SeasonPage", () => {
     fireEvent.change(input, { target: { value: "Neue Saison" } });
     fireEvent.click(within(dialog).getByRole("button", { name: /Neue Saison erstellen/i }));
     await waitFor(() => { expect(apiMock.createSeason).toHaveBeenCalledWith({ label: "Neue Saison" }); });
-    expect(navigateMock).toHaveBeenCalledWith("/import");
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith("/import");
+    });
   });
 
   it("runs season row exports with compact PDF default", async () => {
@@ -248,7 +254,9 @@ describe("SeasonPage", () => {
     await waitFor(() =>
       { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", { pdfLayoutPreset: "compact" }); },
     );
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season" }));
+    await waitFor(() => {
+      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season" }));
+    });
   });
 
   it("renders an overview meta line with season count and last-modified context", async () => {

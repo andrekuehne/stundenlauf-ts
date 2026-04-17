@@ -119,7 +119,9 @@ describe("HistoryPage", () => {
     fireEvent.click(screen.getAllByRole("button")[1] as HTMLButtonElement);
     fireEvent.click(screen.getByRole("button", { name: /Bestätigen/i }));
     await waitFor(() => { expect(apiMock.rollbackHistory).toHaveBeenCalledWith("season-1", expect.objectContaining({ mode: "atomic" })); });
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "history" }));
+    await waitFor(() => {
+      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "history" }));
+    });
   });
 
   it("confirms hard reset command", async () => {

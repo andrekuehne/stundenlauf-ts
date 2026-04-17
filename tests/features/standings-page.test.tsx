@@ -215,7 +215,9 @@ describe("StandingsPage", () => {
         pdfLayoutPreset: "compact",
       }); },
     );
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    await waitFor(() => {
+      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    });
   });
 
   it("runs excel export from main content export controls", async () => {
@@ -238,7 +240,9 @@ describe("StandingsPage", () => {
     await waitFor(() =>
       { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"); },
     );
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    await waitFor(() => {
+      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    });
   });
 
   it("does not render the exclusion checkbox column anymore", async () => {
