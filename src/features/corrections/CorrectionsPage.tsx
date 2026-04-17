@@ -80,6 +80,15 @@ export function CorrectionsPage() {
     () => (data ? computeSeasonRaceColumnCount(data.categories) : RACE_COLUMN_FLOOR),
     [data],
   );
+  const includedTeamsCount = useMemo(
+    () => selectedRows.filter((row) => !row.excluded).length,
+    [selectedRows],
+  );
+  const excludedTeamsCount = useMemo(
+    () => selectedRows.filter((row) => row.excluded).length,
+    [selectedRows],
+  );
+  const importedRunsForCategory = selectedCategory?.importedRuns ?? 0;
 
   const handleToggleExcluded = useCallback(
     async (row: StandingsRow) => {
@@ -181,6 +190,34 @@ export function CorrectionsPage() {
         </section>
       ) : (
         <section className="surface-card standings-overview">
+          <p className="surface-card__note">{STR.views.corrections.guidance}</p>
+
+          <div className="standings-overview__kpis" role="group" aria-label={STR.views.standings.summaryTitle}>
+            <div
+              className="summary-card standings-overview__kpi standings-overview__kpi--teams"
+              data-testid="corrections-kpi-teams"
+            >
+              <span>{STR.views.standings.kpiTeamsLabel}</span>
+              <strong>{includedTeamsCount}</strong>
+            </div>
+            <div
+              className="summary-card standings-overview__kpi standings-overview__kpi--races"
+              data-testid="corrections-kpi-races"
+            >
+              <span>{STR.views.standings.kpiRacesLabel}</span>
+              <strong>
+                {STR.views.standings.kpiRacesValue(importedRunsForCategory, seasonRaceColumnCount)}
+              </strong>
+            </div>
+            <div
+              className="summary-card standings-overview__kpi standings-overview__kpi--excluded"
+              data-testid="corrections-kpi-excluded"
+            >
+              <span>{STR.views.standings.kpiExcludedLabel}</span>
+              <strong>{excludedTeamsCount}</strong>
+            </div>
+          </div>
+
           <div className="standings-overview__category-bar">
             <CategoryChipsBar
               categories={data.categories}

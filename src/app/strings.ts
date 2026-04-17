@@ -375,6 +375,8 @@ export const STR = {
     corrections: {
       title: "Korrekturen",
       subtitle: "Wählen Sie eine Kategorie aus und korrigieren Sie Teilnehmerdaten oder die Wertungsstellung.",
+      guidance:
+        "Hinweis: Namen oder Vereine anklicken, um Korrekturen zu starten. Über a.W. setzen oder entfernen Sie Teams als außer Wertung. Weitere Korrektur-Funktionen folgen hier.",
       noSeason: "Bitte zuerst eine Saison auswählen.",
       loading: "Korrekturen werden geladen...",
       correctionModalTitle: "Daten korrigieren",

@@ -162,14 +162,19 @@ describe("CorrectionsPage", () => {
     await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
   });
 
-  it("renders category chips without KPI cards, meta row, or export buttons", async () => {
+  it("renders guidance and KPI badges on corrections page without meta row or export buttons", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
     await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
 
+    expect(screen.getByText(/Namen oder Vereine anklicken/i)).toBeInTheDocument();
+    expect(screen.getByText(/Über a\.W\./i)).toBeInTheDocument();
     expect(screen.getByText("Halbstunde")).toBeInTheDocument();
     expect(screen.queryByTestId("standings-meta")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("standings-kpi-teams")).not.toBeInTheDocument();
+    expect(screen.getByTestId("corrections-kpi-teams")).toHaveTextContent("1");
+    expect(screen.getByTestId("corrections-kpi-races")).toHaveTextContent("2 / 5");
+    expect(screen.getByTestId("corrections-kpi-excluded")).toHaveTextContent("1");
+    expect(screen.getByText("Außer Wertung")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "PDF exportieren" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Excel exportieren" })).not.toBeInTheDocument();
   });
