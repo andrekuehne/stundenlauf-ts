@@ -23,7 +23,8 @@ export default defineConfig({
     baseURL: previewOrigin,
     trace: "off",
     ...devices["Desktop Chrome"],
-    viewport: { width: 1280, height: 720 },
+    /** Full HD for README / e2e screenshots */
+    viewport: { width: 1600, height: 900 },
     ...(useSystemChrome ? { channel: "chrome" as const } : {}),
   },
   projects: [{ name: "chromium", use: {} }],

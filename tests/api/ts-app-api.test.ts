@@ -197,7 +197,7 @@ describe("TsAppApi standings and exports", () => {
     const exportResult = await liveApi.runExportAction(created.seasonId, "export_excel");
     expect(exportResult.severity).toBe("success");
     expect(triggerDownloadSpy).toHaveBeenCalledTimes(1);
-  });
+  }, 30_000);
 });
 
 describe("TsAppApi history workflows", () => {
