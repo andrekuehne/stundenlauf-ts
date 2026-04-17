@@ -14,12 +14,12 @@ function formatDateTime(value: string): string {
 }
 
 function findMostRecentModification(seasons: SeasonListItem[]): SeasonListItem | null {
-  if (seasons.length === 0) {
+  const first = seasons[0];
+  if (!first) {
     return null;
   }
-  const [first, ...rest] = seasons;
-  let recent = first;
-  for (const candidate of rest) {
+  let recent: SeasonListItem = first;
+  for (const candidate of seasons.slice(1)) {
     if (new Date(candidate.lastModifiedAt).getTime() > new Date(recent.lastModifiedAt).getTime()) {
       recent = candidate;
     }

@@ -1237,6 +1237,40 @@ describe("ImportPage", () => {
     expect(["section", "aside"]).toContain(incomingTag);
   });
 
+  it("renders the file-selection step without nested surface-card panels and with a vertical divider between the two columns", async () => {
+    const { container } = render(<ImportPage />);
+
+    await waitFor(() => {
+      expect(container.querySelector(".import-season-overview")).toBeTruthy();
+    });
+
+    const overview = container.querySelector(".import-season-overview");
+    expect(overview).toBeTruthy();
+    expect(overview!.classList.contains("surface-card")).toBe(false);
+
+    const form = container.querySelector(".import-select-form");
+    expect(form).toBeTruthy();
+    expect(form!.classList.contains("surface-card")).toBe(false);
+
+    const selectStep = container.querySelector(".import-step");
+    expect(selectStep).toBeTruthy();
+    const nestedCards = selectStep!.querySelectorAll(".surface-card");
+    expect(nestedCards.length).toBe(0);
+
+    const grid = container.querySelector(".import-select-grid--with-overview");
+    expect(grid).toBeTruthy();
+    const divider = grid!.querySelector(".import-select-grid__divider");
+    expect(divider).toBeTruthy();
+
+    const children = Array.from(grid!.children);
+    const overviewIdx = children.findIndex((el) => el.classList.contains("import-season-overview"));
+    const dividerIdx = children.findIndex((el) => el.classList.contains("import-select-grid__divider"));
+    const formIdx = children.findIndex((el) => el.classList.contains("import-select-form"));
+    expect(overviewIdx).toBeGreaterThanOrEqual(0);
+    expect(dividerIdx).toBeGreaterThan(overviewIdx);
+    expect(formIdx).toBeGreaterThan(dividerIdx);
+  });
+
   it("lists candidate matches before the 'new person' fallback with a labelled divider between them", async () => {
     const unresolvedDraft = buildDraftWithUnresolvedReview({
       seasonId: "season-1",

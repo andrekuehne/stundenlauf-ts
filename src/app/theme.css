@@ -1829,14 +1829,13 @@ textarea {
   gap: var(--spacing-md);
 }
 
-.import-step--narrow {
-  justify-items: center;
+.import-step--select {
+  justify-items: stretch;
 }
 
-.import-step--narrow > .surface-card__header,
-.import-step--narrow > .import-step__form,
-.import-step--narrow > .import-step__actions {
-  width: min(680px, 100%);
+.import-step--select > .import-select-meta,
+.import-step--select > .import-select-grid {
+  width: 100%;
 }
 
 .import-select-meta {
@@ -1869,14 +1868,45 @@ textarea {
 }
 
 .import-select-grid--with-overview {
-  grid-template-columns: minmax(280px, 360px) minmax(420px, 560px);
+  grid-template-columns:
+    minmax(280px, 360px)
+    auto
+    minmax(420px, 560px);
   justify-content: center;
   align-items: stretch;
+  gap: var(--spacing-lg);
+}
+
+.import-select-grid__divider {
+  width: 1px;
+  justify-self: center;
+  background: var(--color-border);
+}
+
+.import-select-section__header {
+  display: grid;
+  gap: 2px;
+}
+
+.import-select-section__header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.import-select-section__header p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.35;
 }
 
 .import-existing-runs,
 .import-select-form {
   height: 100%;
+  display: grid;
+  gap: var(--spacing-md);
+  align-content: start;
 }
 
 .import-existing-runs .table-wrap {
@@ -1888,23 +1918,6 @@ textarea {
   gap: var(--spacing-md);
   align-content: start;
   height: 100%;
-}
-
-.import-season-overview__header {
-  display: grid;
-  gap: var(--spacing-xs);
-}
-
-.import-season-overview__header h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.import-season-overview__header p {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.35;
 }
 
 .import-season-overview__rows {

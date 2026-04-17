@@ -445,7 +445,10 @@ export function ImportPage() {
       setDraft(nextDraft);
       setStagedDecisions((current) => ({
         ...current,
-        [activeReview.reviewId]: { action: "merge_with_typo_fix", candidateId: currentDecision.candidateId },
+        [activeReview.reviewId]: {
+          action: "merge_with_typo_fix",
+          candidateId: currentDecision.candidateId ?? null,
+        },
       }));
       setIsCorrectionModalOpen(false);
       setCorrectionError(null);
@@ -537,7 +540,7 @@ export function ImportPage() {
         {step === "select_file" ? (
           <ContentSplitLayout
             main={
-              <article className="surface-card import-step import-step--narrow">
+              <article className="surface-card import-step import-step--select">
                 {flowSteps}
                 <p className="import-select-meta" data-testid="import-select-meta">
                   <span className="import-select-meta__eyebrow">
@@ -557,8 +560,9 @@ export function ImportPage() {
                       setRaceNumber(String(nextRace));
                     }}
                   />
-                  <section className="surface-card import-select-form">
-                    <div className="surface-card__header">
+                  <div className="import-select-grid__divider" role="presentation" aria-hidden="true" />
+                  <section className="import-select-form">
+                    <div className="import-select-section__header">
                       <h2>{STR.views.import.selectFileTitle}</h2>
                       <p>{STR.views.import.selectFileHint}</p>
                     </div>

@@ -114,6 +114,7 @@ beforeEach(() => {
       throw new Error("not used");
     }),
     rollbackHistory: vi.fn(async () => buildCommandResult("ok")),
+    setStandingsRowExcluded: vi.fn(async () => {}),
     hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("ok")),
   };
 });

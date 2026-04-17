@@ -4,7 +4,7 @@ const createHashRouterMock = vi.fn((...args: unknown[]) => {
   void args;
   return {};
 });
-const routerProviderMock = vi.fn(() => null);
+const routerProviderMock = vi.fn((_props?: unknown) => null);
 
 vi.mock("react-router-dom", () => ({
   createHashRouter: (...args: unknown[]) => createHashRouterMock(...args),

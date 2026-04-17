@@ -74,10 +74,10 @@ export function ImportSeasonOverview({
 
   return (
     <section
-      className="surface-card import-season-overview"
+      className="import-season-overview"
       aria-label={STR.views.import.seasonOverviewTitle}
     >
-      <div className="surface-card__header import-season-overview__header">
+      <div className="import-select-section__header">
         <h2>{STR.views.import.seasonOverviewTitle}</h2>
         <p>{STR.views.import.seasonOverviewHint}</p>
       </div>
