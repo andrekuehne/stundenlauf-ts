@@ -18,7 +18,9 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "inspect:excel-fixtures": "vite-node scripts/dump-local-excel-fixtures.ts"
+    "inspect:excel-fixtures": "vite-node scripts/dump-local-excel-fixtures.ts",
+    "playwright:install": "playwright install chromium",
+    "screenshots:readme": "playwright test e2e/readme-main-screen.spec.ts"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
@@ -36,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9",
+    "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6",
     "@testing-library/react": "^16",
     "@types/node": "^25.6.0",
