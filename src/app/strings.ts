@@ -206,6 +206,10 @@ export const STR = {
       importDoneWithReviews: "Import abgeschlossen. Bitte prüfen Sie offene Zuordnungen.",
       importFailed: "Import konnte nicht abgeschlossen werden.",
       importDraftFailed: "Import-Entwurf konnte nicht erstellt werden.",
+      leaveInProgressTitle: "Import-Prozess verlassen?",
+      leaveInProgressConfirm:
+        "Der aktuelle Import-/Matching-Prozess ist noch nicht abgeschlossen. Beim Verlassen werden die aktuellen Schritte verworfen.",
+      leaveInProgressProceed: "Trotzdem verlassen",
       raceWord: "Lauf",
       inferenceDetectedBoth: (typeLabel: string, racePart: string) => `Erkannt: ${typeLabel} · ${racePart}`,
       inferenceDetectedTypeOnly: (typeLabel: string) =>

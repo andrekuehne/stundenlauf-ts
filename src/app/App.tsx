@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { ShellData } from "@/api/contracts/index.ts";
 import { AppApiProvider, useAppApi } from "@/api/provider.tsx";
 import { isAppRoute, type AppRoute } from "@/app/routes.ts";
+import type { NavigationGuardConfig } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
 import { EmptyState } from "@/components/feedback/EmptyState.tsx";
 import { UpdatePrompt } from "@/components/feedback/UpdatePrompt.tsx";
@@ -72,6 +73,12 @@ function Phase1App() {
   const setStatus = useStatusStore((state) => state.setStatus);
   const currentStatus = useStatusStore((state) => state.current);
   const [shellData, setShellData] = useState<ShellData>(EMPTY_SHELL_DATA);
+  const [navigationGuard, setNavigationGuard] = useState<NavigationGuardConfig | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<
+    | { type: "route"; route: AppRoute }
+    | { type: "season"; seasonId: string }
+    | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarControls, setSidebarControls] = useState<ReactNode | null>(null);
@@ -100,7 +107,7 @@ function Phase1App() {
     void refreshShellData();
   }, [refreshShellData]);
 
-  const handleSeasonChange = useCallback(
+  const executeSeasonChange = useCallback(
     async (seasonId: string) => {
       const selected = shellData.availableSeasons.find((season) => season.seasonId === seasonId);
       await api.openSeason(seasonId);
@@ -124,6 +131,40 @@ function Phase1App() {
     [api, navigate, refreshShellData, setStatus, shellData.availableSeasons],
   );
 
+  const requestNavigation = useCallback(
+    (attempt: { type: "route"; route: AppRoute } | { type: "season"; seasonId: string }) => {
+      if (!navigationGuard) {
+        return true;
+      }
+      setPendingNavigation(attempt);
+      return false;
+    },
+    [navigationGuard],
+  );
+
+  const handleSeasonChange = useCallback(
+    async (seasonId: string) => {
+      if (!requestNavigation({ type: "season", seasonId })) {
+        return;
+      }
+      await executeSeasonChange(seasonId);
+    },
+    [executeSeasonChange, requestNavigation],
+  );
+
+  async function confirmPendingNavigation() {
+    const pending = pendingNavigation;
+    if (!pending) {
+      return;
+    }
+    setPendingNavigation(null);
+    if (pending.type === "route") {
+      void navigate(`/${pending.route}`);
+      return;
+    }
+    await executeSeasonChange(pending.seasonId);
+  }
+
   useLayoutEffect(() => {
     setSidebarControls(null);
   }, [activeRoute]);
@@ -144,6 +185,7 @@ function Phase1App() {
         activeRoute={activeRoute}
         shellData={shellData}
         onSeasonChange={handleSeasonChange}
+        onNavigationAttempt={requestNavigation}
         footer={footer}
         sidebarControls={sidebarControls}
       >
@@ -152,12 +194,49 @@ function Phase1App() {
             <EmptyState title={STR.app.errorTitle} message={error} />
           </div>
         ) : (
-          <Outlet context={{ shellData, refreshShellData, setSidebarControls }} />
+          <Outlet context={{ shellData, refreshShellData, setSidebarControls, setNavigationGuard }} />
         )}
       </AppShell>
       <div className="version-badge" title={`Version ${APP_VERSION}`}>
         {APP_VERSION}
       </div>
+      {pendingNavigation ? (
+        <div className="confirm-modal__backdrop" role="presentation">
+          <div
+            className="confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={STR.views.import.leaveInProgressTitle}
+          >
+            <div className="confirm-modal__header">
+              <h2>{STR.views.import.leaveInProgressTitle}</h2>
+            </div>
+            <div className="confirm-modal__body">
+              <p>{navigationGuard?.message ?? STR.views.import.leaveInProgressConfirm}</p>
+            </div>
+            <div className="confirm-modal__actions">
+              <button
+                type="button"
+                className="button button--ghost"
+                onClick={() => {
+                  setPendingNavigation(null);
+                }}
+              >
+                {STR.confirmModal.cancel}
+              </button>
+              <button
+                type="button"
+                className="button button--danger"
+                onClick={() => {
+                  void confirmPendingNavigation();
+                }}
+              >
+                {STR.views.import.leaveInProgressProceed}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <UpdatePrompt />
     </>
   );

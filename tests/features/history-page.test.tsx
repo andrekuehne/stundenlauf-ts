@@ -4,6 +4,7 @@ import type { AppApi, AppCommandResult, HistoryData, ShellData, StandingsData } 
 import { HistoryPage } from "@/features/history/HistoryPage.tsx";
 
 const setSidebarControls = vi.fn();
+const setNavigationGuard = vi.fn();
 const setStatus = vi.fn();
 
 const shellData: ShellData = {
@@ -54,7 +55,7 @@ function buildCommandResult(message: string): AppCommandResult {
 let apiMock: AppApi;
 vi.mock("@/api/provider.tsx", () => ({ useAppApi: () => apiMock }));
 vi.mock("@/app/shell-context.ts", () => ({
-  useAppShellContext: () => ({ shellData, setSidebarControls }),
+  useAppShellContext: () => ({ shellData, setSidebarControls, setNavigationGuard }),
 }));
 vi.mock("@/stores/status.ts", () => ({
   useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) => selector({ setStatus }),
@@ -62,6 +63,7 @@ vi.mock("@/stores/status.ts", () => ({
 
 beforeEach(() => {
   setSidebarControls.mockReset();
+  setNavigationGuard.mockReset();
   setStatus.mockReset();
   apiMock = {
     getShellData: vi.fn(async () => shellData),

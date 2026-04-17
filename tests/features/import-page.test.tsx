@@ -13,6 +13,7 @@ import "@/app/theme.css";
 import { ImportPage } from "@/features/import/ImportPage.tsx";
 
 const setSidebarControls = vi.fn();
+const setNavigationGuard = vi.fn();
 const refreshShellData = vi.fn(async () => {});
 
 const defaultShellData: ShellData = {
@@ -49,6 +50,7 @@ vi.mock("@/app/shell-context.ts", () => ({
     shellData,
     refreshShellData,
     setSidebarControls,
+    setNavigationGuard,
   }),
 }));
 
@@ -339,6 +341,7 @@ function buildDraftWithUnresolvedReview(input: ImportDraftInput): ImportDraftSta
 
 beforeEach(() => {
   setSidebarControls.mockReset();
+  setNavigationGuard.mockReset();
   refreshShellData.mockClear();
   shellData = { ...defaultShellData };
 

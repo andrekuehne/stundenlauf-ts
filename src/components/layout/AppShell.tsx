@@ -4,10 +4,13 @@ import type { AppRoute } from "@/app/routes.ts";
 import { STR } from "@/app/strings.ts";
 import type { ShellData } from "@/api/contracts/index.ts";
 
+type NavigationAttempt = { type: "route"; route: AppRoute };
+
 interface AppShellProps {
   activeRoute: AppRoute;
   shellData: ShellData;
   onSeasonChange: (seasonId: string) => void | Promise<void>;
+  onNavigationAttempt?: (attempt: NavigationAttempt) => boolean;
   sidebarControls?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
@@ -15,7 +18,15 @@ interface AppShellProps {
 
 const NAV_ITEMS: AppRoute[] = ["season", "standings", "import", "corrections", "history"];
 
-export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarControls, children, footer }: AppShellProps) {
+export function AppShell({
+  activeRoute,
+  shellData,
+  onSeasonChange,
+  onNavigationAttempt,
+  sidebarControls,
+  children,
+  footer,
+}: AppShellProps) {
   const showSidebarControls = Boolean(sidebarControls);
 
   return (
@@ -55,6 +66,15 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
                 <NavLink
                   key={route}
                   to={`/${route}`}
+                  onClick={(event) => {
+                    if (!onNavigationAttempt) {
+                      return;
+                    }
+                    const allowed = onNavigationAttempt({ type: "route", route });
+                    if (!allowed) {
+                      event.preventDefault();
+                    }
+                  }}
                   className={({ isActive }) =>
                     `shell-nav-link ${isActive ? "is-active" : ""} ${route === "standings" && !shellData.selectedSeasonId ? "is-disabled" : ""}`
                   }

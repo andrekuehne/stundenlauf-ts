@@ -4,6 +4,7 @@ import type { AppApi, AppCommandResult, ShellData, StandingsData } from "@/api/c
 import { StandingsPage } from "@/features/standings/StandingsPage.tsx";
 
 const setSidebarControls = vi.fn();
+const setNavigationGuard = vi.fn();
 const setStatus = vi.fn();
 const selectCategory = vi.fn();
 let selectedCategoryKey: string | null = null;
@@ -100,7 +101,7 @@ function buildCommandResult(message: string): AppCommandResult {
 let apiMock: AppApi;
 vi.mock("@/api/provider.tsx", () => ({ useAppApi: () => apiMock }));
 vi.mock("@/app/shell-context.ts", () => ({
-  useAppShellContext: () => ({ shellData, setSidebarControls }),
+  useAppShellContext: () => ({ shellData, setSidebarControls, setNavigationGuard }),
 }));
 vi.mock("@/stores/status.ts", () => ({
   useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) => selector({ setStatus }),
@@ -119,6 +120,7 @@ beforeEach(() => {
   };
   selectedCategoryKey = null;
   setSidebarControls.mockReset();
+  setNavigationGuard.mockReset();
   setStatus.mockReset();
   selectCategory.mockReset();
   apiMock = {

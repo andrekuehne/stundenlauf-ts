@@ -6,6 +6,7 @@ import type { AppApi, AppCommandResult, SeasonListItem, ShellData, StandingsData
 import { SeasonPage } from "@/features/season/SeasonPage.tsx";
 
 const setSidebarControls = vi.fn();
+const setNavigationGuard = vi.fn();
 const refreshShellData = vi.fn(async () => {});
 const setStatus = vi.fn();
 const navigateMock = vi.fn();
@@ -58,7 +59,7 @@ let apiMock: AppApi;
 
 vi.mock("@/api/provider.tsx", () => ({ useAppApi: () => apiMock }));
 vi.mock("@/app/shell-context.ts", () => ({
-  useAppShellContext: () => ({ shellData, refreshShellData, setSidebarControls }),
+  useAppShellContext: () => ({ shellData, refreshShellData, setSidebarControls, setNavigationGuard }),
 }));
 vi.mock("@/stores/status.ts", () => ({
   useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) => selector({ setStatus }),
@@ -75,6 +76,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   setStatus.mockReset();
   setSidebarControls.mockReset();
+  setNavigationGuard.mockReset();
   refreshShellData.mockClear();
   navigateMock.mockReset();
   apiMock = {

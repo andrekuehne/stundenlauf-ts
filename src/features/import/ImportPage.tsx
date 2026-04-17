@@ -126,7 +126,7 @@ function effectiveAutoThresholdFromConfig(config: {
 
 export function ImportPage() {
   const api = useAppApi();
-  const { shellData, refreshShellData, setSidebarControls } = useAppShellContext();
+  const { shellData, refreshShellData, setSidebarControls, setNavigationGuard } = useAppShellContext();
   const setStatus = useStatusStore((state) => state.setStatus);
   const [importedRuns, setImportedRuns] = useState<ImportedRunRow[]>([]);
   const [step, setStep] = useState<StepKey>("select_file");
@@ -188,6 +188,17 @@ export function ImportPage() {
       setSidebarControls(null);
     };
   }, [setSidebarControls]);
+
+  useEffect(() => {
+    if (!draft) {
+      setNavigationGuard(null);
+      return;
+    }
+    setNavigationGuard({ message: STR.views.import.leaveInProgressConfirm });
+    return () => {
+      setNavigationGuard(null);
+    };
+  }, [draft, setNavigationGuard]);
 
   const canStartImport =
     Boolean(shellData.selectedSeasonId) && fileName.trim().length > 0 && Number.parseInt(raceNumber, 10) > 0;

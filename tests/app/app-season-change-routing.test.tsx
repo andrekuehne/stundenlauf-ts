@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppApi, AppCommandResult, ShellData, StandingsData } from "@/api/contracts/index.ts";
@@ -7,6 +7,9 @@ import { App } from "@/app/App.tsx";
 const navigateMock = vi.fn();
 const setStatus = vi.fn();
 let currentPathname = "/season";
+let latestOutletContext: {
+  setNavigationGuard: (guard: { message: string } | null) => void;
+} | null = null;
 
 let shellData: ShellData = {
   selectedSeasonId: "season-1",
@@ -36,11 +39,31 @@ function buildCommandResult(message: string): AppCommandResult {
 vi.mock("react-router-dom", () => ({
   useLocation: () => ({ pathname: currentPathname }),
   useNavigate: () => navigateMock,
-  Outlet: () => null,
-  NavLink: ({ to, className, children }: { to: string; className?: ((args: { isActive: boolean }) => string) | string; children: ReactNode }) => {
+  Outlet: ({ context }: { context?: unknown }) => {
+    latestOutletContext = context as { setNavigationGuard: (guard: { message: string } | null) => void };
+    return null;
+  },
+  NavLink: ({
+    to,
+    className,
+    children,
+    onClick,
+  }: {
+    to: string;
+    className?: ((args: { isActive: boolean }) => string) | string;
+    children: ReactNode;
+    onClick?: (event: MouseEvent) => void;
+  }) => {
     const resolvedClass = typeof className === "function" ? className({ isActive: false }) : className;
     return (
-      <a href={to} className={resolvedClass}>
+      <a
+        href={to}
+        className={resolvedClass}
+        onClick={(event) => {
+          event.preventDefault();
+          onClick?.(event.nativeEvent);
+        }}
+      >
         {children}
       </a>
     );
@@ -62,6 +85,7 @@ vi.mock("@/devtools/LegacyLayoutParityPage.tsx", () => ({ LegacyLayoutParityPage
 
 beforeEach(() => {
   currentPathname = "/season";
+  latestOutletContext = null;
   shellData = {
     selectedSeasonId: "season-1",
     selectedSeasonLabel: "Saison 1",
@@ -166,6 +190,40 @@ describe("App season selector routing", () => {
 
     await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
     await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledWith("season-2"); });
+    expect(navigateMock).toHaveBeenCalledWith("/import");
+  });
+
+  it("shows in-app leave modal and cancels season change when user aborts", async () => {
+    render(<App />);
+    const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");
+    await waitFor(() => expect(latestOutletContext).not.toBeNull());
+
+    await act(async () => {
+      latestOutletContext?.setNavigationGuard({ message: "test confirm" });
+    });
+    fireEvent.change(seasonSelect, { target: { value: "season-2" } });
+
+    expect(screen.getByRole("dialog", { name: "Import-Prozess verlassen?" })).toBeInTheDocument();
+    expect(screen.getByText("test confirm")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
+
+    expect(screen.queryByRole("dialog", { name: "Import-Prozess verlassen?" })).not.toBeInTheDocument();
+    expect(apiMock.openSeason).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("shows in-app leave modal and confirms Bereich navigation", async () => {
+    render(<App />);
+    await screen.findByLabelText("Aktuelle Saison:");
+    await waitFor(() => expect(latestOutletContext).not.toBeNull());
+
+    await act(async () => {
+      latestOutletContext?.setNavigationGuard({ message: "test confirm" });
+    });
+    fireEvent.click(screen.getByRole("link", { name: "Import" }));
+
+    expect(screen.getByRole("dialog", { name: "Import-Prozess verlassen?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Trotzdem verlassen" }));
     expect(navigateMock).toHaveBeenCalledWith("/import");
   });
 });
