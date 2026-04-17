@@ -9,7 +9,6 @@ type NavigationAttempt = { type: "route"; route: AppRoute };
 interface AppShellProps {
   activeRoute: AppRoute;
   shellData: ShellData;
-  onSeasonChange: (seasonId: string) => void | Promise<void>;
   onNavigationAttempt?: (attempt: NavigationAttempt) => boolean;
   sidebarControls?: ReactNode;
   children: ReactNode;
@@ -21,7 +20,6 @@ const NAV_ITEMS: AppRoute[] = ["season", "standings", "import", "corrections", "
 export function AppShell({
   activeRoute,
   shellData,
-  onSeasonChange,
   onNavigationAttempt,
   sidebarControls,
   children,
@@ -31,35 +29,10 @@ export function AppShell({
 
   return (
     <div className="shell-layout">
-      <header className="shell-topbar">
-        <div className="shell-topbar__title">
-          <h1 className="shell-topbar__eyebrow">{STR.shell.appTitle}</h1>
-        </div>
-        <div className="shell-topbar__controls">
-          <label className="shell-inline-field shell-topbar__season-field">
-            <span>{STR.shell.seasonSelectLabel}</span>
-            <select
-              value={shellData.selectedSeasonId ?? ""}
-              onChange={(event) => {
-                if (event.target.value) {
-                  void onSeasonChange(event.target.value);
-                }
-              }}
-            >
-              <option value="">{STR.shell.noSeasonOption}</option>
-              {shellData.availableSeasons.map((season) => (
-                <option key={season.seasonId} value={season.seasonId}>
-                  {season.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </header>
-
       <div className="shell-body">
         <aside className="shell-sidebar">
           <div className="shell-sidebar__nav">
+            <h1 className="shell-sidebar__app-title">{STR.shell.appTitle}</h1>
             <h2>{STR.shell.sectionsTitle}</h2>
             <nav>
               {NAV_ITEMS.map((route) => (

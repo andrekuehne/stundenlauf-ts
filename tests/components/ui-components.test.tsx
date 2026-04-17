@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { DataTable, type DataTableColumn } from "@/components/tables/DataTable.tsx";
@@ -29,8 +29,7 @@ describe("shared UI components", () => {
     expect(screen.getByText("Name").className).toContain("ui-table__cell--right");
   });
 
-  it("renders AppShell default hint and season change callback", () => {
-    const onSeasonChange = vi.fn();
+  it("renders AppShell main child and sidebar without global season combobox", () => {
     render(
       <AppShell
         activeRoute="season"
@@ -40,7 +39,6 @@ describe("shared UI components", () => {
           unresolvedReviews: 3,
           availableSeasons: [{ seasonId: "s1", label: "S1" }, { seasonId: "s2", label: "S2" }],
         }}
-        onSeasonChange={onSeasonChange}
       >
         <div>Child</div>
       </AppShell>,
@@ -48,11 +46,10 @@ describe("shared UI components", () => {
 
     expect(screen.getByText("Child")).toBeInTheDocument();
     expect(screen.queryByText("Offene Prüfungen:")).not.toBeInTheDocument();
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "s2" } });
-    expect(onSeasonChange).toHaveBeenCalledWith("s2");
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
-  it("shows only one branded topbar title text", () => {
+  it("shows the app title in the sidebar above Bereiche", () => {
     render(
       <AppShell
         activeRoute="season"
@@ -62,17 +59,16 @@ describe("shared UI components", () => {
           unresolvedReviews: 0,
           availableSeasons: [{ seasonId: "s1", label: "S1" }],
         }}
-        onSeasonChange={vi.fn()}
       >
         <div>Child</div>
       </AppShell>,
     );
 
     expect(screen.getByRole("heading", { level: 1, name: "Stundenlauf-Auswertung" })).toBeInTheDocument();
-    expect(screen.queryByText("Stundenlauf")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Bereiche" })).toBeInTheDocument();
   });
 
-  it("wraps the AppShell topbar season field in a polished chip-style container", () => {
+  it("styles the sidebar app title for the narrow rail", () => {
     const { container } = render(
       <AppShell
         activeRoute="season"
@@ -82,15 +78,14 @@ describe("shared UI components", () => {
           unresolvedReviews: 0,
           availableSeasons: [{ seasonId: "s1", label: "S1" }],
         }}
-        onSeasonChange={vi.fn()}
       >
         <div>Child</div>
       </AppShell>,
     );
 
-    const seasonField = container.querySelector(".shell-topbar__season-field");
-    expect(seasonField).not.toBeNull();
-    expect(seasonField?.querySelector("select")).not.toBeNull();
+    const title = container.querySelector(".shell-sidebar__app-title");
+    expect(title).not.toBeNull();
+    expect(title?.textContent).toBe("Stundenlauf-Auswertung");
   });
 
   it("renders AppShell sidebar navigation with an accent rail on each nav link", () => {
@@ -103,7 +98,6 @@ describe("shared UI components", () => {
           unresolvedReviews: 0,
           availableSeasons: [{ seasonId: "s1", label: "S1" }],
         }}
-        onSeasonChange={vi.fn()}
       >
         <div>Child</div>
       </AppShell>,

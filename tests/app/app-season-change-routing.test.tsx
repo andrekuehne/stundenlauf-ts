@@ -139,10 +139,10 @@ beforeEach(() => {
   };
 });
 
-describe("App season selector routing", () => {
+describe("App shell and navigation guard", () => {
   it("hides season fallback sidebar heading and hint", async () => {
     render(<App />);
-    await screen.findByLabelText("Aktuelle Saison:");
+    await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Saison" })).not.toBeInTheDocument();
     expect(screen.queryByText("Bereichsspezifische Saison-Steuerungen erscheinen hier.")).not.toBeInTheDocument();
   });
@@ -150,7 +150,7 @@ describe("App season selector routing", () => {
   it("hides standings fallback sidebar heading and hint", async () => {
     currentPathname = "/standings";
     render(<App />);
-    await screen.findByLabelText("Aktuelle Saison:");
+    await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Auswertung" })).not.toBeInTheDocument();
     expect(screen.queryByText("Steuerungen fuer die Auswertung werden geladen.")).not.toBeInTheDocument();
   });
@@ -158,7 +158,7 @@ describe("App season selector routing", () => {
   it("hides import fallback sidebar heading and hint", async () => {
     currentPathname = "/import";
     render(<App />);
-    await screen.findByLabelText("Aktuelle Saison:");
+    await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Import" })).not.toBeInTheDocument();
     expect(screen.queryByText("Bereichsspezifische Import-Steuerungen erscheinen hier.")).not.toBeInTheDocument();
   });
@@ -166,43 +166,19 @@ describe("App season selector routing", () => {
   it("hides corrections and history sidebar control panels when no outlet injects controls", async () => {
     currentPathname = "/corrections";
     const { unmount } = render(<App />);
-    await screen.findByLabelText("Aktuelle Saison:");
+    await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Korrekturen", level: 3 })).not.toBeInTheDocument();
     unmount();
 
     currentPathname = "/history";
     render(<App />);
-    await screen.findByLabelText("Aktuelle Saison:");
+    await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Historie", level: 3 })).not.toBeInTheDocument();
   });
 
-  it("navigates to standings when opened season has runs", async () => {
+  it("shows in-app leave modal and cancels Bereich navigation when user aborts", async () => {
     render(<App />);
-    const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");
-    fireEvent.change(seasonSelect, { target: { value: "season-2" } });
-
-    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
-    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledWith("season-2"); });
-    expect(navigateMock).toHaveBeenCalledWith("/standings");
-  });
-
-  it("navigates to import when standings are unavailable", async () => {
-    apiMock.getStandings = vi.fn(async () => {
-      throw new Error("no standings yet");
-    });
-
-    render(<App />);
-    const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");
-    fireEvent.change(seasonSelect, { target: { value: "season-2" } });
-
-    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
-    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledWith("season-2"); });
-    expect(navigateMock).toHaveBeenCalledWith("/import");
-  });
-
-  it("shows in-app leave modal and cancels season change when user aborts", async () => {
-    render(<App />);
-    const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");
+    await screen.findByRole("heading", { name: "Bereiche" });
     await waitFor(() => {
       expect(latestOutletContext).not.toBeNull();
     });
@@ -210,7 +186,7 @@ describe("App season selector routing", () => {
     await act(async () => {
       latestOutletContext?.setNavigationGuard({ message: "test confirm" });
     });
-    fireEvent.change(seasonSelect, { target: { value: "season-2" } });
+    fireEvent.click(screen.getByRole("link", { name: "Import" }));
 
     expect(screen.getByRole("dialog", { name: "Import-Prozess verlassen?" })).toBeInTheDocument();
     expect(screen.getByText("test confirm")).toBeInTheDocument();
@@ -219,13 +195,12 @@ describe("App season selector routing", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Import-Prozess verlassen?" })).not.toBeInTheDocument();
     });
-    expect(apiMock.openSeason).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
   it("shows in-app leave modal and confirms Bereich navigation", async () => {
     render(<App />);
-    await screen.findByLabelText("Aktuelle Saison:");
+    await screen.findByRole("heading", { name: "Bereiche" });
     await waitFor(() => {
       expect(latestOutletContext).not.toBeNull();
     });

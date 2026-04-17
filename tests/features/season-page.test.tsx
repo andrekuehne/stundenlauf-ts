@@ -301,11 +301,20 @@ describe("SeasonPage", () => {
     expect(kpiStrongBlock?.[0]).toContain("max-width: 17ch");
   });
 
-  it("wraps the season list in the Auswertung-styled surface + detail table", async () => {
+  it("gives the shell main pane a white background in theme.css", () => {
+    const themeCss = readFileSync(resolve(process.cwd(), "src/app/theme.css"), "utf8");
+    const shellMainBlock = themeCss.match(/\.shell-main\s*\{[^}]*\}/s);
+    expect(shellMainBlock?.[0]).toContain("background:");
+    expect(shellMainBlock?.[0]).toContain("var(--color-surface)");
+  });
+
+  it("renders the season overview without an outer surface-card and with the detail table", async () => {
     const { container } = render(<SeasonPage />);
     await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
-    expect(container.querySelector(".season-overview")).not.toBeNull();
+    const overview = container.querySelector(".season-overview");
+    expect(overview).not.toBeNull();
+    expect(overview!.classList.contains("surface-card")).toBe(false);
 
     const table = screen.getByRole("table");
     expect(table).toHaveClass("ui-table--seasons");

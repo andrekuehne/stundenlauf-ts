@@ -179,7 +179,7 @@ export function SeasonPage() {
 
   return (
     <div className="page-stack">
-      <section className="surface-card season-overview">
+      <section className="season-overview">
         <p className="season-overview__meta" data-testid="season-meta">
           <span>{`${totalSeasons} Saisons`}</span>
           {lastModifiedLabel ? (
