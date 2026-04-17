@@ -339,6 +339,16 @@ function buildDraftWithUnresolvedReview(input: ImportDraftInput): ImportDraftSta
   };
 }
 
+function clickFirstImportCandidateMatching(text: RegExp): void {
+  const match = screen
+    .getAllByRole("button", { name: text })
+    .find((el) => el.classList.contains("import-candidate") && !el.classList.contains("import-candidate--new"));
+  if (!match) {
+    throw new Error(`No import candidate button matched ${text}`);
+  }
+  fireEvent.click(match);
+}
+
 beforeEach(() => {
   setSidebarControls.mockReset();
   setNavigationGuard.mockReset();
@@ -865,7 +875,7 @@ describe("ImportPage", () => {
     expect(children[2]?.classList.contains("import-review")).toBe(true);
   });
 
-  it("auto-selects the best visible candidate when no decision exists yet", async () => {
+  it("does not auto-select a candidate by default so the user must choose explicitly", async () => {
     const unresolvedDraft = buildDraftWithUnresolvedReview({
       seasonId: "season-1",
       fileName: "Ergebnisliste MW Lauf 1.xlsx",
@@ -881,10 +891,40 @@ describe("ImportPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
-    const selectedBestCandidate = await screen.findByRole("button", {
-      name: /Kathi Moller - ausgewählt/i,
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+    expect(screen.queryByRole("button", { name: /Kathi Moller - ausgewählt/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Zusammenfassung/i })).toBeDisabled();
+  });
+
+  it("auto-selects the best visible candidate when the matching setting is enabled", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
     });
-    expect(selectedBestCandidate).toBeInTheDocument();
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+    fireEvent.click(screen.getByRole("button", { name: "Einstellungen" }));
+    const autoCheckbox = screen.getByRole("checkbox", { name: /Ersten Treffer automatisch auswählen/i });
+    expect(autoCheckbox).not.toBeChecked();
+    fireEvent.click(autoCheckbox);
+    expect(autoCheckbox).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
+
+    expect(
+      await screen.findByRole("button", {
+        name: /Kathi Moller - ausgewählt/i,
+      }),
+    ).toBeInTheDocument();
   });
 
   it("opens and closes matching settings via a single button", async () => {
@@ -936,6 +976,8 @@ describe("ImportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
 
+    clickFirstImportCandidateMatching(/Kathi Moller/i);
+
     const correctButton = screen.getByRole("button", { name: /Daten korrigieren/i });
     await waitFor(() => {
       expect(correctButton).not.toBeDisabled();
@@ -979,6 +1021,8 @@ describe("ImportPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    clickFirstImportCandidateMatching(/Kathi Moller/i);
 
     const correctButton = screen.getByRole("button", { name: /Daten korrigieren/i });
     await waitFor(() => {
@@ -1064,7 +1108,7 @@ describe("ImportPage", () => {
     expect(screen.queryByRole("heading", { name: "Import-Zusammenfassung" })).not.toBeInTheDocument();
   });
 
-  it("does not finalize when unresolved decisions exist", async () => {
+  it("allows advancing to the summary once the user has explicitly chosen a candidate", async () => {
     const unresolvedDraft = buildDraftWithUnresolvedReview({
       seasonId: "season-1",
       fileName: "Ergebnisliste MW Lauf 1.xlsx",
@@ -1072,8 +1116,6 @@ describe("ImportPage", () => {
       raceNumber: 1,
     });
     apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
-    const finalizeSpy = vi.fn(async () => buildCommandResult("Import abgeschlossen"));
-    apiMock.finalizeImportDraft = finalizeSpy;
 
     render(<ImportPage />);
 
@@ -1086,13 +1128,14 @@ describe("ImportPage", () => {
       expect(screen.getByRole("heading", { name: /Eintrag 1\/1/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Zusammenfassung/i }));
+    const summaryButton = screen.getByRole("button", { name: /Zusammenfassung/i });
+    expect(summaryButton).toBeDisabled();
+    clickFirstImportCandidateMatching(/Kathi Moller/i);
+    expect(summaryButton).not.toBeDisabled();
+    fireEvent.click(summaryButton);
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Import-Zusammenfassung" })).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole("button", { name: "Import abschließen" }));
-    expect(finalizeSpy).not.toHaveBeenCalled();
-    await waitForImportPageReady();
   });
 
   it("renders step indicators in the top header and no helper sidebar cards", async () => {
