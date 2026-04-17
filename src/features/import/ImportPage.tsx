@@ -489,6 +489,14 @@ export function ImportPage() {
         if (!stagedDecision) {
           continue;
         }
+        const serverDecision = nextDraft.decisions.find((d) => d.reviewId === reviewItem.reviewId);
+        const matchesServer =
+          serverDecision != null &&
+          serverDecision.action === stagedDecision.action &&
+          serverDecision.candidateId === stagedDecision.candidateId;
+        if (matchesServer) {
+          continue;
+        }
         nextDraft = await api.setImportReviewDecision(nextDraft.draftId, {
           reviewId: reviewItem.reviewId,
           action: stagedDecision.action,

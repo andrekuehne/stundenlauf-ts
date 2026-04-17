@@ -1049,6 +1049,61 @@ describe("ImportPage", () => {
     });
   });
 
+  it("does not call setImportReviewDecision on finalize for reviews already resolved via Datenkorrektur", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    const afterCorrection: ImportDraftState = {
+      ...unresolvedDraft,
+      decisions: [{ reviewId: "review-1", action: "merge_with_typo_fix", candidateId: "team-2" }],
+      summary: { ...unresolvedDraft.summary, typoCorrections: 1 },
+    };
+    const setImportReviewDecisionSpy = vi.fn(async () => {
+      throw new Error("setImportReviewDecision should not run for server-resolved typo-fix merge");
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+    apiMock.applyImportReviewCorrection = vi.fn(async () => afterCorrection);
+    apiMock.setImportReviewDecision = setImportReviewDecisionSpy;
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    clickFirstImportCandidateMatching(/Kathi Moller/i);
+
+    const correctButton = screen.getByRole("button", { name: /Daten korrigieren/i });
+    await waitFor(() => {
+      expect(correctButton).not.toBeDisabled();
+    });
+    fireEvent.click(correctButton);
+    await screen.findByRole("dialog", { name: /Daten korrigieren/i });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Kathi Mueller" } });
+    fireEvent.change(screen.getByLabelText("Jahrgang"), { target: { value: "1993" } });
+    fireEvent.change(screen.getByLabelText("Verein"), { target: { value: "SV Nord" } });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => {
+      expect(apiMock.applyImportReviewCorrection).toHaveBeenCalled();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Zusammenfassung/i }));
+    await screen.findByRole("heading", { name: "Import-Zusammenfassung" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Import abschließen" }));
+
+    await waitFor(() => {
+      expect(apiMock.finalizeImportDraft).toHaveBeenCalledWith("draft-unresolved-review");
+    });
+    expect(setImportReviewDecisionSpy).not.toHaveBeenCalled();
+  });
+
   it("uses 0 as slider minimum for matching thresholds", async () => {
     const unresolvedDraft = buildDraftWithUnresolvedReview({
       seasonId: "season-1",
