@@ -51,6 +51,20 @@ async function countPdfPages(blob: Blob): Promise<number> {
   return (text.match(/\/Type\s*\/Page\b/g) ?? []).length;
 }
 
+async function pdfOrientation(blob: Blob): Promise<"portrait" | "landscape" | "unknown"> {
+  const text = await decodePdfText(blob);
+  const mediaBoxMatch = text.match(/\/MediaBox\s*\[\s*0\s+0\s+([0-9.]+)\s+([0-9.]+)\s*\]/);
+  if (!mediaBoxMatch) {
+    return "unknown";
+  }
+  const width = Number(mediaBoxMatch[1]);
+  const height = Number(mediaBoxMatch[2]);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return "unknown";
+  }
+  return width > height ? "landscape" : "portrait";
+}
+
 function buildSinglesState() {
   resetSeqCounter();
   return projectState("season-export", [
@@ -399,5 +413,17 @@ describe("PDF export", () => {
 
     const paareText = await decodePdfText(artifacts[1]!.blob);
     expect(paareText).toContain("2. Stundenlauf - Paare Männer");
+  });
+
+  it("defaults dual export to compact portrait layout", async () => {
+    const state = buildMixedState();
+    const artifacts = exportLaufuebersichtDualPdfs(state, {
+      seasonYear: 2026,
+      filenameBase: "report",
+    });
+
+    expect(artifacts).toHaveLength(2);
+    expect(await pdfOrientation(artifacts[0]!.blob)).toBe("portrait");
+    expect(await pdfOrientation(artifacts[1]!.blob)).toBe("portrait");
   });
 });

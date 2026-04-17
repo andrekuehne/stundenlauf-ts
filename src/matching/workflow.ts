@@ -170,16 +170,26 @@ export async function processCouplesSection(
   const reviewItems: ReviewItem[] = [];
   const newPersonPayloads: SectionMatchResult["new_person_payloads"] = [];
   const newTeamPayloads: SectionMatchResult["new_team_payloads"] = [];
-  const displayNameByTeamId = new Map<string, { display_name: string; yob: number; club: string | null }>();
+  const displayNameByTeamId = new Map<string, {
+    display_name: string;
+    yob: number;
+    yob_text: string | null;
+    club: string | null;
+  }>();
 
   for (const team of state.teams.values()) {
     if (team.team_kind !== "couple") continue;
     const memberA = state.persons.get(team.member_person_ids[0] ?? "");
     const memberB = state.persons.get(team.member_person_ids[1] ?? "");
     if (!memberA || !memberB) continue;
+    const yobText =
+      memberA.yob > 0 || memberB.yob > 0
+        ? `${memberA.yob > 0 ? memberA.yob : "—"} / ${memberB.yob > 0 ? memberB.yob : "—"}`
+        : null;
     displayNameByTeamId.set(team.team_id, {
       display_name: `${memberA.display_name} / ${memberB.display_name}`,
       yob: 0,
+      yob_text: yobText,
       club: [memberA.club, memberB.club].filter(Boolean).join(" / ") || null,
     });
   }
@@ -214,7 +224,7 @@ export async function processCouplesSection(
         route: "review",
         confidence: result.confidence,
         candidates: result.candidate_uids.map((uid, i) => ({
-          ...(displayNameByTeamId.get(uid) ?? { display_name: uid, yob: 0, club: null }),
+          ...(displayNameByTeamId.get(uid) ?? { display_name: uid, yob: 0, yob_text: null, club: null }),
           team_id: uid,
           score: result.candidate_confidences[i] ?? 0,
           features: result.features,

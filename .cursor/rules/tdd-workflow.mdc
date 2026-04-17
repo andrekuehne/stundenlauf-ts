@@ -1,0 +1,20 @@
+---
+description: Enforce test-first development workflow for all changes
+alwaysApply: true
+---
+
+# TDD Workflow Rule
+
+For every new feature, bug fix, or behavior change:
+
+1. Write or update tests first (red), then implement code (green), then refactor.
+2. Do not mark implementation as complete unless relevant tests pass locally.
+3. Add tests for success paths, edge cases, and expected failures.
+
+Minimum test update expectation for each change:
+
+- New behavior -> new tests.
+- Changed behavior -> updated tests.
+- Removed behavior -> remove or adapt obsolete tests.
+
+If tests are missing, add them before finalizing code changes.

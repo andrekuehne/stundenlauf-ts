@@ -20,7 +20,7 @@ Copy this block for each notable accomplishment:
 ### 2026-04-14 - F-TS09 GitHub Pages deployment and PWA implemented
 - Requirement/Milestone: [R7], [R8], [M-TS7], [F-TS09]
 - What shipped: Added a deploy-ready GitHub Pages pipeline and PWA runtime with Vite base-path targeting, Workbox-powered service worker precaching, prompt-based update UI, hash-routing compatibility, manifest/meta wiring, and production icon assets.
-- Evidence: `vite.config.ts`, `index.html`, `src/main.tsx`, `src/App.tsx`, `src/components/UpdatePrompt.tsx`, `src/version.ts`, `src/vite-env.d.ts`, `src/theme.css`, `public/icons/`, `.github/workflows/ts-deploy.yml`, `PROJECT_PLAN.md`, `docs/features/F-TS09-github-pages-deployment-pwa.md`
+- Evidence: `vite.config.ts`, `index.html`, `src/main.tsx`, `src/app/App.tsx`, `src/components/feedback/UpdatePrompt.tsx`, `src/version.ts`, `src/vite-env.d.ts`, `src/app/theme.css`, `public/icons/`, `.github/workflows/ts-deploy.yml`, `PROJECT_PLAN.md`, `docs/features/F-TS09-github-pages-deployment-pwa.md`
 - Impact: The TS app is now distributable as a zero-install, offline-capable browser app with CI quality gates and automated Pages deployment on `main`, removing the Windows-only installer dependency.
 - Follow-up: Enable GitHub Pages in repository settings (Source: GitHub Actions), push to `main`, and run Lighthouse against the deployed URL for final installability/perf/accessibility verification.
 

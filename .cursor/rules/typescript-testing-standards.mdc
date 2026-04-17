@@ -1,0 +1,19 @@
+---
+description: TypeScript testing standards for changed code
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TypeScript Testing Standards
+
+Use the project's testing stack: Vitest (`vitest`), Testing Library (`@testing-library/react`), and `jsdom`.
+
+When changing TypeScript code, ensure tests cover public behavior of updated modules and components.
+
+- Keep tests type-safe and avoid `any` unless explicitly justified.
+- Prefer testing exported APIs and component behavior over private internals.
+- For bug fixes, add a regression test that fails before the fix.
+- Validate both success and error handling paths where applicable.
+- Put or update tests in `tests/**/*.test.{ts,tsx}` or `src/**/*.test.{ts,tsx}`.
+- For React components, prefer user-centric Testing Library queries over implementation details.
+- Reuse shared test setup from `tests/setup.ts` instead of duplicating environment bootstrapping.

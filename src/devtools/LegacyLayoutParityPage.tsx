@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { STR } from "@/strings.ts";
+import { STR } from "@/app/strings.ts";
 
 type LegacyView = "standings" | "import" | "history";
 
@@ -155,7 +155,7 @@ export function LegacyLayoutParityPage() {
                 </button>
               </div>
               <div className="legacy-parity__import-review-column">
-                <h3>Zusammenführungen prüfen</h3>
+                <h2>Eintrag 1/1</h2>
                 <p>Statischer Platzhalter für Prüflistenbereich und differenzierte Tabellenbreiten.</p>
                 <div className="legacy-parity__table-wrap">
                   <table className="legacy-parity__table">

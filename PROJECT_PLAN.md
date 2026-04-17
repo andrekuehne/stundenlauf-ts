@@ -89,6 +89,12 @@ Features are prefixed `F-TS` to distinguish from the Python version's `F` prefix
 | F-TS08 | Standings and results export (PDF, Excel) | M-TS6 | Done |
 | F-TS09 | GitHub Pages deployment and PWA | M-TS7 | Done |
 | F-TS10 | Legacy frontend API compatibility adapter | M-TS5 | Planned |
+| F-TS11 | Updated React frontend rewrite (mock-first with `AppApi` boundary) | M-TS5 | Planned |
+| F-TS11a | Frontend architecture and `AppApi` boundary | M-TS5 | Planned |
+| F-TS11b | Mock-first shell and screen blueprints | M-TS5 | Planned |
+| F-TS11c | Core read workflows on live data | M-TS5 | Planned |
+| F-TS11d | Import wizard and review workflow | M-TS5 | Planned |
+| F-TS11e | Live cutover, exports, and polish | M-TS5 | Planned |
 
 ## Hardening Inventory
 
@@ -199,6 +205,7 @@ TS version: UI components call domain functions directly. No serialization bound
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-04-15 | Added F-TS11a through F-TS11e frontend rewrite plan | Split the updated frontend brainstorm into a mock-first implementation roadmap with an explicit `AppApi` seam, staged live-data wiring, import workflow delivery, final cutover/polish milestones, clear folder-boundary rules for migration and cleanup, and an explicit initial reorg snapshot documenting the moved entry-layer files |
 | 2026-04-14 | F-TS09 implementation completed | Added GitHub Pages CI/CD workflow (`.github/workflows/ts-deploy.yml`), Vite base path + PWA Workbox setup, manifest/meta/install icons, prompt-based SW update UX, hash routing compatibility, and build-time git version injection for deploy-ready PWA distribution |
 | 2026-04-14 | F-TS08 Excel Gesamtwertung export implemented | Added the requested two-sheet Excel workbook (`Gesamtwertung_Einzel`, `Gesamtwertung_Paare`) with continuous section numbering, duplicated pair numerics, and legacy frontend download wiring; completes F-TS08 and M-TS6 |
 | 2026-04-14 | F-TS08 PDF first-page notice layout fix | Moved the Laufübersicht `Hinweis` block onto page 1 above the first table and removed the manual underline that rendered as a black artifact in some viewers |

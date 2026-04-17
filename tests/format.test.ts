@@ -5,7 +5,7 @@ import {
   reviewConfidenceText,
   reviewOpenCount,
   seasonLabel,
-} from "@/format.ts";
+} from "@/app/format.ts";
 
 describe("formatKm", () => {
   it("formats kilometer values with German decimal comma and three decimals", () => {

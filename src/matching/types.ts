@@ -73,6 +73,7 @@ export interface ReviewCandidate {
   features: MatchingFeatures;
   display_name: string;
   yob: number;
+  yob_text?: string | null;
   club: string | null;
 }
 

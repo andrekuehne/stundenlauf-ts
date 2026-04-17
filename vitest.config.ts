@@ -17,6 +17,13 @@ export default defineConfig({
     coverage: {
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/main.tsx", "src/**/*.d.ts"],
+      reporter: ["text", "lcov"],
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        statements: 50,
+        branches: 45,
+      },
     },
   },
 });

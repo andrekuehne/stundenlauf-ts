@@ -10,7 +10,7 @@ export function buildLaufuebersichtGuiSpec(
     readonly layoutPreset?: string | null;
   },
 ): ExportSpec {
-  const normalizedPreset = normalizePdfLayoutPreset(options.layoutPreset);
+  const normalizedPreset = normalizePdfLayoutPreset(options.layoutPreset ?? "compact");
   return createExportSpec({
     format: "pdf",
     categories,
