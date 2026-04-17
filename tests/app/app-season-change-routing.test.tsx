@@ -197,7 +197,9 @@ describe("App season selector routing", () => {
   it("shows in-app leave modal and cancels season change when user aborts", async () => {
     render(<App />);
     const seasonSelect = await screen.findByLabelText("Aktuelle Saison:");
-    await waitFor(() => expect(latestOutletContext).not.toBeNull());
+    await waitFor(() => {
+      expect(latestOutletContext).not.toBeNull();
+    });
 
     await act(async () => {
       latestOutletContext?.setNavigationGuard({ message: "test confirm" });
@@ -216,7 +218,9 @@ describe("App season selector routing", () => {
   it("shows in-app leave modal and confirms Bereich navigation", async () => {
     render(<App />);
     await screen.findByLabelText("Aktuelle Saison:");
-    await waitFor(() => expect(latestOutletContext).not.toBeNull());
+    await waitFor(() => {
+      expect(latestOutletContext).not.toBeNull();
+    });
 
     await act(async () => {
       latestOutletContext?.setNavigationGuard({ message: "test confirm" });

@@ -647,6 +647,10 @@ class TsAppApi implements AppApi {
     if (targets.length < 2) {
       throw new Error("Team-Mitglieder für die Korrektur wurden nicht gefunden.");
     }
+    const [targetA, targetB] = targets;
+    if (!targetA || !targetB) {
+      throw new Error("Team-Mitglieder für die Korrektur wurden nicht gefunden.");
+    }
     const memberA = input.correction.memberA;
     const memberB = input.correction.memberB;
     const nameA = validateName(memberA.name);
@@ -656,7 +660,7 @@ class TsAppApi implements AppApi {
     return [
       {
         reviewId: input.reviewId,
-        personId: targets[0]!.personId,
+        personId: targetA.personId,
         member: "a",
         name: nameA,
         yob: memberA.yob,
@@ -664,7 +668,7 @@ class TsAppApi implements AppApi {
       },
       {
         reviewId: input.reviewId,
-        personId: targets[1]!.personId,
+        personId: targetB.personId,
         member: "b",
         name: nameB,
         yob: memberB.yob,
