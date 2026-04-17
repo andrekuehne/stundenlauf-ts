@@ -60,6 +60,46 @@ describe("ImportCandidateCard doubles comparison", () => {
 });
 
 describe("ImportCandidateCard header chrome", () => {
+  it("does not render a duplicate name row above the comparison (name appears in field rows)", () => {
+    const incoming: ImportIncomingRecord = {
+      displayName: "John Doe",
+      yob: 1993,
+      club: "Club Alpha",
+      startNumber: 44,
+      resultLabel: "7,2 km / 20 P",
+    };
+
+    const candidate: ImportReviewCandidate = {
+      candidateId: "single-1",
+      displayName: "Jon Doe",
+      confidence: 0.84,
+      isRecommended: false,
+      fieldComparisons: [
+        {
+          fieldKey: "name",
+          label: "Name",
+          incomingValue: "John Doe",
+          candidateValue: "Jon Doe",
+          isMatch: false,
+        },
+      ],
+    };
+
+    const { container } = render(
+      <ImportCandidateCard
+        candidate={candidate}
+        incoming={incoming}
+        isSelected={false}
+        isDoubles={false}
+        disabled={false}
+        onSelect={() => {}}
+      />,
+    );
+
+    expect(container.querySelector(".import-candidate__head")).toBeNull();
+    expect(screen.getByRole("button", { name: "Jon Doe" })).toBeInTheDocument();
+  });
+
   it("does not render a confidence percentage badge", () => {
     const incoming: ImportIncomingRecord = {
       displayName: "John Doe",

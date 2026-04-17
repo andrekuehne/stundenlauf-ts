@@ -186,7 +186,7 @@ export function ImportCandidateCard({
   disabled,
   onSelect,
 }: ImportCandidateCardProps) {
-  const displayName = isSelected
+  const ariaLabel = isSelected
     ? STR.importCandidate.selectedDisplayName(candidate.displayName, STR.views.import.selectedSuffix)
     : candidate.displayName;
 
@@ -197,12 +197,8 @@ export function ImportCandidateCard({
       onClick={onSelect}
       disabled={disabled}
       aria-pressed={isSelected}
+      aria-label={ariaLabel}
     >
-      <div className="import-candidate__head">
-        <div className="import-candidate__identity">
-          <strong className="import-candidate__name">{displayName}</strong>
-        </div>
-      </div>
       <small className="import-candidate__hint">
         {STR.importCandidate.assignmentHint}
       </small>
