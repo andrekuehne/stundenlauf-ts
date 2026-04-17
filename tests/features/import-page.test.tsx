@@ -643,7 +643,7 @@ describe("ImportPage", () => {
 
     await screen.findByRole("heading", { name: "Import-Zusammenfassung" });
 
-    const table = document.querySelector(".import-summary__decisions table") as HTMLTableElement | null;
+    const table = document.querySelector(".import-summary__decisions table");
     expect(table).toBeTruthy();
     const rows = table!.querySelectorAll("tbody tr");
     expect(rows.length).toBe(3);
@@ -1104,7 +1104,7 @@ describe("ImportPage", () => {
 
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
 
-    const next = container.querySelector(".import-review__next-button") as HTMLElement | null;
+    const next = container.querySelector(".import-review__next-button");
     expect(next).toBeTruthy();
     const minWidth = window.getComputedStyle(next!).minWidth;
     const px = minWidth.endsWith("px") ? Number.parseFloat(minWidth) : Number.NaN;

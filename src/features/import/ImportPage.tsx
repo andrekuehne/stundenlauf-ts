@@ -38,21 +38,6 @@ const FLOW_STEPS: Array<{ key: StepKey; label: string }> = [
   { key: "summary", label: STR.views.import.flowStepSummary },
 ];
 
-function isRunOccupied(importedRuns: ImportedRunRow[], category: "singles" | "doubles", raceValue: string): boolean {
-  const race = Number.parseInt(raceValue, 10);
-  if (!Number.isFinite(race) || race <= 0) {
-    return false;
-  }
-
-  const isDoubles = category === "doubles";
-  return importedRuns.some((entry) => {
-    const normalizedLabel = entry.raceLabel.toLowerCase().replace("lauf", "").trim();
-    const raceMatch = Number.parseInt(normalizedLabel, 10) === race;
-    const categoryMatch = isDoubles ? entry.categoryLabel.includes("Paare") : !entry.categoryLabel.includes("Paare");
-    return raceMatch && categoryMatch;
-  });
-}
-
 function clampThreshold(value: number): number {
   return Math.min(MATCHING_THRESHOLD_MAX, Math.max(MATCHING_THRESHOLD_MIN, value));
 }
@@ -84,7 +69,7 @@ function parseYobToken(token: string, fallback: number): number {
 
 function pairYobsFromReview(incomingYob: number, review: ImportReviewItem): [number, number] {
   const yobComp = review.candidates[0]?.fieldComparisons.find((comparison) => comparison.fieldKey === "yob");
-  const raw = yobComp?.incomingValue?.trim();
+  const raw = yobComp?.incomingValue.trim();
   if (!raw) {
     const shared = Number.isFinite(incomingYob) && incomingYob > 0 ? incomingYob : 0;
     return [shared, shared];

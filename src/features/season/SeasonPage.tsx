@@ -17,8 +17,9 @@ function findMostRecentModification(seasons: SeasonListItem[]): SeasonListItem |
   if (seasons.length === 0) {
     return null;
   }
-  let recent = seasons[0]!;
-  for (const candidate of seasons.slice(1)) {
+  const [first, ...rest] = seasons;
+  let recent = first;
+  for (const candidate of rest) {
     if (new Date(candidate.lastModifiedAt).getTime() > new Date(recent.lastModifiedAt).getTime()) {
       recent = candidate;
     }
@@ -56,7 +57,7 @@ export function SeasonPage() {
   const totalSeasons = seasons.length;
   const activeSeason = useMemo(() => seasons.find((entry) => entry.isActive) ?? null, [seasons]);
   const totalImportedRuns = useMemo(
-    () => seasons.reduce((sum, entry) => sum + (entry.importedEvents ?? 0), 0),
+    () => seasons.reduce((sum, entry) => sum + entry.importedEvents, 0),
     [seasons],
   );
   const lastModifiedSeason = useMemo(() => findMostRecentModification(seasons), [seasons]);

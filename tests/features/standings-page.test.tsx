@@ -284,8 +284,9 @@ describe("StandingsPage", () => {
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getByText(/Doro Team/)).toBeInTheDocument(); });
 
-    const table = screen.getByRole("table") as HTMLTableElement;
-    const headerRows = Array.from(table.tHead?.rows ?? []);
+    const table = screen.getByRole("table");
+    const thead = table.querySelector("thead");
+    const headerRows = thead instanceof HTMLTableSectionElement ? Array.from(thead.rows) : [];
     expect(headerRows).toHaveLength(2);
     expect(headerRows[0]).toHaveClass("ui-table--standings-detail__header-row--primary");
     expect(headerRows[1]).toHaveClass("ui-table--standings-detail__header-row--units");
@@ -307,7 +308,9 @@ describe("StandingsPage", () => {
     render(<StandingsPage />);
     await waitFor(() => { expect(screen.getByText(/Anna Team/)).toBeInTheDocument(); });
 
-    const bodyRows = Array.from((screen.getByRole("table") as HTMLTableElement).tBodies[0]?.rows ?? []);
+    const table = screen.getByRole("table");
+    const tbody = table.querySelector("tbody");
+    const bodyRows = tbody instanceof HTMLTableSectionElement ? Array.from(tbody.rows) : [];
     const teamOrder = bodyRows.map((row) => within(row).getByTestId("standings-team-name").textContent?.trim());
     expect(teamOrder).toEqual(["Bea Team", "Clara Team", "Anna Team"]);
 
@@ -359,7 +362,7 @@ describe("StandingsPage", () => {
     expect(pdfButton.className).not.toContain("standings-overview__export-button--excel");
     expect(excelButton.className).not.toContain("standings-overview__export-button--pdf");
 
-    const cluster = pdfButton.closest(".standings-overview__exports") as HTMLElement | null;
+    const cluster = pdfButton.closest(".standings-overview__exports");
     expect(cluster).not.toBeNull();
     expect(cluster).toHaveClass("standings-overview__exports--divided");
     expect(cluster?.contains(excelButton)).toBe(true);

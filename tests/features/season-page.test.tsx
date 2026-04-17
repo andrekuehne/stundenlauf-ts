@@ -114,7 +114,7 @@ beforeEach(() => {
 describe("SeasonPage", () => {
   it("does not inject season sidebar controls", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
     expect(setSidebarControls).not.toHaveBeenCalled();
   });
 
@@ -131,7 +131,7 @@ describe("SeasonPage", () => {
 
   it("opens already active season and still navigates based on imported events", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[0] as HTMLButtonElement);
@@ -164,7 +164,7 @@ describe("SeasonPage", () => {
 
   it("styles delete action as danger button", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     const deleteButton = screen.getAllByRole("button", { name: "Löschen" })[0] as HTMLButtonElement;
     expect(deleteButton.className).toContain("button--danger");
@@ -231,21 +231,21 @@ describe("SeasonPage", () => {
 
   it("runs season row exports with compact PDF default", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     fireEvent.click(screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement);
-    await waitFor(() => expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"));
+    await waitFor(() => { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"); });
 
     fireEvent.click(screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement);
     await waitFor(() =>
-      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", { pdfLayoutPreset: "compact" }),
+      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", { pdfLayoutPreset: "compact" }); },
     );
     expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season" }));
   });
 
   it("renders an overview meta line with season count and last-modified context", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     const meta = screen.getByTestId("season-meta");
     expect(meta).toHaveClass("season-overview__meta");
@@ -255,7 +255,7 @@ describe("SeasonPage", () => {
 
   it("renders three KPI cards for total seasons, active season and imported runs", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     const totalCard = screen.getByTestId("season-kpi-total");
     expect(totalCard).toHaveClass("summary-card");
@@ -275,7 +275,7 @@ describe("SeasonPage", () => {
 
   it("wraps the season list in the Auswertung-styled surface + detail table", async () => {
     const { container } = render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     expect(container.querySelector(".season-overview")).not.toBeNull();
 
@@ -291,7 +291,7 @@ describe("SeasonPage", () => {
 
   it("styles Excel and PDF row exports with distinct accent classes", async () => {
     render(<SeasonPage />);
-    await waitFor(() => expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0));
+    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     const excelButton = screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement;
     const pdfButton = screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement;
