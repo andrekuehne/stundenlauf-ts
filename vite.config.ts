@@ -82,13 +82,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
-        "legacy-bridge": resolve(__dirname, "src/legacy/bridge-entry.ts"),
-      },
-      output: {
-        entryFileNames: (chunkInfo) =>
-          chunkInfo.name === "legacy-bridge"
-            ? "assets/[name].js"
-            : "assets/[name]-[hash].js",
       },
     },
   },
