@@ -630,9 +630,9 @@ describe("TsAppApi import workflows", () => {
       candidateId: candidate.candidateId,
       correction: {
         type: "single",
-        name: "Katharina Müller",
+        name: "Müller, Katharina",
         yob: 1993,
-        club: "SV Nord",
+        club: "  SV Nord  ",
       },
     });
 
@@ -640,6 +640,37 @@ describe("TsAppApi import workflows", () => {
       { reviewId: review.reviewId, action: "merge_with_typo_fix", candidateId: candidate.candidateId },
     ]);
     expect(corrected.summary.typoCorrections).toBe(1);
+
+    const finalized = await api.finalizeImportDraft(draft.draftId);
+    expect(finalized.severity).toBe("success");
+
+    const events = await repo.getEventLog(created.seasonId);
+    const correctionEvent = events.find((event) => event.type === "person.corrected");
+    expect(correctionEvent).toBeDefined();
+    const payload = correctionEvent?.payload as {
+      person_id: string;
+      rationale: string;
+      updated_fields: {
+        given_name?: string;
+        family_name?: string;
+        display_name?: string;
+        name_normalized?: string;
+        yob?: number;
+        club?: string | null;
+        club_normalized?: string;
+      };
+    };
+    expect(payload.person_id).toBe("person-correction-existing");
+    expect(payload.updated_fields).toMatchObject({
+      given_name: "Katharina",
+      family_name: "Müller",
+      display_name: "Müller, Katharina",
+      name_normalized: "katharina|muller",
+      yob: 1993,
+      club: "SV Nord",
+      club_normalized: "sv nord",
+    });
+    expect(payload.rationale).toContain("merge_with_typo_fix");
   });
 });
 
@@ -780,7 +811,7 @@ describe("TsAppApi corrections – identity lookup and correction", () => {
     const result = await api.correctStandingsRowIdentity(season.season_id, {
       categoryKey: "hour:women",
       teamId: "team-solo",
-      members: [{ personId: "person-solo", name: "Anna Beta", yob: 1991, club: "Club B" }],
+      members: [{ personId: "person-solo", name: "Beta, Anna", yob: 1991, club: "  Club B  " }],
     });
 
     expect(result.severity).toBe("success");
@@ -788,9 +819,29 @@ describe("TsAppApi corrections – identity lookup and correction", () => {
     const events = await repo.getEventLog(season.season_id);
     const correctionEvent = events.find((ev) => ev.type === "person.corrected");
     expect(correctionEvent).toBeDefined();
-    const payload = correctionEvent?.payload as { person_id: string; updated_fields: { yob?: number; club?: string | null }; rationale: string };
+    const payload = correctionEvent?.payload as {
+      person_id: string;
+      updated_fields: {
+        given_name?: string;
+        family_name?: string;
+        display_name?: string;
+        name_normalized?: string;
+        yob?: number;
+        club?: string | null;
+        club_normalized?: string;
+      };
+      rationale: string;
+    };
     expect(payload.person_id).toBe("person-solo");
-    expect(payload.updated_fields.yob).toBe(1991);
+    expect(payload.updated_fields).toMatchObject({
+      given_name: "Anna",
+      family_name: "Beta",
+      display_name: "Beta, Anna",
+      name_normalized: "anna|beta",
+      yob: 1991,
+      club: "Club B",
+      club_normalized: "club b",
+    });
     expect(payload.rationale).toMatch(/Korrekturen-Ansicht/);
   });
 

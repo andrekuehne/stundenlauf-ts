@@ -682,6 +682,44 @@ class TsAppApi implements AppApi {
     ];
   }
 
+  private buildPersonCorrectedEvent(
+    seq: number,
+    personId: string,
+    name: string,
+    yob: number,
+    club: string | null,
+    rationale: string,
+  ): DomainEvent {
+    const [givenName, familyName] = splitDisplayNameParts(name);
+    const names = canonicalizePersonNames({
+      given_name: givenName,
+      family_name: familyName || name,
+      display_name: name,
+    });
+    const canonicalClub = canonicalizeClub({ club });
+    return {
+      event_id: crypto.randomUUID(),
+      seq,
+      recorded_at: new Date().toISOString(),
+      type: "person.corrected",
+      schema_version: 1,
+      payload: {
+        person_id: personId,
+        updated_fields: {
+          given_name: names.given_name,
+          family_name: names.family_name,
+          display_name: names.display_name,
+          name_normalized: names.name_normalized,
+          yob,
+          club: canonicalClub.club,
+          club_normalized: canonicalClub.club_normalized,
+        },
+        rationale,
+      },
+      metadata: { app_version: APP_VERSION },
+    };
+  }
+
   async getShellData() {
     const seasons = await this.listSeasons();
     const selectedSeasonId =
@@ -1011,34 +1049,14 @@ class TsAppApi implements AppApi {
       if (!existing) {
         throw new Error(`Person ${member.personId} wurde nicht gefunden.`);
       }
-      const [givenName, familyName] = splitDisplayNameParts(member.name);
-      const names = canonicalizePersonNames({
-        given_name: givenName,
-        family_name: familyName || member.name,
-        display_name: member.name,
-      });
-      const club = canonicalizeClub({ club: member.club || null });
-      events.push({
-        event_id: crypto.randomUUID(),
-        seq: seqCursor++,
-        recorded_at: new Date().toISOString(),
-        type: "person.corrected",
-        schema_version: 1,
-        payload: {
-          person_id: member.personId,
-          updated_fields: {
-            given_name: names.given_name,
-            family_name: names.family_name,
-            display_name: names.display_name,
-            name_normalized: names.name_normalized,
-            yob: member.yob,
-            club: club.club,
-            club_normalized: club.club_normalized,
-          },
-          rationale: "Korrektur über Korrekturen-Ansicht",
-        },
-        metadata: { app_version: APP_VERSION },
-      });
+      events.push(this.buildPersonCorrectedEvent(
+        seqCursor++,
+        member.personId,
+        member.name,
+        member.yob,
+        member.club || null,
+        "Korrektur über Korrekturen-Ansicht",
+      ));
     }
 
     await repo.appendEvents(seasonId, events);
@@ -1162,39 +1180,16 @@ class TsAppApi implements AppApi {
     let seqCursor = nextSeq;
     for (const corrections of draft.correctionByReviewId.values()) {
       for (const correction of corrections) {
-        const [givenName, familyName] = splitDisplayNameParts(correction.name);
-        const names = canonicalizePersonNames({
-          given_name: givenName,
-          family_name: familyName || correction.name,
-          display_name: correction.name,
-        });
-        const club = canonicalizeClub({ club: correction.club || null });
-        correctionEvents.push({
-          event_id: crypto.randomUUID(),
-          seq: seqCursor++,
-          recorded_at: new Date().toISOString(),
-          type: "person.corrected",
-          schema_version: 1,
-          payload: {
-            person_id: correction.personId,
-            updated_fields: {
-              given_name: names.given_name,
-              family_name: names.family_name,
-              display_name: names.display_name,
-              name_normalized: names.name_normalized,
-              yob: correction.yob,
-              club: club.club,
-              club_normalized: club.club_normalized,
-            },
-            rationale:
-              correction.member == null
-                ? "Import review merge_with_typo_fix"
-                : `Import review merge_with_typo_fix member ${correction.member}`,
-          },
-          metadata: {
-            app_version: APP_VERSION,
-          },
-        });
+        correctionEvents.push(this.buildPersonCorrectedEvent(
+          seqCursor++,
+          correction.personId,
+          correction.name,
+          correction.yob,
+          correction.club || null,
+          correction.member == null
+            ? "Import review merge_with_typo_fix"
+            : `Import review merge_with_typo_fix member ${correction.member}`,
+        ));
       }
     }
     const importEvents = finalizeOrchestratedImport(draft.session, { startSeq: seqCursor });
