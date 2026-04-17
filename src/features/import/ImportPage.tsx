@@ -565,7 +565,7 @@ export function ImportPage() {
         {step === "select_file" ? (
           <ContentSplitLayout
             main={
-              <article className="surface-card import-step import-step--select">
+              <article className="import-step import-step--select">
                 {flowSteps}
                 <p className="import-select-meta" data-testid="import-select-meta">
                   <span className="import-select-meta__eyebrow">
@@ -709,9 +709,9 @@ export function ImportPage() {
             fillHeight
             stickySide
             main={
-              <article className="surface-card import-step import-step--fill">
+              <article className="import-step import-step--fill">
                 {flowSteps}
-                <div className="surface-card__header import-review__toolbar">
+                <div className="import-review__toolbar">
                   <div className="import-review__toolbar-left">
                     <button
                       type="button"
@@ -826,27 +826,52 @@ export function ImportPage() {
                       <div className="import-review__matches-heading">
                         <h3>{STR.views.import.reviewMatchesHeading}</h3>
                       </div>
-                      {visibleCandidates.map((candidate) => {
-                        const isSelected = currentDecision?.candidateId === candidate.candidateId;
+                      {(() => {
+                        const primary = visibleCandidates[0];
+                        if (!primary) {
+                          return (
+                            <div className="import-review__empty-candidates">
+                              {STR.views.import.noVisibleCandidates}
+                            </div>
+                          );
+                        }
+                        const isPrimarySelected = currentDecision?.candidateId === primary.candidateId;
                         return (
-                          <ImportCandidateCard
-                            key={candidate.candidateId}
-                            candidate={candidate}
-                            incoming={activeReview.incoming}
-                            isSelected={isSelected}
-                            isDoubles={isDoublesReview}
-                            disabled={busy}
-                            onSelect={() => {
-                              stageReviewDecision("merge", candidate.candidateId);
-                            }}
-                          />
+                          <>
+                            <ImportCandidateCard
+                              key={primary.candidateId}
+                              candidate={primary}
+                              incoming={activeReview.incoming}
+                              isSelected={isPrimarySelected}
+                              isDoubles={isDoublesReview}
+                              disabled={busy}
+                              onSelect={() => {
+                                stageReviewDecision("merge", primary.candidateId);
+                              }}
+                            />
+                            {visibleCandidates.length > 1 ? (
+                              <div className="import-review__extra-candidates">
+                                {visibleCandidates.slice(1).map((candidate) => {
+                                  const isSelected = currentDecision?.candidateId === candidate.candidateId;
+                                  return (
+                                    <ImportCandidateCard
+                                      key={candidate.candidateId}
+                                      candidate={candidate}
+                                      incoming={activeReview.incoming}
+                                      isSelected={isSelected}
+                                      isDoubles={isDoublesReview}
+                                      disabled={busy}
+                                      onSelect={() => {
+                                        stageReviewDecision("merge", candidate.candidateId);
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            ) : null}
+                          </>
                         );
-                      })}
-                      {visibleCandidates.length === 0 ? (
-                        <div className="import-review__empty-candidates">
-                          {STR.views.import.noVisibleCandidates}
-                        </div>
-                      ) : null}
+                      })()}
                       <div
                         className="import-review__fallback-divider"
                         role="separator"
@@ -885,9 +910,9 @@ export function ImportPage() {
         {step === "summary" && visibleSummary && draft ? (
           <ContentSplitLayout
             main={
-              <article className="surface-card import-step">
+              <article className="import-step">
                 {flowSteps}
-                <div className="surface-card__header">
+                <div className="import-step__summary-head">
                   <h2>{STR.views.import.summaryTitle}</h2>
                   <p>{STR.views.import.summaryHint}</p>
                 </div>

@@ -871,8 +871,60 @@ describe("ImportPage", () => {
     const children = Array.from(article!.children);
     expect(children.length).toBe(3);
     expect(children[0]?.classList.contains("import-flowbar")).toBe(true);
-    expect(children[1]?.classList.contains("surface-card__header")).toBe(true);
+    expect(children[1]?.classList.contains("import-review__toolbar")).toBe(true);
     expect(children[2]?.classList.contains("import-review")).toBe(true);
+  });
+
+  it("places only additional merge candidates in the extra-candidates scroll bucket", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const extra = container.querySelector(".import-review__extra-candidates");
+    expect(extra).toBeTruthy();
+    const mergeCardsInExtra = extra?.querySelectorAll("button.import-candidate:not(.import-candidate--new)");
+    expect(mergeCardsInExtra?.length).toBe(1);
+
+    const cardsRoot = container.querySelector(".import-review__cards");
+    expect(cardsRoot).toBeTruthy();
+    const mergeCardsTotal = cardsRoot?.querySelectorAll("button.import-candidate:not(.import-candidate--new)");
+    expect(mergeCardsTotal?.length).toBe(2);
+    expect(cardsRoot?.querySelector("button.import-candidate--new")).toBeTruthy();
+  });
+
+  it("omits the extra-candidates bucket when there is at most one visible merge candidate", async () => {
+    const draft = buildDraftWithReviewItems({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => draft);
+
+    const { container } = render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    expect(container.querySelector(".import-review__extra-candidates")).toBeNull();
+    expect(container.querySelector(".import-review__cards button.import-candidate--new")).toBeTruthy();
   });
 
   it("does not auto-select a candidate by default so the user must choose explicitly", async () => {
@@ -1257,7 +1309,7 @@ describe("ImportPage", () => {
 
     const article = container.querySelector("article.import-step--fill");
     expect(article).toBeTruthy();
-    expect(article!.classList.contains("surface-card")).toBe(true);
+    expect(article!.classList.contains("surface-card")).toBe(false);
   });
 
   it("renders a compact meta line atop the file-selection step with season context", async () => {
