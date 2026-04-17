@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { ShellData } from "@/api/contracts/index.ts";
 import { AppApiProvider, useAppApi } from "@/api/provider.tsx";
@@ -8,11 +17,18 @@ import { STR } from "@/app/strings.ts";
 import { EmptyState } from "@/components/feedback/EmptyState.tsx";
 import { UpdatePrompt } from "@/components/feedback/UpdatePrompt.tsx";
 import { AppShell } from "@/components/layout/AppShell.tsx";
-import { ImportOrchestrationHarness } from "@/devtools/ImportOrchestrationHarness.tsx";
-import { ImportSeasonWalkthroughHarness } from "@/devtools/ImportSeasonWalkthroughHarness.tsx";
-import { LegacyLayoutParityPage } from "@/devtools/LegacyLayoutParityPage.tsx";
 import { useStatusStore } from "@/stores/status.ts";
 import { APP_VERSION } from "@/version.ts";
+
+const ImportOrchestrationHarness = lazy(async () => ({
+  default: (await import("@/devtools/ImportOrchestrationHarness.tsx")).ImportOrchestrationHarness,
+}));
+const ImportSeasonWalkthroughHarness = lazy(async () => ({
+  default: (await import("@/devtools/ImportSeasonWalkthroughHarness.tsx")).ImportSeasonWalkthroughHarness,
+}));
+const LegacyLayoutParityPage = lazy(async () => ({
+  default: (await import("@/devtools/LegacyLayoutParityPage.tsx")).LegacyLayoutParityPage,
+}));
 
 function shouldShowImportHarness(): boolean {
   if (!import.meta.env.DEV) return false;
@@ -38,13 +54,25 @@ export function App() {
   const showLegacyLayoutHarness = shouldShowLegacyLayoutHarness();
 
   if (showImportSeasonHarness) {
-    return <ImportSeasonWalkthroughHarness />;
+    return (
+      <Suspense fallback={null}>
+        <ImportSeasonWalkthroughHarness />
+      </Suspense>
+    );
   }
   if (showImportHarness) {
-    return <ImportOrchestrationHarness />;
+    return (
+      <Suspense fallback={null}>
+        <ImportOrchestrationHarness />
+      </Suspense>
+    );
   }
   if (showLegacyLayoutHarness) {
-    return <LegacyLayoutParityPage />;
+    return (
+      <Suspense fallback={null}>
+        <LegacyLayoutParityPage />
+      </Suspense>
+    );
   }
 
   return (

@@ -1,10 +1,20 @@
+import { lazy, Suspense, type ReactNode } from "react";
 import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
-import { CorrectionsPage } from "@/features/corrections/index.ts";
-import { HistoryPage } from "@/features/history/index.ts";
-import { ImportPage } from "@/features/import/index.ts";
-import { SeasonPage } from "@/features/season/index.ts";
-import { StandingsPage } from "@/features/standings/index.ts";
 import { App } from "./App.tsx";
+
+const SeasonPage = lazy(async () => ({ default: (await import("@/features/season/index.ts")).SeasonPage }));
+const StandingsPage = lazy(async () => ({
+  default: (await import("@/features/standings/index.ts")).StandingsPage,
+}));
+const ImportPage = lazy(async () => ({ default: (await import("@/features/import/index.ts")).ImportPage }));
+const CorrectionsPage = lazy(async () => ({
+  default: (await import("@/features/corrections/index.ts")).CorrectionsPage,
+}));
+const HistoryPage = lazy(async () => ({ default: (await import("@/features/history/index.ts")).HistoryPage }));
+
+function routeElement(element: ReactNode) {
+  return <Suspense fallback={null}>{element}</Suspense>;
+}
 
 const router = createHashRouter([
   {
@@ -17,23 +27,23 @@ const router = createHashRouter([
       },
       {
         path: "season",
-        element: <SeasonPage />,
+        element: routeElement(<SeasonPage />),
       },
       {
         path: "standings",
-        element: <StandingsPage />,
+        element: routeElement(<StandingsPage />),
       },
       {
         path: "import",
-        element: <ImportPage />,
+        element: routeElement(<ImportPage />),
       },
       {
         path: "corrections",
-        element: <CorrectionsPage />,
+        element: routeElement(<CorrectionsPage />),
       },
       {
         path: "history",
-        element: <HistoryPage />,
+        element: routeElement(<HistoryPage />),
       },
     ],
   },

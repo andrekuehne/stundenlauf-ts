@@ -1,7 +1,3 @@
-import {
-  exportGesamtwertungWorkbook,
-  exportLaufuebersichtDualPdfs,
-} from "@/export/index.ts";
 import { categoryKey, isEffectiveRace, projectState } from "@/domain/projection.ts";
 import type { DomainEvent } from "@/domain/events.ts";
 import type {
@@ -19,14 +15,12 @@ import {
   getReviewQueue,
   resolveReviewEntry,
   runMatching,
-  startImport,
   type ImportSession,
 } from "@/import/orchestrator.ts";
 import { defaultMatchingConfig } from "@/matching/config.ts";
 import { alignCoupleMembersForDisplay } from "@/matching/review-display.ts";
 import { canonicalizeClub, canonicalizePersonNames } from "@/domain/person-identity.ts";
 import { splitDisplayNameParts } from "@/lib/normalization.ts";
-import { importSeason, exportSeason } from "@/portability/index.ts";
 import { triggerDownload } from "@/portability/download.ts";
 import { computeStandings } from "@/ranking/index.ts";
 import { exclusionsForCategory, markExclusions } from "@/ranking/exclusions.ts";
@@ -768,6 +762,7 @@ class TsAppApi implements AppApi {
     const repo = await this.repo();
 
     if (command === "export_backup") {
+      const { exportSeason } = await import("@/portability/export-season.ts");
       const exported = await exportSeason(repo, selectedSeasonId, {
         filename: `stundenlauf-${season.label}`,
       });
@@ -780,6 +775,7 @@ class TsAppApi implements AppApi {
     if (!file) {
       return asInfo("Import abgebrochen.");
     }
+    const { importSeason } = await import("@/portability/import-season.ts");
     const imported = await importSeason(repo, file, {
       targetSeasonId: selectedSeasonId,
       replaceExisting: true,
@@ -887,6 +883,7 @@ class TsAppApi implements AppApi {
     const snapshot = await this.loadSnapshot(seasonId);
     const seasonYear = extractSeasonYear(snapshot.descriptor.label, snapshot.descriptor.created_at);
     if (actionId === "export_pdf") {
+      const { exportLaufuebersichtDualPdfs } = await import("@/export/pdf.ts");
       const layoutPreset = options?.pdfLayoutPreset ?? "compact";
       const artifacts = exportLaufuebersichtDualPdfs(snapshot.state, {
         seasonYear,
@@ -899,6 +896,7 @@ class TsAppApi implements AppApi {
       return asSuccess(`PDF-Export abgeschlossen (${artifacts.length} Datei(en)).`);
     }
 
+    const { exportGesamtwertungWorkbook } = await import("@/export/excel.ts");
     const artifact = await exportGesamtwertungWorkbook(snapshot.state, {
       seasonYear,
       filenameBase: `stundenlauf-${seasonYear}-ergebnisse`,
@@ -971,6 +969,7 @@ class TsAppApi implements AppApi {
     }
 
     const snapshot = await this.loadSnapshot(input.seasonId);
+    const { startImport } = await import("@/import/start-import.ts");
     let session = await startImport(file, snapshot.state, {
       sourceType: toSourceType(input.category),
       raceNoOverride: input.raceNumber,
