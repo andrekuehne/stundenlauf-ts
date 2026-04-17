@@ -263,6 +263,11 @@ export const STR = {
       matchingModeHintAutoZone: "Fuzzy-Automatik: oberster Treffer liegt in der Auto-Zone.",
       matchingModeHintReviewList: "Fuzzy-Automatik: oberster Treffer bleibt in der Prüfliste.",
       visibleCandidatesCount: (visible: number, total: number) => `Sichtbare Kandidaten: ${visible} von ${total}`,
+      autoSelectTopCandidateLabel: "Ersten Treffer automatisch auswählen",
+      autoSelectTopCandidateHint:
+        "Wenn aktiviert, wird der beste sichtbare Treffer vorausgewählt. Sonst müssen Sie je Eintrag aktiv einen Treffer oder „Neue Person anlegen“ wählen.",
+      reviewAdvanceRequiresDecisionTitle:
+        "Bitte wählen Sie einen Treffer oder „Neue Person anlegen“, bevor Sie fortfahren.",
       hintsTitle: "Hinweise",
       hintCheckYob: "Prüfen Sie Jahrgang bei Unsicherheit.",
       hintClubChanged: "Verein kann sich geändert haben.",

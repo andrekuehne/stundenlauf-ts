@@ -140,6 +140,7 @@ export function ImportPage() {
   const [matchingMode, setMatchingMode] = useState<MatchingMode>("fuzzy_automatik");
   const [fuzzySubMode, setFuzzySubMode] = useState<FuzzySubMode>("perfect");
   const [isMatchingSettingsOpen, setIsMatchingSettingsOpen] = useState(false);
+  const [autoSelectTopReviewCandidate, setAutoSelectTopReviewCandidate] = useState(false);
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
   const [correctionError, setCorrectionError] = useState<string | null>(null);
   const [singleCorrection, setSingleCorrection] = useState({ name: "", yob: "", club: "" });
@@ -277,6 +278,22 @@ export function ImportPage() {
     (visibleCandidates[0]?.confidence ?? 0) >= effectiveAutoThreshold;
   const isDoublesReview = draft?.category === "doubles";
 
+  const canAdvanceFromCurrentReview = useMemo(() => {
+    if (!draft || !activeReview) {
+      return true;
+    }
+    const staged = stagedDecisions[activeReview.reviewId];
+    const fromDraft = draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId);
+    const decision = staged ?? fromDraft ?? null;
+    if (!decision) {
+      return false;
+    }
+    if (decision.action === "create_new") {
+      return true;
+    }
+    return Boolean(decision.candidateId?.trim());
+  }, [activeReview, draft, stagedDecisions]);
+
   const visibleSummary = useMemo(() => {
     if (!draft) {
       return null;
@@ -285,7 +302,7 @@ export function ImportPage() {
   }, [draft]);
 
   useEffect(() => {
-    if (!activeReview || visibleCandidates.length === 0) {
+    if (!autoSelectTopReviewCandidate || !activeReview || visibleCandidates.length === 0) {
       return;
     }
 
@@ -302,7 +319,7 @@ export function ImportPage() {
       return;
     }
     stageReviewDecision("merge", bestCandidate.candidateId);
-  }, [activeReview, currentDecision, visibleCandidates]);
+  }, [activeReview, autoSelectTopReviewCandidate, currentDecision, visibleCandidates]);
 
   async function startDraft() {
     if (!shellData.selectedSeasonId || !canStartImport) {
@@ -743,7 +760,10 @@ export function ImportPage() {
                         }
                         setReviewIndex((current) => Math.min(totalReviews - 1, current + 1));
                       }}
-                      disabled={busy || totalReviews === 0}
+                      disabled={busy || totalReviews === 0 || !canAdvanceFromCurrentReview}
+                      title={
+                        !canAdvanceFromCurrentReview ? STR.views.import.reviewAdvanceRequiresDecisionTitle : undefined
+                      }
                     >
                       {reviewIndex >= totalReviews - 1 ? STR.views.import.summaryNext : `${STR.views.import.reviewNextEntry} ➡️`}
                     </button>
@@ -1039,6 +1059,20 @@ export function ImportPage() {
                 <p className="matching-options__hint">
                   {STR.views.import.visibleCandidatesCount(visibleCandidates.length, orderedCandidates.length)}
                 </p>
+                <label className="matching-options__toggle">
+                  <input
+                    type="checkbox"
+                    checked={autoSelectTopReviewCandidate}
+                    onChange={(event) => {
+                      setAutoSelectTopReviewCandidate(event.target.checked);
+                    }}
+                    disabled={busy}
+                  />
+                  <span>
+                    <strong>{STR.views.import.autoSelectTopCandidateLabel}</strong>
+                    <small className="matching-options__toggle-hint">{STR.views.import.autoSelectTopCandidateHint}</small>
+                  </span>
+                </label>
               </div>
             </div>
             <div className="confirm-modal__actions">
