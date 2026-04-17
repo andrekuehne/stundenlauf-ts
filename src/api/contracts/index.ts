@@ -141,6 +141,35 @@ export interface ImportReviewDecision {
   action: ImportReviewAction;
 }
 
+export interface ImportSingleIdentityCorrectionInput {
+  type: "single";
+  name: string;
+  yob: number;
+  club: string;
+}
+
+export interface ImportTeamMemberIdentityCorrectionInput {
+  name: string;
+  yob: number;
+  club: string;
+}
+
+export interface ImportTeamIdentityCorrectionInput {
+  type: "team";
+  memberA: ImportTeamMemberIdentityCorrectionInput;
+  memberB: ImportTeamMemberIdentityCorrectionInput;
+}
+
+export type ImportIdentityCorrectionInput =
+  | ImportSingleIdentityCorrectionInput
+  | ImportTeamIdentityCorrectionInput;
+
+export interface ImportReviewCorrectionInput {
+  reviewId: string;
+  candidateId: string;
+  correction: ImportIdentityCorrectionInput;
+}
+
 export interface ImportDraftSummary {
   importedEntries: number;
   mergedEntries: number;
@@ -248,6 +277,7 @@ export interface AppApi {
   createImportDraft(input: ImportDraftInput): Promise<ImportDraftState>;
   getImportDraft(draftId: string): Promise<ImportDraftState>;
   setImportReviewDecision(draftId: string, decision: ImportReviewDecision): Promise<ImportDraftState>;
+  applyImportReviewCorrection(draftId: string, input: ImportReviewCorrectionInput): Promise<ImportDraftState>;
   finalizeImportDraft(draftId: string): Promise<AppCommandResult>;
   getHistory(seasonId: string, query?: HistoryQuery): Promise<HistoryData>;
   previewHistoryState(seasonId: string, input: HistoryPreviewInput): Promise<HistoryPreviewState>;

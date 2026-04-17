@@ -363,6 +363,9 @@ beforeEach(() => {
       void decision;
       throw new Error("not used");
     }),
+    applyImportReviewCorrection: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     finalizeImportDraft: vi.fn(async () => buildCommandResult("Import abgeschlossen")),
     getHistory: vi.fn(async () => {
       throw new Error("not used");
@@ -886,6 +889,93 @@ describe("ImportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
 
     expect(screen.queryByRole("dialog", { name: "Matching-Optionen" })).not.toBeInTheDocument();
+  });
+
+  it("opens correction modal from Daten korrigieren and validates required fields", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+    apiMock.applyImportReviewCorrection = vi.fn(async () => unresolvedDraft);
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const correctButton = screen.getByRole("button", { name: /Daten korrigieren/i });
+    await waitFor(() => {
+      expect(correctButton).not.toBeDisabled();
+    });
+    fireEvent.click(correctButton);
+    const dialog = await screen.findByRole("dialog", { name: /Daten korrigieren/i });
+    expect(dialog).toHaveTextContent("Eingehend");
+    expect(dialog).toHaveTextContent("Bestand");
+    expect(dialog).toHaveTextContent("Kathi Mueller");
+    expect(dialog).toHaveTextContent("Kathi Moller");
+
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => {
+      expect(apiMock.applyImportReviewCorrection).not.toHaveBeenCalled();
+      expect(screen.getByText(/Name und Jahrgang/i)).toBeInTheDocument();
+    });
+  });
+
+  it("submits correction modal and stages merge_with_typo_fix for current review", async () => {
+    const unresolvedDraft = buildDraftWithUnresolvedReview({
+      seasonId: "season-1",
+      fileName: "Ergebnisliste MW Lauf 1.xlsx",
+      category: "singles",
+      raceNumber: 1,
+    });
+    const correctedDraft: ImportDraftState = {
+      ...unresolvedDraft,
+      decisions: [{ reviewId: "review-1", action: "merge_with_typo_fix", candidateId: "team-2" }],
+      summary: { ...unresolvedDraft.summary, typoCorrections: 1 },
+    };
+    const applySpy = vi.fn(async () => correctedDraft);
+    apiMock.createImportDraft = vi.fn(async () => unresolvedDraft);
+    apiMock.applyImportReviewCorrection = applySpy;
+
+    render(<ImportPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("lauf4-mw.xlsx"), {
+      target: { value: "Ergebnisliste MW Lauf 1.xlsx" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
+    await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
+
+    const correctButton = screen.getByRole("button", { name: /Daten korrigieren/i });
+    await waitFor(() => {
+      expect(correctButton).not.toBeDisabled();
+    });
+    fireEvent.click(correctButton);
+    await screen.findByRole("dialog", { name: /Daten korrigieren/i });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Kathi Mueller" } });
+    fireEvent.change(screen.getByLabelText("Jahrgang"), { target: { value: "1993" } });
+    fireEvent.change(screen.getByLabelText("Verein"), { target: { value: "SV Nord" } });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => {
+      expect(applySpy).toHaveBeenCalledWith("draft-unresolved-review", {
+        reviewId: "review-1",
+        candidateId: "team-2",
+        correction: {
+          type: "single",
+          name: "Kathi Mueller",
+          yob: 1993,
+          club: "SV Nord",
+        },
+      });
+    });
   });
 
   it("uses 0 as slider minimum for matching thresholds", async () => {

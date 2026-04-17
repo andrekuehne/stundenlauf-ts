@@ -12,6 +12,7 @@ import type {
   ImportCategory,
   ImportDraftInput,
   ImportDraftState,
+  ImportReviewCorrectionInput,
   ImportReviewDecision,
   ImportReviewItem,
   SeasonCommand,
@@ -845,6 +846,28 @@ class MockAppApi implements AppApi {
     draft.decisions = current;
     draft.summary = buildDraftSummary(draft.decisions);
 
+    return Promise.resolve(cloneImportDraft(draft));
+  }
+
+  applyImportReviewCorrection(draftId: string, input: ImportReviewCorrectionInput) {
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    const hasReview = draft.reviewItems.some((item) => item.reviewId === input.reviewId);
+    if (!hasReview) {
+      throw new Error("Die ausgewählte Prüfung wurde nicht gefunden.");
+    }
+    const next: ImportReviewDecision = {
+      reviewId: input.reviewId,
+      candidateId: input.candidateId,
+      action: "merge_with_typo_fix",
+    };
+    const current = draft.decisions.filter((entry) => entry.reviewId !== input.reviewId);
+    current.push(next);
+    current.sort((a, b) => a.reviewId.localeCompare(b.reviewId));
+    draft.decisions = current;
+    draft.summary = buildDraftSummary(draft.decisions);
     return Promise.resolve(cloneImportDraft(draft));
   }
 

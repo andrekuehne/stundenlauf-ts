@@ -564,4 +564,81 @@ describe("TsAppApi import workflows", () => {
     expect(yobComparison?.candidateValue).toBe("1992 / 1990");
     expect(clubComparison?.candidateValue).toBe("Club A / Club B");
   });
+
+  it("applies merge_with_typo_fix correction for a single review candidate", async () => {
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Stundenlauf 2035" });
+    await api.openSeason(created.seasonId);
+    const repo = await getSeasonRepository();
+    await repo.saveImportedSeason(
+      {
+        season_id: created.seasonId,
+        label: created.label,
+        created_at: new Date().toISOString(),
+      },
+      [
+        personRegistered({
+          person_id: "person-correction-existing",
+          given_name: "Katharina",
+          family_name: "Moller",
+          display_name: "Katharina Moller",
+          name_normalized: "katharina|moller",
+          yob: 1991,
+          club: "Altverein",
+          club_normalized: "altverein",
+        }),
+        teamRegistered({
+          team_id: "team-correction-existing",
+          member_person_ids: ["person-correction-existing"],
+          team_kind: "solo",
+        }),
+      ],
+    );
+
+    const file = buildSinglesImportFile([
+      EXPECTED_HEADER_SINGLES,
+      ["h-Lauf", "", "", "", "", "", "", ""],
+      ["Männer", "", "", "", "", "", "", ""],
+      [1, "10", "Moller, Katharina", 1991, "Altverein", "10,2", "", "11"],
+    ]);
+    rememberImportFile(file);
+
+    const draft = await api.createImportDraft({
+      seasonId: created.seasonId,
+      fileName: file.name,
+      category: "singles",
+      raceNumber: 1,
+      matchingConfig: {
+        autoMin: 0.5,
+        reviewMin: 0.5,
+        autoMergeEnabled: false,
+        perfectMatchAutoMerge: false,
+        strictNormalizedAutoOnly: false,
+      },
+    });
+    const review = draft.reviewItems[0];
+    if (!review) {
+      throw new Error("Expected single review item.");
+    }
+    const candidate = review.candidates[0];
+    if (!candidate) {
+      throw new Error("Expected candidate for correction review.");
+    }
+
+    const corrected = await api.applyImportReviewCorrection(draft.draftId, {
+      reviewId: review.reviewId,
+      candidateId: candidate.candidateId,
+      correction: {
+        type: "single",
+        name: "Katharina Müller",
+        yob: 1993,
+        club: "SV Nord",
+      },
+    });
+
+    expect(corrected.decisions).toEqual([
+      { reviewId: review.reviewId, action: "merge_with_typo_fix", candidateId: candidate.candidateId },
+    ]);
+    expect(corrected.summary.typoCorrections).toBe(1);
+  });
 });

@@ -2694,6 +2694,81 @@ textarea {
   box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
 }
 
+.confirm-modal--wide {
+  width: min(95vw, 980px);
+}
+
+.import-correction-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.import-correction-modal__comparison {
+  display: grid;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.import-correction-modal__comparison h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.import-correction-modal__comparison-grid {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.import-correction-modal__comparison-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 120px) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  align-items: start;
+}
+
+.import-correction-modal__comparison-label {
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.import-correction-modal__comparison-row small {
+  display: block;
+  color: var(--color-text-muted);
+}
+
+.import-correction-modal__comparison-row p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.import-correction-modal__fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  display: grid;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.import-correction-modal__fieldset label {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+@media (max-width: 900px) {
+  .import-correction-modal__comparison-row {
+    grid-template-columns: 1fr;
+  }
+
+  .import-correction-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .confirm-modal__header,
 .confirm-modal__actions {
   display: flex;

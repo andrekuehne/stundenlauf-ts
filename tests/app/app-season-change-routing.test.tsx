@@ -93,6 +93,9 @@ beforeEach(() => {
     setImportReviewDecision: vi.fn(async () => {
       throw new Error("not used");
     }),
+    applyImportReviewCorrection: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     finalizeImportDraft: vi.fn(async () => buildCommandResult("ok")),
     getHistory: vi.fn(async () => {
       throw new Error("not used");

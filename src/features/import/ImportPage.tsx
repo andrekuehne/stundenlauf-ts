@@ -1,5 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { ImportDraftState, ImportReviewAction, ImportReviewItem, ImportedRunRow } from "@/api/contracts/index.ts";
+import type {
+  ImportDraftState,
+  ImportReviewAction,
+  ImportReviewItem,
+  ImportedRunRow,
+  ImportReviewCorrectionInput,
+} from "@/api/contracts/index.ts";
 import { rememberImportFile } from "@/api/import-file-registry.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
@@ -134,6 +140,13 @@ export function ImportPage() {
   const [matchingMode, setMatchingMode] = useState<MatchingMode>("fuzzy_automatik");
   const [fuzzySubMode, setFuzzySubMode] = useState<FuzzySubMode>("perfect");
   const [isMatchingSettingsOpen, setIsMatchingSettingsOpen] = useState(false);
+  const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
+  const [correctionError, setCorrectionError] = useState<string | null>(null);
+  const [singleCorrection, setSingleCorrection] = useState({ name: "", yob: "", club: "" });
+  const [teamCorrection, setTeamCorrection] = useState({
+    memberA: { name: "", yob: "", club: "" },
+    memberB: { name: "", yob: "", club: "" },
+  });
   const [matchingModeSettings, setMatchingModeSettings] =
     useState<Record<MatchingMode, MatchingModeSettings>>(MATCHING_MODE_DEFAULTS);
   const [stagedDecisions, setStagedDecisions] = useState<
@@ -185,6 +198,10 @@ export function ImportPage() {
       ? stagedDecisions[activeReview.reviewId]
         ? { reviewId: activeReview.reviewId, ...stagedDecisions[activeReview.reviewId] }
         : draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId) ?? null
+      : null;
+  const selectedCorrectionCandidate =
+    activeReview && currentDecision?.candidateId
+      ? activeReview.candidates.find((candidate) => candidate.candidateId === currentDecision.candidateId) ?? null
       : null;
   const orderedCandidates = useMemo(() => {
     if (!activeReview) {
@@ -327,6 +344,106 @@ export function ImportPage() {
       ...current,
       [activeReview.reviewId]: { action, candidateId },
     }));
+  }
+
+  function openCorrectionModal() {
+    if (!activeReview || !currentDecision?.candidateId) {
+      return;
+    }
+    const selectedCandidate = activeReview.candidates.find(
+      (candidate) => candidate.candidateId === currentDecision.candidateId,
+    );
+    const nameIncoming = selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "name")?.incomingValue ?? activeReview.incoming.displayName;
+    const yobIncoming = selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "yob")?.incomingValue ?? String(activeReview.incoming.yob);
+    const clubIncoming = selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "club")?.incomingValue ?? (activeReview.incoming.club ?? "");
+    const [nameA, nameB] = splitPairToken(nameIncoming);
+    const [yobA, yobB] = splitPairToken(yobIncoming);
+    const [clubA, clubB] = splitPairToken(clubIncoming);
+    setSingleCorrection({
+      name: nameIncoming,
+      yob: String(parseYobToken(yobIncoming, activeReview.incoming.yob)),
+      club: clubIncoming === "—" ? "" : clubIncoming,
+    });
+    setTeamCorrection({
+      memberA: { name: nameA === "—" ? "" : nameA, yob: String(parseYobToken(yobA, activeReview.incoming.yob)), club: clubA === "—" ? "" : clubA },
+      memberB: { name: nameB === "—" ? "" : nameB, yob: String(parseYobToken(yobB, activeReview.incoming.yob)), club: clubB === "—" ? "" : clubB },
+    });
+    setCorrectionError(null);
+    setIsCorrectionModalOpen(true);
+  }
+
+  async function submitCorrection() {
+    if (!draft || !activeReview || !currentDecision?.candidateId) {
+      return;
+    }
+    const currentYear = new Date().getUTCFullYear();
+    const parseInputYob = (raw: string): number => Number.parseInt(raw.trim(), 10);
+    const isValidYob = (value: number) =>
+      Number.isInteger(value) && value >= 1900 && value <= currentYear + 1;
+    let payload: ImportReviewCorrectionInput;
+
+    if (isDoublesReview) {
+      const yobA = parseInputYob(teamCorrection.memberA.yob);
+      const yobB = parseInputYob(teamCorrection.memberB.yob);
+      if (
+        teamCorrection.memberA.name.trim() === "" ||
+        teamCorrection.memberB.name.trim() === "" ||
+        !isValidYob(yobA) ||
+        !isValidYob(yobB)
+      ) {
+        setCorrectionError("Name und Jahrgang sind für die Korrektur erforderlich.");
+        return;
+      }
+      payload = {
+        reviewId: activeReview.reviewId,
+        candidateId: currentDecision.candidateId,
+        correction: {
+          type: "team",
+          memberA: {
+            name: teamCorrection.memberA.name.trim(),
+            yob: yobA,
+            club: teamCorrection.memberA.club.trim(),
+          },
+          memberB: {
+            name: teamCorrection.memberB.name.trim(),
+            yob: yobB,
+            club: teamCorrection.memberB.club.trim(),
+          },
+        },
+      };
+    } else {
+      const yob = parseInputYob(singleCorrection.yob);
+      if (singleCorrection.name.trim() === "" || !isValidYob(yob)) {
+        setCorrectionError("Name und Jahrgang sind für die Korrektur erforderlich.");
+        return;
+      }
+      payload = {
+        reviewId: activeReview.reviewId,
+        candidateId: currentDecision.candidateId,
+        correction: {
+          type: "single",
+          name: singleCorrection.name.trim(),
+          yob,
+          club: singleCorrection.club.trim(),
+        },
+      };
+    }
+    setBusy(true);
+    try {
+      const nextDraft = await api.applyImportReviewCorrection(draft.draftId, payload);
+      setDraft(nextDraft);
+      setStagedDecisions((current) => ({
+        ...current,
+        [activeReview.reviewId]: { action: "merge_with_typo_fix", candidateId: currentDecision.candidateId },
+      }));
+      setIsCorrectionModalOpen(false);
+      setCorrectionError(null);
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "Datenkorrektur fehlgeschlagen.";
+      setCorrectionError(message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function finalizeImport() {
@@ -596,9 +713,7 @@ export function ImportPage() {
                       className="button import-review__action import-review__action--correct"
                       disabled={!currentDecision?.candidateId || busy}
                       onClick={() => {
-                        if (currentDecision?.candidateId) {
-                          stageReviewDecision("merge_with_typo_fix", currentDecision.candidateId);
-                        }
+                        openCorrectionModal();
                       }}
                     >
                       {STR.views.import.fixData}
@@ -920,6 +1035,184 @@ export function ImportPage() {
                 }}
               >
                 {STR.actions.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {step === "review_matches" && draft && isCorrectionModalOpen ? (
+        <div className="confirm-modal__backdrop" role="presentation">
+          <div className="confirm-modal confirm-modal--wide import-correction-modal" role="dialog" aria-modal="true" aria-label="Daten korrigieren">
+            <div className="confirm-modal__header">
+              <h2>Daten korrigieren</h2>
+            </div>
+            <div className="confirm-modal__body">
+              {selectedCorrectionCandidate ? (
+                <section className="import-correction-modal__comparison" aria-label="Vergleich">
+                  <h3>Vergleich</h3>
+                  <div className="import-correction-modal__comparison-grid">
+                    {selectedCorrectionCandidate.fieldComparisons.map((comparison) => (
+                      <div key={comparison.fieldKey} className="import-correction-modal__comparison-row">
+                        <span className="import-correction-modal__comparison-label">{comparison.label}</span>
+                        <div>
+                          <small>Eingehend</small>
+                          <p>{comparison.incomingValue || "—"}</p>
+                        </div>
+                        <div>
+                          <small>Bestand</small>
+                          <p>{comparison.candidateValue || "—"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+              <div className="import-correction-modal__grid">
+                {isDoublesReview ? (
+                  <>
+                    <fieldset className="import-correction-modal__fieldset">
+                      <legend>Teilnehmende A</legend>
+                      <label>
+                        <span>Name</span>
+                        <input
+                          value={teamCorrection.memberA.name}
+                          onChange={(event) => {
+                            setTeamCorrection((current) => ({
+                              ...current,
+                              memberA: { ...current.memberA, name: event.target.value },
+                            }));
+                          }}
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        <span>Jahrgang</span>
+                        <input
+                          value={teamCorrection.memberA.yob}
+                          onChange={(event) => {
+                            setTeamCorrection((current) => ({
+                              ...current,
+                              memberA: { ...current.memberA, yob: event.target.value },
+                            }));
+                          }}
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        <span>Verein</span>
+                        <input
+                          value={teamCorrection.memberA.club}
+                          onChange={(event) => {
+                            setTeamCorrection((current) => ({
+                              ...current,
+                              memberA: { ...current.memberA, club: event.target.value },
+                            }));
+                          }}
+                          disabled={busy}
+                        />
+                      </label>
+                    </fieldset>
+                    <fieldset className="import-correction-modal__fieldset">
+                      <legend>Teilnehmende B</legend>
+                      <label>
+                        <span>Name</span>
+                        <input
+                          value={teamCorrection.memberB.name}
+                          onChange={(event) => {
+                            setTeamCorrection((current) => ({
+                              ...current,
+                              memberB: { ...current.memberB, name: event.target.value },
+                            }));
+                          }}
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        <span>Jahrgang</span>
+                        <input
+                          value={teamCorrection.memberB.yob}
+                          onChange={(event) => {
+                            setTeamCorrection((current) => ({
+                              ...current,
+                              memberB: { ...current.memberB, yob: event.target.value },
+                            }));
+                          }}
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        <span>Verein</span>
+                        <input
+                          value={teamCorrection.memberB.club}
+                          onChange={(event) => {
+                            setTeamCorrection((current) => ({
+                              ...current,
+                              memberB: { ...current.memberB, club: event.target.value },
+                            }));
+                          }}
+                          disabled={busy}
+                        />
+                      </label>
+                    </fieldset>
+                  </>
+                ) : (
+                  <div className="import-correction-modal__fieldset">
+                    <label>
+                      <span>Name</span>
+                      <input
+                        value={singleCorrection.name}
+                        onChange={(event) => {
+                          setSingleCorrection((current) => ({ ...current, name: event.target.value }));
+                        }}
+                        disabled={busy}
+                      />
+                    </label>
+                    <label>
+                      <span>Jahrgang</span>
+                      <input
+                        value={singleCorrection.yob}
+                        onChange={(event) => {
+                          setSingleCorrection((current) => ({ ...current, yob: event.target.value }));
+                        }}
+                        disabled={busy}
+                      />
+                    </label>
+                    <label>
+                      <span>Verein</span>
+                      <input
+                        value={singleCorrection.club}
+                        onChange={(event) => {
+                          setSingleCorrection((current) => ({ ...current, club: event.target.value }));
+                        }}
+                        disabled={busy}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+              {correctionError ? <p className="danger-text">{correctionError}</p> : null}
+            </div>
+            <div className="confirm-modal__actions">
+              <button
+                type="button"
+                className="button button--ghost"
+                onClick={() => {
+                  setIsCorrectionModalOpen(false);
+                  setCorrectionError(null);
+                }}
+                disabled={busy}
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => {
+                  void submitCorrection();
+                }}
+                disabled={busy}
+              >
+                Speichern
               </button>
             </div>
           </div>

@@ -24,6 +24,8 @@ import {
 } from "@/import/orchestrator.ts";
 import { defaultMatchingConfig } from "@/matching/config.ts";
 import { alignCoupleMembersForDisplay } from "@/matching/review-display.ts";
+import { canonicalizeClub, canonicalizePersonNames } from "@/domain/person-identity.ts";
+import { splitDisplayNameParts } from "@/lib/normalization.ts";
 import { importSeason, exportSeason } from "@/portability/index.ts";
 import { triggerDownload } from "@/portability/download.ts";
 import { computeStandings } from "@/ranking/index.ts";
@@ -43,6 +45,7 @@ import type {
   ImportMatchingConfigInput,
   ImportDraftState,
   ImportFieldComparison,
+  ImportReviewCorrectionInput,
   ImportReviewCandidate,
   ImportReviewDecision,
   ImportReviewItem,
@@ -81,6 +84,20 @@ type SeasonSnapshot = {
 
 type DraftDecision = ImportReviewDecision & { updatedAt: number };
 
+type DraftIdentityCorrectionTarget = {
+  personId: string;
+  member: "a" | "b" | null;
+};
+
+type DraftIdentityCorrection = {
+  reviewId: string;
+  personId: string;
+  member: "a" | "b" | null;
+  name: string;
+  yob: number;
+  club: string;
+};
+
 type ImportDraftRecord = {
   draftId: string;
   session: ImportSession;
@@ -89,6 +106,7 @@ type ImportDraftRecord = {
   category: ImportDraftInput["category"];
   raceNumber: number;
   sourceFileName: string;
+  correctionByReviewId: Map<string, DraftIdentityCorrection[]>;
 };
 
 function asInfo(message: string): AppCommandResult {
@@ -314,6 +332,25 @@ function toDisplayYobPair(left: number, right: number): string {
   const leftSafe = left > 0 ? String(left) : "—";
   const rightSafe = right > 0 ? String(right) : "—";
   return `${leftSafe} / ${rightSafe}`;
+}
+
+function validateYob(yob: number): void {
+  const currentYear = new Date().getUTCFullYear();
+  if (!Number.isInteger(yob) || yob < 1900 || yob > currentYear + 1) {
+    throw new Error("Name und Jahrgang sind für die Korrektur erforderlich.");
+  }
+}
+
+function validateName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error("Name und Jahrgang sind für die Korrektur erforderlich.");
+  }
+  return trimmed;
+}
+
+function normalizeCorrectionClub(club: string): string {
+  return club.trim();
 }
 
 function alignDoublesCandidateDisplay(
@@ -557,6 +594,89 @@ class TsAppApi implements AppApi {
       decisions: this.toDecisionArray(record),
       summary: this.toDraftSummary(record),
     };
+  }
+
+  private resolveCorrectionTargets(
+    record: ImportDraftRecord,
+    input: ImportReviewCorrectionInput,
+  ): DraftIdentityCorrectionTarget[] {
+    const review = this.toReviewItems(record).find((item) => item.reviewId === input.reviewId);
+    if (!review) {
+      throw new Error("Die ausgewählte Prüfung wurde nicht gefunden.");
+    }
+    if (!review.candidates.some((candidate) => candidate.candidateId === input.candidateId)) {
+      throw new Error("Bitte einen Kandidaten auswählen.");
+    }
+    const team = record.session.season_state_at_start.teams.get(input.candidateId);
+    if (!team) {
+      throw new Error("Zielperson für die Korrektur wurde nicht gefunden.");
+    }
+    if (team.team_kind === "solo") {
+      const personId = team.member_person_ids[0];
+      if (!personId) {
+        throw new Error("Zielperson für die Korrektur wurde nicht gefunden.");
+      }
+      return [{ personId, member: null }];
+    }
+    const [personA, personB] = team.member_person_ids;
+    if (!personA || !personB) {
+      throw new Error("Zielperson für die Korrektur wurde nicht gefunden.");
+    }
+    return [
+      { personId: personA, member: "a" },
+      { personId: personB, member: "b" },
+    ];
+  }
+
+  private toDraftIdentityCorrections(
+    record: ImportDraftRecord,
+    input: ImportReviewCorrectionInput,
+  ): DraftIdentityCorrection[] {
+    const targets = this.resolveCorrectionTargets(record, input);
+    if (input.correction.type === "single") {
+      const target = targets[0];
+      if (!target) {
+        throw new Error("Zielperson für die Korrektur wurde nicht gefunden.");
+      }
+      const name = validateName(input.correction.name);
+      validateYob(input.correction.yob);
+      return [{
+        reviewId: input.reviewId,
+        personId: target.personId,
+        member: target.member,
+        name,
+        yob: input.correction.yob,
+        club: normalizeCorrectionClub(input.correction.club),
+      }];
+    }
+
+    if (targets.length < 2) {
+      throw new Error("Team-Mitglieder für die Korrektur wurden nicht gefunden.");
+    }
+    const memberA = input.correction.memberA;
+    const memberB = input.correction.memberB;
+    const nameA = validateName(memberA.name);
+    const nameB = validateName(memberB.name);
+    validateYob(memberA.yob);
+    validateYob(memberB.yob);
+    return [
+      {
+        reviewId: input.reviewId,
+        personId: targets[0]!.personId,
+        member: "a",
+        name: nameA,
+        yob: memberA.yob,
+        club: normalizeCorrectionClub(memberA.club),
+      },
+      {
+        reviewId: input.reviewId,
+        personId: targets[1]!.personId,
+        member: "b",
+        name: nameB,
+        yob: memberB.yob,
+        club: normalizeCorrectionClub(memberB.club),
+      },
+    ];
   }
 
   async getShellData() {
@@ -866,6 +986,7 @@ class TsAppApi implements AppApi {
       category: input.category,
       raceNumber: input.raceNumber,
       sourceFileName: fileName,
+      correctionByReviewId: new Map(),
     };
     this.importDrafts.set(draftId, record);
     return this.toImportDraftState(record);
@@ -912,6 +1033,30 @@ class TsAppApi implements AppApi {
     return Promise.resolve(this.toImportDraftState(draft));
   }
 
+  applyImportReviewCorrection(draftId: string, input: ImportReviewCorrectionInput) {
+    const draft = this.importDrafts.get(draftId);
+    if (!draft) {
+      throw new Error("Der Import-Entwurf wurde nicht gefunden.");
+    }
+    if (draft.session.phase !== "reviewing") {
+      throw new Error("Es gibt keine offenen Prüffälle mehr.");
+    }
+    const corrections = this.toDraftIdentityCorrections(draft, input);
+    draft.correctionByReviewId.set(input.reviewId, corrections);
+    draft.session = resolveReviewEntry(draft.session, input.reviewId, {
+      type: "link_existing",
+      team_id: input.candidateId,
+    });
+    draft.typoFixReviewIds.add(input.reviewId);
+    draft.decisionByReviewId.set(input.reviewId, {
+      reviewId: input.reviewId,
+      action: "merge_with_typo_fix",
+      candidateId: input.candidateId,
+      updatedAt: Date.now(),
+    });
+    return Promise.resolve(this.toImportDraftState(draft));
+  }
+
   async finalizeImportDraft(draftId: string) {
     const draft = this.importDrafts.get(draftId);
     if (!draft) {
@@ -923,8 +1068,47 @@ class TsAppApi implements AppApi {
     const repo = await this.repo();
     const currentEvents = await repo.getEventLog(draft.session.season_state_at_start.season_id);
     const nextSeq = currentEvents.reduce((max, event) => Math.max(max, event.seq), -1) + 1;
-    const events = finalizeOrchestratedImport(draft.session, { startSeq: nextSeq });
-    await repo.appendEvents(draft.session.season_state_at_start.season_id, events);
+    const correctionEvents: DomainEvent[] = [];
+    let seqCursor = nextSeq;
+    for (const corrections of draft.correctionByReviewId.values()) {
+      for (const correction of corrections) {
+        const [givenName, familyName] = splitDisplayNameParts(correction.name);
+        const names = canonicalizePersonNames({
+          given_name: givenName,
+          family_name: familyName || correction.name,
+          display_name: correction.name,
+        });
+        const club = canonicalizeClub({ club: correction.club || null });
+        correctionEvents.push({
+          event_id: crypto.randomUUID(),
+          seq: seqCursor++,
+          recorded_at: new Date().toISOString(),
+          type: "person.corrected",
+          schema_version: 1,
+          payload: {
+            person_id: correction.personId,
+            updated_fields: {
+              given_name: names.given_name,
+              family_name: names.family_name,
+              display_name: names.display_name,
+              name_normalized: names.name_normalized,
+              yob: correction.yob,
+              club: club.club,
+              club_normalized: club.club_normalized,
+            },
+            rationale:
+              correction.member == null
+                ? "Import review merge_with_typo_fix"
+                : `Import review merge_with_typo_fix member ${correction.member}`,
+          },
+          metadata: {
+            app_version: APP_VERSION,
+          },
+        });
+      }
+    }
+    const importEvents = finalizeOrchestratedImport(draft.session, { startSeq: seqCursor });
+    await repo.appendEvents(draft.session.season_state_at_start.season_id, [...correctionEvents, ...importEvents]);
     this.importDrafts.delete(draftId);
     return asSuccess(
       `Import erfolgreich abgeschlossen: ${draft.sourceFileName} (${draft.session.report.rows_imported} Einträge).`,
