@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppApi, AppCommandResult, SeasonListItem, ShellData, StandingsData } from "@/api/contracts/index.ts";
@@ -271,6 +273,12 @@ describe("SeasonPage", () => {
     expect(runsCard).toHaveClass("summary-card");
     expect(within(runsCard).getByText("Importierte Läufe")).toBeInTheDocument();
     expect(within(runsCard).getByText("5")).toBeInTheDocument();
+  });
+
+  it("caps season KPI value width with a ch-based max-width so labels can use the badge space", () => {
+    const themeCss = readFileSync(resolve(process.cwd(), "src/app/theme.css"), "utf8");
+    const kpiStrongBlock = themeCss.match(/\.season-overview__kpi strong\s*\{[^}]*\}/s);
+    expect(kpiStrongBlock?.[0]).toContain("max-width: 17ch");
   });
 
   it("wraps the season list in the Auswertung-styled surface + detail table", async () => {
