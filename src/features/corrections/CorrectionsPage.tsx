@@ -230,8 +230,20 @@ export function CorrectionsPage() {
             rows={selectedRows}
             raceColumnCount={seasonRaceColumnCount}
             showExcludedColumn
-            onToggleExcluded={handleToggleExcluded}
-            onEditRow={busy ? undefined : handleEditRow}
+            onToggleExcluded={
+              busy
+                ? undefined
+                : (row) => {
+                    void handleToggleExcluded(row);
+                  }
+            }
+            onEditRow={
+              busy
+                ? undefined
+                : (row) => {
+                    void handleEditRow(row);
+                  }
+            }
           />
         </section>
       )}
@@ -241,7 +253,9 @@ export function CorrectionsPage() {
           identity={editIdentity}
           busy={busy}
           saveError={saveError}
-          onSave={handleSaveCorrection}
+          onSave={(members) => {
+            void handleSaveCorrection(members);
+          }}
           onCancel={handleCancelCorrection}
         />
       ) : null}

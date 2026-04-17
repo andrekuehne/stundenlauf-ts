@@ -184,7 +184,7 @@ export function StandingsDetailTable({
                       <button
                         type="button"
                         className="standings-team-edit-trigger"
-                        onClick={() => onEditRow(row)}
+                        onClick={() => { onEditRow(row); }}
                       >
                         <span className="standings-team" data-testid="standings-team-name">
                           {row.team}
@@ -209,7 +209,7 @@ export function StandingsDetailTable({
                       <button
                         type="button"
                         className="standings-team-edit-trigger"
-                        onClick={() => onEditRow(row)}
+                        onClick={() => { onEditRow(row); }}
                       >
                         {row.club || "—"}
                       </button>

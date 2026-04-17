@@ -129,6 +129,12 @@ beforeEach(() => {
     }),
     rollbackHistory: vi.fn(async () => buildCommandResult("ok")),
     setStandingsRowExcluded: vi.fn(async () => {}),
+    getStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    correctStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("ok")),
   };
 });

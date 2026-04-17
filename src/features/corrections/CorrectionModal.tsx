@@ -112,7 +112,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldName}</span>
                     <input
                       value={memberA.name}
-                      onChange={(e) => setMemberA((prev) => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) => { setMemberA((prev) => ({ ...prev, name: e.target.value })); }}
                       disabled={busy}
                     />
                   </label>
@@ -120,7 +120,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldYob}</span>
                     <input
                       value={memberA.yob}
-                      onChange={(e) => setMemberA((prev) => ({ ...prev, yob: e.target.value }))}
+                      onChange={(e) => { setMemberA((prev) => ({ ...prev, yob: e.target.value })); }}
                       disabled={busy}
                     />
                   </label>
@@ -128,7 +128,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldClub}</span>
                     <input
                       value={memberA.club}
-                      onChange={(e) => setMemberA((prev) => ({ ...prev, club: e.target.value }))}
+                      onChange={(e) => { setMemberA((prev) => ({ ...prev, club: e.target.value })); }}
                       disabled={busy}
                     />
                   </label>
@@ -139,7 +139,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldName}</span>
                     <input
                       value={memberB.name}
-                      onChange={(e) => setMemberB((prev) => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) => { setMemberB((prev) => ({ ...prev, name: e.target.value })); }}
                       disabled={busy}
                     />
                   </label>
@@ -147,7 +147,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldYob}</span>
                     <input
                       value={memberB.yob}
-                      onChange={(e) => setMemberB((prev) => ({ ...prev, yob: e.target.value }))}
+                      onChange={(e) => { setMemberB((prev) => ({ ...prev, yob: e.target.value })); }}
                       disabled={busy}
                     />
                   </label>
@@ -155,7 +155,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldClub}</span>
                     <input
                       value={memberB.club}
-                      onChange={(e) => setMemberB((prev) => ({ ...prev, club: e.target.value }))}
+                      onChange={(e) => { setMemberB((prev) => ({ ...prev, club: e.target.value })); }}
                       disabled={busy}
                     />
                   </label>
@@ -167,7 +167,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                   <span>{STR.views.corrections.fieldName}</span>
                   <input
                     value={memberA.name}
-                    onChange={(e) => setMemberA((prev) => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => { setMemberA((prev) => ({ ...prev, name: e.target.value })); }}
                     disabled={busy}
                   />
                 </label>
@@ -175,7 +175,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                   <span>{STR.views.corrections.fieldYob}</span>
                   <input
                     value={memberA.yob}
-                    onChange={(e) => setMemberA((prev) => ({ ...prev, yob: e.target.value }))}
+                    onChange={(e) => { setMemberA((prev) => ({ ...prev, yob: e.target.value })); }}
                     disabled={busy}
                   />
                 </label>
@@ -183,7 +183,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                   <span>{STR.views.corrections.fieldClub}</span>
                   <input
                     value={memberA.club}
-                    onChange={(e) => setMemberA((prev) => ({ ...prev, club: e.target.value }))}
+                    onChange={(e) => { setMemberA((prev) => ({ ...prev, club: e.target.value })); }}
                     disabled={busy}
                   />
                 </label>

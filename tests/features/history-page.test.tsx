@@ -93,6 +93,12 @@ beforeEach(() => {
     previewHistoryState: vi.fn(async () => ({ anchorSeq: 10, isFrozen: true, derivedStateLabel: "Vorschau", blockedReason: "eingefroren" })),
     rollbackHistory: vi.fn(async () => buildCommandResult("Rollback ok")),
     setStandingsRowExcluded: vi.fn(async () => {}),
+    getStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    correctStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("Reset ok")),
   };
 });
