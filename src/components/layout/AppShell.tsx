@@ -22,8 +22,7 @@ export function AppShell({ activeRoute, shellData, onSeasonChange, sidebarContro
     <div className="shell-layout">
       <header className="shell-topbar">
         <div className="shell-topbar__title">
-          <span className="shell-topbar__eyebrow">Stundenlauf</span>
-          <h1>{STR.shell.appTitle}</h1>
+          <h1 className="shell-topbar__eyebrow">{STR.shell.appTitle}</h1>
         </div>
         <div className="shell-topbar__controls">
           <label className="shell-inline-field shell-topbar__season-field">

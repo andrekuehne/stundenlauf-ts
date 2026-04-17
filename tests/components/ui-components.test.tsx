@@ -52,6 +52,26 @@ describe("shared UI components", () => {
     expect(onSeasonChange).toHaveBeenCalledWith("s2");
   });
 
+  it("shows only one branded topbar title text", () => {
+    render(
+      <AppShell
+        activeRoute="season"
+        shellData={{
+          selectedSeasonId: "s1",
+          selectedSeasonLabel: "S1",
+          unresolvedReviews: 0,
+          availableSeasons: [{ seasonId: "s1", label: "S1" }],
+        }}
+        onSeasonChange={vi.fn()}
+      >
+        <div>Child</div>
+      </AppShell>,
+    );
+
+    expect(screen.getByRole("heading", { level: 1, name: "Stundenlauf-Auswertung" })).toBeInTheDocument();
+    expect(screen.queryByText("Stundenlauf")).not.toBeInTheDocument();
+  });
+
   it("wraps the AppShell topbar season field in a polished chip-style container", () => {
     const { container } = render(
       <AppShell

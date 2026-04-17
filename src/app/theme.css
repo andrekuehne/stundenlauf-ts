@@ -89,17 +89,13 @@ textarea {
 }
 
 .shell-topbar__eyebrow {
-  font-size: 0.72rem;
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.1;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-primary-hover);
-}
-
-.shell-topbar__title h1 {
-  margin: 0;
-  font-size: 1.35rem;
-  line-height: 1.1;
 }
 
 .shell-topbar__season-field {
