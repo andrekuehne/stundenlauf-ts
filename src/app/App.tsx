@@ -102,11 +102,7 @@ function Phase1App() {
   const currentStatus = useStatusStore((state) => state.current);
   const [shellData, setShellData] = useState<ShellData>(EMPTY_SHELL_DATA);
   const [navigationGuard, setNavigationGuard] = useState<NavigationGuardConfig | null>(null);
-  const [pendingNavigation, setPendingNavigation] = useState<
-    | { type: "route"; route: AppRoute }
-    | { type: "season"; seasonId: string }
-    | null
-  >(null);
+  const [pendingNavigation, setPendingNavigation] = useState<{ type: "route"; route: AppRoute } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarControls, setSidebarControls] = useState<ReactNode | null>(null);
@@ -135,32 +131,8 @@ function Phase1App() {
     void refreshShellData();
   }, [refreshShellData]);
 
-  const executeSeasonChange = useCallback(
-    async (seasonId: string) => {
-      const selected = shellData.availableSeasons.find((season) => season.seasonId === seasonId);
-      await api.openSeason(seasonId);
-      let targetRoute = "/import";
-      try {
-        const standings = await api.getStandings(seasonId);
-        targetRoute = standings.summary.totalRuns > 0 ? "/standings" : "/import";
-      } catch {
-        targetRoute = "/import";
-      }
-      await refreshShellData();
-      void navigate(targetRoute);
-      if (selected) {
-        setStatus({
-          severity: "info",
-          message: `Saison "${selected.label}" geoeffnet.`,
-          source: "shell",
-        });
-      }
-    },
-    [api, navigate, refreshShellData, setStatus, shellData.availableSeasons],
-  );
-
   const requestNavigation = useCallback(
-    (attempt: { type: "route"; route: AppRoute } | { type: "season"; seasonId: string }) => {
+    (attempt: { type: "route"; route: AppRoute }) => {
       if (!navigationGuard) {
         return true;
       }
@@ -170,27 +142,13 @@ function Phase1App() {
     [navigationGuard],
   );
 
-  const handleSeasonChange = useCallback(
-    async (seasonId: string) => {
-      if (!requestNavigation({ type: "season", seasonId })) {
-        return;
-      }
-      await executeSeasonChange(seasonId);
-    },
-    [executeSeasonChange, requestNavigation],
-  );
-
-  async function confirmPendingNavigation() {
+  function confirmPendingNavigation() {
     const pending = pendingNavigation;
     if (!pending) {
       return;
     }
     setPendingNavigation(null);
-    if (pending.type === "route") {
-      void navigate(`/${pending.route}`);
-      return;
-    }
-    await executeSeasonChange(pending.seasonId);
+    void navigate(`/${pending.route}`);
   }
 
   useLayoutEffect(() => {
@@ -212,7 +170,6 @@ function Phase1App() {
       <AppShell
         activeRoute={activeRoute}
         shellData={shellData}
-        onSeasonChange={handleSeasonChange}
         onNavigationAttempt={requestNavigation}
         footer={footer}
         sidebarControls={sidebarControls}
@@ -256,7 +213,7 @@ function Phase1App() {
                 type="button"
                 className="button button--danger"
                 onClick={() => {
-                  void confirmPendingNavigation();
+                  confirmPendingNavigation();
                 }}
               >
                 {STR.views.import.leaveInProgressProceed}
