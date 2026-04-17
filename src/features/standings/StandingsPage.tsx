@@ -121,11 +121,9 @@ export function StandingsPage() {
       {!shellData.selectedSeasonId ? (
         <EmptyState title={STR.views.standings.title} message={STR.views.standings.noSeason} />
       ) : !data ? (
-        <section className="surface-card">
-          <p className="surface-card__note">{STR.views.standings.loading}</p>
-        </section>
+        <p className="surface-card__note">{STR.views.standings.loading}</p>
       ) : (
-        <section className="surface-card standings-overview">
+        <section className="standings-overview">
           <p className="standings-overview__meta" data-testid="standings-meta">
             <span>{data.summary.seasonLabel}</span>
             <span aria-hidden="true">{STR.views.standings.metaSeparator}</span>

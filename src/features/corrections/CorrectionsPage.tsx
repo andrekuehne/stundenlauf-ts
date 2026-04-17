@@ -185,11 +185,9 @@ export function CorrectionsPage() {
       {!shellData.selectedSeasonId ? (
         <EmptyState title={STR.views.corrections.title} message={STR.views.corrections.noSeason} />
       ) : !data ? (
-        <section className="surface-card">
-          <p className="surface-card__note">{STR.views.corrections.loading}</p>
-        </section>
+        <p className="surface-card__note">{STR.views.corrections.loading}</p>
       ) : (
-        <section className="surface-card standings-overview">
+        <section className="standings-overview">
           <p className="surface-card__note">{STR.views.corrections.guidance}</p>
 
           <div className="standings-overview__kpis" role="group" aria-label={STR.views.standings.summaryTitle}>

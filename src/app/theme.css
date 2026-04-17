@@ -227,6 +227,7 @@ textarea {
   min-height: 0;
   overflow-y: auto;
   padding: var(--spacing-lg);
+  background: var(--color-surface);
 }
 
 .page-stack {

@@ -176,6 +176,15 @@ describe("StandingsPage", () => {
     await waitFor(() => { expect(selectCategory).toHaveBeenCalledWith("half_hour:women"); });
   });
 
+  it("renders the standings overview without an outer surface-card panel", async () => {
+    selectedCategoryKey = "half_hour:women";
+    const { container } = render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    const overview = container.querySelector(".standings-overview");
+    expect(overview).not.toBeNull();
+    expect(overview!.classList.contains("surface-card")).toBe(false);
+  });
+
   it("renders only a quiet meta line (season + last-updated), without an Auswertung eyebrow or category headline", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
