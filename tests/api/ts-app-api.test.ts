@@ -630,9 +630,9 @@ describe("TsAppApi import workflows", () => {
       candidateId: candidate.candidateId,
       correction: {
         type: "single",
-        name: "Katharina Müller",
+        name: "Müller, Katharina",
         yob: 1993,
-        club: "SV Nord",
+        club: "  SV Nord  ",
       },
     });
 
@@ -640,5 +640,253 @@ describe("TsAppApi import workflows", () => {
       { reviewId: review.reviewId, action: "merge_with_typo_fix", candidateId: candidate.candidateId },
     ]);
     expect(corrected.summary.typoCorrections).toBe(1);
+
+    const finalized = await api.finalizeImportDraft(draft.draftId);
+    expect(finalized.severity).toBe("success");
+
+    const events = await repo.getEventLog(created.seasonId);
+    const correctionEvent = events.find((event) => event.type === "person.corrected");
+    expect(correctionEvent).toBeDefined();
+    const payload = correctionEvent?.payload as {
+      person_id: string;
+      rationale: string;
+      updated_fields: {
+        given_name?: string;
+        family_name?: string;
+        display_name?: string;
+        name_normalized?: string;
+        yob?: number;
+        club?: string | null;
+        club_normalized?: string;
+      };
+    };
+    expect(payload.person_id).toBe("person-correction-existing");
+    expect(payload.updated_fields).toMatchObject({
+      given_name: "Katharina",
+      family_name: "Müller",
+      display_name: "Müller, Katharina",
+      name_normalized: "katharina|muller",
+      yob: 1993,
+      club: "SV Nord",
+      club_normalized: "sv nord",
+    });
+    expect(payload.rationale).toContain("merge_with_typo_fix");
+  });
+});
+
+describe("TsAppApi corrections – identity lookup and correction", () => {
+  async function buildSeasonWithTeam(repo: InMemorySeasonRepository, seasonLabel: string) {
+    const season = await repo.createSeason(seasonLabel);
+    await repo.appendEvents(season.season_id, [
+      personRegistered({
+        person_id: "person-solo",
+        given_name: "Anna",
+        family_name: "Alpha",
+        display_name: "Anna Alpha",
+        name_normalized: "anna alpha",
+        yob: 1990,
+        club: "Club A",
+        club_normalized: "club a",
+      }),
+      teamRegistered({
+        team_id: "team-solo",
+        member_person_ids: ["person-solo"],
+        team_kind: "solo",
+      }),
+      importBatchRecorded({ import_batch_id: "batch-corr", source_file: "lauf.xlsx", source_sha256: "sha" }),
+      raceRegistered({
+        race_event_id: "race-corr",
+        import_batch_id: "batch-corr",
+        category: { duration: "hour", division: "women" },
+        race_no: 1,
+        entries: [defaultEntry({ entry_id: "entry-corr", team_id: "team-solo", points: 10, distance_m: 5000 })],
+      }),
+    ]);
+    return season;
+  }
+
+  async function buildSeasonWithCoupleTeam(repo: InMemorySeasonRepository, seasonLabel: string) {
+    const season = await repo.createSeason(seasonLabel);
+    await repo.appendEvents(season.season_id, [
+      personRegistered({
+        person_id: "person-a",
+        given_name: "Maria",
+        family_name: "Muster",
+        display_name: "Maria Muster",
+        name_normalized: "maria muster",
+        yob: 1988,
+        club: "SV Paar",
+        club_normalized: "sv paar",
+      }),
+      personRegistered({
+        person_id: "person-b",
+        given_name: "Josef",
+        family_name: "Muster",
+        display_name: "Josef Muster",
+        name_normalized: "josef muster",
+        yob: 1985,
+        club: "SV Paar",
+        club_normalized: "sv paar",
+      }),
+      teamRegistered({
+        team_id: "team-couple",
+        member_person_ids: ["person-a", "person-b"],
+        team_kind: "couple",
+      }),
+      importBatchRecorded({ import_batch_id: "batch-couple", source_file: "paare.xlsx", source_sha256: "sha2" }),
+      raceRegistered({
+        race_event_id: "race-couple",
+        import_batch_id: "batch-couple",
+        category: { duration: "hour", division: "couples_mixed" },
+        race_no: 1,
+        entries: [defaultEntry({ entry_id: "entry-couple", team_id: "team-couple", points: 15, distance_m: 8000 })],
+      }),
+    ]);
+    return season;
+  }
+
+  it("getStandingsRowIdentity returns solo member data", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await buildSeasonWithTeam(repo, "Stundenlauf Identity 2031");
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const identity = await api.getStandingsRowIdentity(season.season_id, {
+      categoryKey: "hour:women",
+      teamId: "team-solo",
+    });
+
+    expect(identity.teamId).toBe("team-solo");
+    expect(identity.teamKind).toBe("solo");
+    expect(identity.members).toHaveLength(1);
+    expect(identity.members[0]).toMatchObject({
+      personId: "person-solo",
+      name: "Anna Alpha",
+      yob: 1990,
+      club: "Club A",
+    });
+  });
+
+  it("getStandingsRowIdentity returns couple member data with both persons", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await buildSeasonWithCoupleTeam(repo, "Stundenlauf Couple Identity 2032");
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const identity = await api.getStandingsRowIdentity(season.season_id, {
+      categoryKey: "hour:couples_mixed",
+      teamId: "team-couple",
+    });
+
+    expect(identity.teamKind).toBe("couple");
+    expect(identity.members).toHaveLength(2);
+    expect(identity.members[0]).toMatchObject({ personId: "person-a", name: "Maria Muster" });
+    expect(identity.members[1]).toMatchObject({ personId: "person-b", name: "Josef Muster" });
+  });
+
+  it("getStandingsRowIdentity throws when teamId is unknown", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await buildSeasonWithTeam(repo, "Stundenlauf Identity Error 2033");
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    await expect(
+      api.getStandingsRowIdentity(season.season_id, {
+        categoryKey: "hour:women",
+        teamId: "team-nonexistent",
+      }),
+    ).rejects.toThrow(/nicht gefunden/i);
+  });
+
+  it("correctStandingsRowIdentity appends a person.corrected event and returns success", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await buildSeasonWithTeam(repo, "Stundenlauf Correct 2034");
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const result = await api.correctStandingsRowIdentity(season.season_id, {
+      categoryKey: "hour:women",
+      teamId: "team-solo",
+      members: [{ personId: "person-solo", name: "Beta, Anna", yob: 1991, club: "  Club B  " }],
+    });
+
+    expect(result.severity).toBe("success");
+
+    const events = await repo.getEventLog(season.season_id);
+    const correctionEvent = events.find((ev) => ev.type === "person.corrected");
+    expect(correctionEvent).toBeDefined();
+    const payload = correctionEvent?.payload as {
+      person_id: string;
+      updated_fields: {
+        given_name?: string;
+        family_name?: string;
+        display_name?: string;
+        name_normalized?: string;
+        yob?: number;
+        club?: string | null;
+        club_normalized?: string;
+      };
+      rationale: string;
+    };
+    expect(payload.person_id).toBe("person-solo");
+    expect(payload.updated_fields).toMatchObject({
+      given_name: "Anna",
+      family_name: "Beta",
+      display_name: "Beta, Anna",
+      name_normalized: "anna|beta",
+      yob: 1991,
+      club: "Club B",
+      club_normalized: "club b",
+    });
+    expect(payload.rationale).toMatch(/Korrekturen-Ansicht/);
+  });
+
+  it("correctStandingsRowIdentity updates both persons for a couple team", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await buildSeasonWithCoupleTeam(repo, "Stundenlauf Couple Correct 2035");
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const result = await api.correctStandingsRowIdentity(season.season_id, {
+      categoryKey: "hour:couples_mixed",
+      teamId: "team-couple",
+      members: [
+        { personId: "person-a", name: "Maria K.", yob: 1988, club: "TuS Neu" },
+        { personId: "person-b", name: "Josef K.", yob: 1985, club: "TuS Neu" },
+      ],
+    });
+
+    expect(result.severity).toBe("success");
+
+    const events = await repo.getEventLog(season.season_id);
+    const corrections = events.filter((ev) => ev.type === "person.corrected");
+    expect(corrections).toHaveLength(2);
+    const personIds = corrections.map((ev) => (ev.payload as { person_id: string }).person_id);
+    expect(personIds).toContain("person-a");
+    expect(personIds).toContain("person-b");
+  });
+
+  it("correctStandingsRowIdentity reflects changes in subsequent getStandings call", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await buildSeasonWithTeam(repo, "Stundenlauf Reflect 2036");
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    await api.correctStandingsRowIdentity(season.season_id, {
+      categoryKey: "hour:women",
+      teamId: "team-solo",
+      members: [{ personId: "person-solo", name: "Anna Gamma", yob: 1992, club: "Club C" }],
+    });
+
+    const standings = await api.getStandings(season.season_id);
+    const row = standings.rowsByCategory["hour:women"]?.find((r) => r.teamId === "team-solo");
+    expect(row?.team).toBe("Anna Gamma");
+    expect(row?.club).toBe("Club C");
   });
 });

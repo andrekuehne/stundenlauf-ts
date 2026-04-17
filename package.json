@@ -8,6 +8,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "ci:local": "pnpm install --frozen-lockfile && pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build",
+    "prepare": "simple-git-hooks",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -47,10 +49,14 @@
     "jiti": "^2.6.1",
     "jsdom": "^26",
     "prettier": "^3",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "~5.8",
     "typescript-eslint": "^8",
     "vite": "^6",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^3"
+  },
+  "simple-git-hooks": {
+    "pre-push": "pnpm run ci:local"
   }
 }

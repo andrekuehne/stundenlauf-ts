@@ -129,6 +129,12 @@ beforeEach(() => {
     }),
     rollbackHistory: vi.fn(async () => buildCommandResult("ok")),
     setStandingsRowExcluded: vi.fn(async () => {}),
+    getStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    correctStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("ok")),
   };
 });
@@ -210,7 +216,9 @@ describe("App season selector routing", () => {
     expect(screen.getByText("test confirm")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
 
-    expect(screen.queryByRole("dialog", { name: "Import-Prozess verlassen?" })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Import-Prozess verlassen?" })).not.toBeInTheDocument();
+    });
     expect(apiMock.openSeason).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
   });
@@ -229,6 +237,8 @@ describe("App season selector routing", () => {
 
     expect(screen.getByRole("dialog", { name: "Import-Prozess verlassen?" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Trotzdem verlassen" }));
-    expect(navigateMock).toHaveBeenCalledWith("/import");
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith("/import");
+    });
   });
 });

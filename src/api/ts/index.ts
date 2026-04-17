@@ -47,6 +47,8 @@ import type {
   SeasonListItem,
   StandingsData,
   StandingsRow,
+  StandingsRowIdentity,
+  StandingsRowIdentityCorrectionInput,
 } from "../contracts/index.ts";
 
 export const TS_APP_API_METHOD_MAP = {
@@ -61,6 +63,9 @@ export const TS_APP_API_METHOD_MAP = {
   deleteSeason: ["SeasonRepository.deleteSeason(seasonId)"],
   runSeasonCommand: ["exportSeason()", "importSeason()"],
   getStandings: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "computeStandings()"],
+  setStandingsRowExcluded: ["appendEvents()", "ranking.eligibility_set"],
+  getStandingsRowIdentity: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "team + person lookup"],
+  correctStandingsRowIdentity: ["appendEvents()", "person.corrected per member"],
   runExportAction: ["exportLaufuebersichtDualPdfs()", "exportGesamtwertungWorkbook()"],
   getHistory: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "legacy timeline synthesis adapter"],
   previewHistoryState: ["SeasonRepository.getEventLog(seasonId)", "projectState(seasonId, eventsPrefix)"],
@@ -677,6 +682,44 @@ class TsAppApi implements AppApi {
     ];
   }
 
+  private buildPersonCorrectedEvent(
+    seq: number,
+    personId: string,
+    name: string,
+    yob: number,
+    club: string | null,
+    rationale: string,
+  ): DomainEvent {
+    const [givenName, familyName] = splitDisplayNameParts(name);
+    const names = canonicalizePersonNames({
+      given_name: givenName,
+      family_name: familyName || name,
+      display_name: name,
+    });
+    const canonicalClub = canonicalizeClub({ club });
+    return {
+      event_id: crypto.randomUUID(),
+      seq,
+      recorded_at: new Date().toISOString(),
+      type: "person.corrected",
+      schema_version: 1,
+      payload: {
+        person_id: personId,
+        updated_fields: {
+          given_name: names.given_name,
+          family_name: names.family_name,
+          display_name: names.display_name,
+          name_normalized: names.name_normalized,
+          yob,
+          club: canonicalClub.club,
+          club_normalized: canonicalClub.club_normalized,
+        },
+        rationale,
+      },
+      metadata: { app_version: APP_VERSION },
+    };
+  }
+
   async getShellData() {
     const seasons = await this.listSeasons();
     const selectedSeasonId =
@@ -958,6 +1001,68 @@ class TsAppApi implements AppApi {
     }]);
   }
 
+  async getStandingsRowIdentity(
+    seasonId: string,
+    input: { categoryKey: string; teamId: string },
+  ): Promise<StandingsRowIdentity> {
+    const snapshot = await this.loadSnapshot(seasonId);
+    const team = snapshot.state.teams.get(input.teamId);
+    if (!team) {
+      throw new Error("Der gewählte Wertungseintrag wurde nicht gefunden.");
+    }
+    const members = team.member_person_ids.map((personId) => {
+      const person = snapshot.state.persons.get(personId);
+      if (!person) {
+        throw new Error(`Person ${personId} wurde nicht gefunden.`);
+      }
+      return {
+        personId: person.person_id,
+        name: person.display_name,
+        yob: person.yob,
+        club: person.club ?? "",
+      };
+    });
+    return {
+      teamId: input.teamId,
+      teamKind: team.team_kind === "couple" ? "couple" : "solo",
+      members,
+    };
+  }
+
+  async correctStandingsRowIdentity(
+    seasonId: string,
+    input: StandingsRowIdentityCorrectionInput,
+  ): Promise<AppCommandResult> {
+    const snapshot = await this.loadSnapshot(seasonId);
+    const team = snapshot.state.teams.get(input.teamId);
+    if (!team) {
+      throw new Error("Der gewählte Wertungseintrag wurde nicht gefunden.");
+    }
+
+    const repo = await this.repo();
+    const currentEvents = await repo.getEventLog(seasonId);
+    let seqCursor = currentEvents.reduce((max, ev) => Math.max(max, ev.seq), -1) + 1;
+    const events: DomainEvent[] = [];
+
+    for (const member of input.members) {
+      const existing = snapshot.state.persons.get(member.personId);
+      if (!existing) {
+        throw new Error(`Person ${member.personId} wurde nicht gefunden.`);
+      }
+      events.push(this.buildPersonCorrectedEvent(
+        seqCursor++,
+        member.personId,
+        member.name,
+        member.yob,
+        member.club || null,
+        "Korrektur über Korrekturen-Ansicht",
+      ));
+    }
+
+    await repo.appendEvents(seasonId, events);
+    return asSuccess("Teilnehmerdaten gespeichert.");
+  }
+
   async createImportDraft(input: ImportDraftInput) {
     await this.ensureSeason(input.seasonId);
     const fileName = input.fileName.trim();
@@ -1075,39 +1180,16 @@ class TsAppApi implements AppApi {
     let seqCursor = nextSeq;
     for (const corrections of draft.correctionByReviewId.values()) {
       for (const correction of corrections) {
-        const [givenName, familyName] = splitDisplayNameParts(correction.name);
-        const names = canonicalizePersonNames({
-          given_name: givenName,
-          family_name: familyName || correction.name,
-          display_name: correction.name,
-        });
-        const club = canonicalizeClub({ club: correction.club || null });
-        correctionEvents.push({
-          event_id: crypto.randomUUID(),
-          seq: seqCursor++,
-          recorded_at: new Date().toISOString(),
-          type: "person.corrected",
-          schema_version: 1,
-          payload: {
-            person_id: correction.personId,
-            updated_fields: {
-              given_name: names.given_name,
-              family_name: names.family_name,
-              display_name: names.display_name,
-              name_normalized: names.name_normalized,
-              yob: correction.yob,
-              club: club.club,
-              club_normalized: club.club_normalized,
-            },
-            rationale:
-              correction.member == null
-                ? "Import review merge_with_typo_fix"
-                : `Import review merge_with_typo_fix member ${correction.member}`,
-          },
-          metadata: {
-            app_version: APP_VERSION,
-          },
-        });
+        correctionEvents.push(this.buildPersonCorrectedEvent(
+          seqCursor++,
+          correction.personId,
+          correction.name,
+          correction.yob,
+          correction.club || null,
+          correction.member == null
+            ? "Import review merge_with_typo_fix"
+            : `Import review merge_with_typo_fix member ${correction.member}`,
+        ));
       }
     }
     const importEvents = finalizeOrchestratedImport(draft.session, { startSeq: seqCursor });

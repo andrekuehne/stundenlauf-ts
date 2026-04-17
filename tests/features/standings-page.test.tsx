@@ -135,6 +135,10 @@ beforeEach(() => {
     getStandings: vi.fn(async () => standingsData),
     runExportAction: vi.fn(async () => buildCommandResult("ok")),
     setStandingsRowExcluded: vi.fn(async () => {}),
+    getStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    correctStandingsRowIdentity: vi.fn(async () => buildCommandResult("ok")),
     createImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
@@ -215,7 +219,9 @@ describe("StandingsPage", () => {
         pdfLayoutPreset: "compact",
       }); },
     );
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    await waitFor(() => {
+      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    });
   });
 
   it("runs excel export from main content export controls", async () => {
@@ -238,7 +244,9 @@ describe("StandingsPage", () => {
     await waitFor(() =>
       { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"); },
     );
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    await waitFor(() => {
+      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
+    });
   });
 
   it("does not render the exclusion checkbox column anymore", async () => {
