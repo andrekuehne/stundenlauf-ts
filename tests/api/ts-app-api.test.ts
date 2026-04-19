@@ -305,6 +305,102 @@ describe("TsAppApi history workflows", () => {
     });
     expect(hardResetResult.severity).toBe("warn");
   });
+
+  it("exposes importBatches derived from import_batch.recorded events", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2031");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({
+        import_batch_id: "batch-a",
+        source_file: "lauf-1.xlsx",
+        source_sha256: "sha-a",
+      }),
+      raceRegistered({
+        race_event_id: "race-a",
+        import_batch_id: "batch-a",
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [],
+      }),
+      importBatchRecorded({
+        import_batch_id: "batch-b",
+        source_file: "lauf-2.xlsx",
+        source_sha256: "sha-b",
+      }),
+      raceRegistered({
+        race_event_id: "race-b",
+        import_batch_id: "batch-b",
+        category: { duration: "hour", division: "women" },
+        race_no: 2,
+        entries: [],
+      }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+    const history = await api.getHistory(season.season_id);
+    expect(history.importBatches).toHaveLength(2);
+    expect(history.importBatches[0]?.importBatchId).toBe("batch-a");
+    expect(history.importBatches[0]?.sourceFile).toBe("lauf-1.xlsx");
+    expect(history.importBatches[1]?.importBatchId).toBe("batch-b");
+    expect(history.importBatches[1]?.sourceFile).toBe("lauf-2.xlsx");
+  });
+
+  it("exclusive hard reset removes the anchor event and all later events", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2032");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({ import_batch_id: "batch-x1", source_file: "lauf-1.xlsx", source_sha256: "sha-x1" }),
+      raceRegistered({ race_event_id: "race-x1", import_batch_id: "batch-x1", category: { duration: "hour", division: "men" }, race_no: 1, entries: [] }),
+      importBatchRecorded({ import_batch_id: "batch-x2", source_file: "lauf-2.xlsx", source_sha256: "sha-x2" }),
+      raceRegistered({ race_event_id: "race-x2", import_batch_id: "batch-x2", category: { duration: "hour", division: "women" }, race_no: 2, entries: [] }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const before = await api.getHistory(season.season_id);
+    const secondBatch = before.importBatches.find((b) => b.importBatchId === "batch-x2");
+    if (!secondBatch) throw new Error("Expected batch-x2");
+
+    const result = await api.hardResetHistoryToSeq(season.season_id, {
+      anchorSeq: secondBatch.anchorSeq,
+      truncateMode: "exclusive",
+      reason: "test.exclusive-reset",
+    });
+    expect(result.severity).toBe("warn");
+
+    const after = await api.getHistory(season.season_id);
+    expect(after.importBatches).toHaveLength(1);
+    expect(after.importBatches[0]?.importBatchId).toBe("batch-x1");
+    expect(after.rows.every((r) => !r.importBatchId?.includes("batch-x2"))).toBe(true);
+  });
+
+  it("exclusive hard reset on the first import yields an empty event log", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2033");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({ import_batch_id: "batch-only", source_file: "lauf-1.xlsx", source_sha256: "sha-only" }),
+      raceRegistered({ race_event_id: "race-only", import_batch_id: "batch-only", category: { duration: "hour", division: "men" }, race_no: 1, entries: [] }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const before = await api.getHistory(season.season_id);
+    const onlyBatch = before.importBatches[0];
+    if (!onlyBatch) throw new Error("Expected at least one import batch");
+
+    await api.hardResetHistoryToSeq(season.season_id, {
+      anchorSeq: onlyBatch.anchorSeq,
+      truncateMode: "exclusive",
+      reason: "test.exclusive-reset-first",
+    });
+
+    const after = await api.getHistory(season.season_id);
+    expect(after.importBatches).toHaveLength(0);
+    expect(after.rows).toHaveLength(0);
+  });
 });
 
 describe("TsAppApi import workflows", () => {

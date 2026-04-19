@@ -252,11 +252,20 @@ export interface HistoryRaceContext {
   raceDateLabel: string;
 }
 
+export interface ImportBatchSummary {
+  importBatchId: string;
+  sourceFile: string;
+  recordedAt: string;
+  /** seq of the import_batch.recorded event — exclusive reset cuts here (removes this event and all later events) */
+  anchorSeq: number;
+}
+
 export interface HistoryData {
   seasonId: string;
   seasonLabel: string;
   raceContext: HistoryRaceContext | null;
   rows: HistoryRow[];
+  importBatches: ImportBatchSummary[];
 }
 
 export interface HistoryPreviewState {
@@ -281,6 +290,11 @@ export interface HistoryRollbackInput {
 export interface HistoryHardResetInput {
   anchorSeq: number;
   reason: string;
+  /**
+   * "inclusive" (default): keep events up to and including anchorSeq.
+   * "exclusive": drop anchorSeq and all subsequent events (used for "reset before this import").
+   */
+  truncateMode?: "inclusive" | "exclusive";
 }
 
 export interface AppApi {

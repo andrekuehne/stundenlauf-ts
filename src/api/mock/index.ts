@@ -637,6 +637,14 @@ function cloneHistoryData(record: HistoryRecord, query?: HistoryQuery): HistoryD
       ...row,
       actionability: { ...row.actionability },
     }));
+  const importBatches = record.rows
+    .filter((row) => row.type === "import_batch.recorded")
+    .map((row) => ({
+      importBatchId: row.importBatchId ?? row.eventId,
+      sourceFile: row.summary,
+      recordedAt: row.recordedAt,
+      anchorSeq: row.seq,
+    }));
   return {
     seasonId: record.seasonId,
     seasonLabel: record.seasonLabel,
@@ -647,6 +655,7 @@ function cloneHistoryData(record: HistoryRecord, query?: HistoryQuery): HistoryD
       raceDateLabel: record.raceDateLabel,
     },
     rows,
+    importBatches,
   };
 }
 
@@ -1043,6 +1052,7 @@ class MockAppApi implements AppApi {
         seasonLabel: season.label,
         raceContext: null,
         rows: [],
+        importBatches: [],
       } satisfies HistoryData);
     }
     return Promise.resolve(cloneHistoryData(record, query));
@@ -1151,7 +1161,8 @@ class MockAppApi implements AppApi {
     if (anchorIdx === -1) {
       throw new Error("Der ausgewaehlte Verlaufspunkt wurde nicht gefunden.");
     }
-    record.rows = record.rows.slice(0, anchorIdx + 1);
+    const exclusive = input.truncateMode === "exclusive";
+    record.rows = exclusive ? record.rows.slice(0, anchorIdx) : record.rows.slice(0, anchorIdx + 1);
     return Promise.resolve({
       severity: "warn",
       message: `Hard reset bis seq ${input.anchorSeq} ausgeführt. Nachfolgende Events wurden verworfen.`,

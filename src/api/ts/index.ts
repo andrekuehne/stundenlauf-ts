@@ -1254,6 +1254,18 @@ class TsAppApi implements AppApi {
       [...raceMap.values()].find((race) => isEffectiveRace(snapshot.state, race.race_event_id)) ??
       null;
 
+    const importBatches = snapshot.eventLog
+      .filter((event) => event.type === "import_batch.recorded")
+      .map((event) => {
+        const payload = event.payload as { import_batch_id: string; source_file: string };
+        return {
+          importBatchId: payload.import_batch_id,
+          sourceFile: payload.source_file,
+          recordedAt: event.recorded_at,
+          anchorSeq: event.seq,
+        };
+      });
+
     return {
       seasonId,
       seasonLabel: snapshot.descriptor.label,
@@ -1266,6 +1278,7 @@ class TsAppApi implements AppApi {
           }
         : null,
       rows,
+      importBatches,
     };
   }
 
@@ -1369,7 +1382,8 @@ class TsAppApi implements AppApi {
     if (anchorIndex < 0) {
       throw new Error("Der ausgewählte Verlaufspunkt wurde nicht gefunden.");
     }
-    const nextEvents = eventLog.slice(0, anchorIndex + 1);
+    const exclusive = input.truncateMode === "exclusive";
+    const nextEvents = exclusive ? eventLog.slice(0, anchorIndex) : eventLog.slice(0, anchorIndex + 1);
     await repo.clearEventLog(seasonId);
     if (nextEvents.length > 0) {
       await repo.appendEvents(seasonId, nextEvents);
