@@ -848,21 +848,35 @@ class TsAppApi implements AppApi {
       racesByCategory.set(key, current);
     }
 
-    const categories = standings.category_tables.map((table) => ({
-      key: table.category_key,
-      label: categoryLabel(table.rows[0]?.race_contributions[0] ? races.find((race) => categoryKey(race.category) === table.category_key)?.category ?? { duration: "hour", division: "men" } : { duration: "hour", division: "men" }),
-      description: `Aktueller Wertungsstand für ${table.category_key}.`,
-      participantCount: table.rows.length,
-      importedRuns: racesByCategory.get(table.category_key)?.length ?? 0,
-    }));
+    const orderedRacesForCategory = (categoryKey: string): RaceEvent[] =>
+      (racesByCategory.get(categoryKey) ?? [])
+        .slice()
+        .sort((a, b) => a.race_no - b.race_no || a.race_event_id.localeCompare(b.race_event_id));
+
+    const categories = standings.category_tables.map((table) => {
+      const orderedRaces = orderedRacesForCategory(table.category_key);
+      return {
+        key: table.category_key,
+        label: categoryLabel(
+          table.rows[0]?.race_contributions[0]
+            ? races.find((race) => categoryKey(race.category) === table.category_key)?.category ?? {
+                duration: "hour",
+                division: "men",
+              }
+            : { duration: "hour", division: "men" },
+        ),
+        description: `Aktueller Wertungsstand für ${table.category_key}.`,
+        participantCount: table.rows.length,
+        importedRuns: orderedRaces.length,
+        raceNos: orderedRaces.map((race) => race.race_no),
+      };
+    });
 
     const rowsByCategory = Object.fromEntries(
       standings.category_tables.map((table) => {
         const excludedTeamIds = exclusionsForCategory(snapshot.state, table.category_key);
         const marked = markExclusions(table, excludedTeamIds);
-        const orderedRaces = (racesByCategory.get(table.category_key) ?? [])
-          .slice()
-          .sort((a, b) => a.race_no - b.race_no || a.race_event_id.localeCompare(b.race_event_id));
+        const orderedRaces = orderedRacesForCategory(table.category_key);
         const rows: StandingsRow[] = marked.rows.map((row) => {
           const team = snapshot.state.teams.get(row.team_id);
           const label = team

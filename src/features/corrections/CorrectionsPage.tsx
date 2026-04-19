@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import type { StandingsCategory, StandingsData, StandingsRow, StandingsRowIdentity, StandingsRowIdentityMember } from "@/api/contracts/index.ts";
+import type { StandingsData, StandingsRow, StandingsRowIdentity, StandingsRowIdentityMember } from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
@@ -7,20 +7,13 @@ import { EmptyState } from "@/components/feedback/EmptyState.tsx";
 import { CorrectionModal } from "@/features/corrections/CorrectionModal.tsx";
 import { CategoryChipsBar } from "@/features/shared/CategoryChipsBar.tsx";
 import { StandingsDetailTable } from "@/features/shared/StandingsDetailTable.tsx";
+import {
+  buildStandingsRaceColumnHeaders,
+  computeStandingsRaceColumnCount,
+  STANDINGS_RACE_COLUMNS_WHEN_EMPTY,
+} from "@/features/shared/standingsRaceColumnLayout.ts";
 import { useStandingsStore } from "@/stores/standings.ts";
 import { useStatusStore } from "@/stores/status.ts";
-
-const RACE_COLUMN_FLOOR = 5;
-
-function computeSeasonRaceColumnCount(categories: StandingsCategory[]): number {
-  let max = 0;
-  for (const category of categories) {
-    if (category.importedRuns > max) {
-      max = category.importedRuns;
-    }
-  }
-  return Math.max(RACE_COLUMN_FLOOR, max);
-}
 
 export function CorrectionsPage() {
   const api = useAppApi();
@@ -77,9 +70,16 @@ export function CorrectionsPage() {
     [data, selectedCategory],
   );
   const seasonRaceColumnCount = useMemo(
-    () => (data ? computeSeasonRaceColumnCount(data.categories) : RACE_COLUMN_FLOOR),
+    () => (data ? computeStandingsRaceColumnCount(data.categories) : STANDINGS_RACE_COLUMNS_WHEN_EMPTY),
     [data],
   );
+
+  const raceColumnHeaders = useMemo(() => {
+    if (!selectedCategory) {
+      return undefined;
+    }
+    return buildStandingsRaceColumnHeaders(selectedCategory, seasonRaceColumnCount);
+  }, [selectedCategory, seasonRaceColumnCount]);
   const includedTeamsCount = useMemo(
     () => selectedRows.filter((row) => !row.excluded).length,
     [selectedRows],
@@ -227,6 +227,7 @@ export function CorrectionsPage() {
           <StandingsDetailTable
             rows={selectedRows}
             raceColumnCount={seasonRaceColumnCount}
+            raceColumnHeaders={raceColumnHeaders}
             showExcludedColumn
             onToggleExcluded={
               busy

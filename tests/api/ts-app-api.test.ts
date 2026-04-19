@@ -14,6 +14,7 @@ import {
   importBatchRecorded,
   personRegistered,
   raceRegistered,
+  raceRolledBack,
   resetSeqCounter,
   teamRegistered,
 } from "../helpers/event-factories.ts";
@@ -250,6 +251,50 @@ describe("TsAppApi standings and exports", () => {
     expect(cell0!.points).toBe(10);
     expect(cell1!.distanceKm).toBe(8);
     expect(cell1!.points).toBe(14);
+  }, 30_000);
+
+  it("getStandings raceNos list skips rolled-back races but preserves later race_no values", async () => {
+    resetSeqCounter();
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Rollback raceNos" });
+    const repo = await getSeasonRepository();
+    const category = { duration: "hour" as const, division: "men" as const };
+    await repo.saveImportedSeason(
+      { season_id: created.seasonId, label: created.label, created_at: new Date().toISOString() },
+      [
+        personRegistered({ person_id: "p-rbnos" }),
+        teamRegistered({ team_id: "t-rbnos", member_person_ids: ["p-rbnos"], team_kind: "solo" }),
+        ...([1, 2, 3, 4, 5] as const).flatMap((n) => {
+          const batch = `batch-rb-${n}`;
+          const raceId = `race-rb-${n}`;
+          return [
+            importBatchRecorded({ import_batch_id: batch }),
+            raceRegistered({
+              race_event_id: raceId,
+              import_batch_id: batch,
+              category,
+              race_no: n,
+              entries: [
+                defaultEntry({
+                  entry_id: `e-rb-${n}`,
+                  team_id: "t-rbnos",
+                  points: 10,
+                  distance_m: 5000,
+                }),
+              ],
+            }),
+          ];
+        }),
+        raceRolledBack({ race_event_id: "race-rb-3", reason: "test" }),
+      ],
+    );
+
+    await api.openSeason(created.seasonId);
+    const standings = await api.getStandings(created.seasonId);
+    const cat = standings.categories.find((c) => c.key === "hour:men");
+    expect(cat?.raceNos).toEqual([1, 2, 4, 5]);
+    const rows = standings.rowsByCategory["hour:men"] ?? [];
+    expect(rows[0]?.raceCells).toHaveLength(4);
   }, 30_000);
 });
 

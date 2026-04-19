@@ -52,14 +52,31 @@ function formatYobLabel(row: StandingsRow): string {
 interface StandingsDetailTableProps {
   rows: StandingsRow[];
   raceColumnCount: number;
+  /** Per-column `race_no` (aligned with `raceColumnCount`; `null` = padded column). Omitted → headers `1…n`. */
+  raceColumnHeaders?: readonly (number | null)[];
   showExcludedColumn?: boolean;
   onToggleExcluded?: (row: StandingsRow) => void;
   onEditRow?: (row: StandingsRow) => void;
 }
 
+function raceGroupHeaderLabel(
+  index: number,
+  raceColumnHeaders: readonly (number | null)[] | undefined,
+): string {
+  if (raceColumnHeaders && index < raceColumnHeaders.length) {
+    const raceNo = raceColumnHeaders[index];
+    if (raceNo != null) {
+      return STR.views.standings.headerRaceGroup(raceNo);
+    }
+    return "\u00a0";
+  }
+  return STR.views.standings.headerRaceGroup(index + 1);
+}
+
 export function StandingsDetailTable({
   rows,
   raceColumnCount,
+  raceColumnHeaders,
   showExcludedColumn = false,
   onToggleExcluded,
   onEditRow,
@@ -93,11 +110,11 @@ export function StandingsDetailTable({
             <th>{STR.views.standings.club}</th>
             {Array.from({ length: raceColumnCount }, (_, index) => (
               <th
-                key={`group-race-${index + 1}`}
+                key={`group-race-${index}-${raceColumnHeaders?.[index] ?? "seq"}`}
                 colSpan={2}
                 className="ui-table--standings-detail__group"
               >
-                {STR.views.standings.headerRaceGroup(index + 1)}
+                {raceGroupHeaderLabel(index, raceColumnHeaders)}
               </th>
             ))}
             <th colSpan={2} className="ui-table--standings-detail__group ui-table--standings-detail__group--total">

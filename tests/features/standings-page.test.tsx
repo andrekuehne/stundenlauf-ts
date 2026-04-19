@@ -26,8 +26,22 @@ const standingsData: StandingsData = {
     lastUpdatedAt: "2025-04-08T12:34:00Z",
   },
   categories: [
-    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 3, importedRuns: 2 },
-    { key: "hour:women", label: "Frauen 1", description: "desc", participantCount: 2, importedRuns: 4 },
+    {
+      key: "half_hour:women",
+      label: "Frauen 1/2",
+      description: "desc",
+      participantCount: 3,
+      importedRuns: 2,
+      raceNos: [1, 2],
+    },
+    {
+      key: "hour:women",
+      label: "Frauen 1",
+      description: "desc",
+      participantCount: 2,
+      importedRuns: 4,
+      raceNos: [1, 2, 3, 4],
+    },
   ],
   rowsByCategory: {
     "half_hour:women": [
@@ -43,7 +57,6 @@ const standingsData: StandingsData = {
         raceCells: [
           { distanceKm: 4.5, points: 9, countsTowardTotal: true },
           { distanceKm: 4.5, points: 9, countsTowardTotal: true },
-          null, null, null,
         ],
         excluded: false,
       },
@@ -59,7 +72,6 @@ const standingsData: StandingsData = {
         raceCells: [
           { distanceKm: 5.0, points: 10, countsTowardTotal: true },
           { distanceKm: 5.0, points: 10, countsTowardTotal: true },
-          null, null, null,
         ],
         excluded: true,
       },
@@ -75,7 +87,6 @@ const standingsData: StandingsData = {
         raceCells: [
           { distanceKm: 4.0, points: 8, countsTowardTotal: true },
           { distanceKm: 4.0, points: 8, countsTowardTotal: true },
-          null, null, null,
         ],
         excluded: false,
       },
@@ -95,7 +106,6 @@ const standingsData: StandingsData = {
           { distanceKm: 3.5, points: 7, countsTowardTotal: true },
           { distanceKm: 3.5, points: 7, countsTowardTotal: true },
           { distanceKm: 3.5, points: 7, countsTowardTotal: true },
-          null,
         ],
         excluded: false,
       },
@@ -113,7 +123,6 @@ const standingsData: StandingsData = {
           { distanceKm: 3.0, points: 6, countsTowardTotal: true },
           { distanceKm: 3.0, points: 6, countsTowardTotal: true },
           { distanceKm: 3.0, points: 6, countsTowardTotal: true },
-          null,
         ],
         excluded: false,
       },
@@ -238,7 +247,7 @@ describe("StandingsPage", () => {
 
     const racesCard = screen.getByTestId("standings-kpi-races");
     expect(within(racesCard).getByText("Läufe importiert")).toBeInTheDocument();
-    expect(within(racesCard).getByText("2 / 5")).toBeInTheDocument();
+    expect(within(racesCard).getByText("2 / 4")).toBeInTheDocument();
 
     const excludedCard = screen.getByTestId("standings-kpi-excluded");
     expect(within(excludedCard).getByText("Außer Wertung")).toBeInTheDocument();
@@ -308,7 +317,7 @@ describe("StandingsPage", () => {
     const hourCols = Array.from(screen.getByRole("table").querySelectorAll("col"));
 
     expect(halfHourCols.length).toBe(hourCols.length);
-    expect(halfHourCols.length).toBe(3 + 2 * 5 + 2);
+    expect(halfHourCols.length).toBe(3 + 2 * 4 + 2);
   });
 
   it("falls back to a 5-race floor when no category has imported runs yet", async () => {
@@ -317,7 +326,14 @@ describe("StandingsPage", () => {
       getStandings: vi.fn(async () => ({
         ...standingsData,
         categories: [
-          { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 0, importedRuns: 0 },
+          {
+            key: "half_hour:women",
+            label: "Frauen 1/2",
+            description: "desc",
+            participantCount: 0,
+            importedRuns: 0,
+            raceNos: [],
+          },
         ],
         rowsByCategory: { "half_hour:women": [] },
       })),
@@ -345,13 +361,59 @@ describe("StandingsPage", () => {
 
     expect(within(table).getByRole("columnheader", { name: "1. Lauf" })).toHaveAttribute("colspan", "2");
     expect(within(table).getByRole("columnheader", { name: "Gesamt" })).toHaveAttribute("colspan", "2");
-    expect(within(table).getAllByRole("columnheader", { name: "km" })).toHaveLength(6);
-    expect(within(table).getAllByRole("columnheader", { name: "Pkt" })).toHaveLength(6);
+    expect(within(table).getAllByRole("columnheader", { name: "km" })).toHaveLength(5);
+    expect(within(table).getAllByRole("columnheader", { name: "Pkt" })).toHaveLength(5);
 
     const doroRow = within(table).getByText("Doro Team").closest("tr") as HTMLTableRowElement;
     expect(within(doroRow).getByText("Doro Team")).toBeInTheDocument();
     expect(within(doroRow).getByText("(1985)")).toBeInTheDocument();
     expect(within(doroRow).queryByText("Doro Team (1985)")).not.toBeInTheDocument();
+  });
+
+  it("labels race columns by effective race_no when a middle race is rolled back", async () => {
+    selectedCategoryKey = "hour:women";
+    apiMock = {
+      ...apiMock,
+      getStandings: vi.fn(async () => ({
+        ...standingsData,
+        categories: [
+          {
+            key: "hour:women",
+            label: "Frauen 1",
+            description: "desc",
+            participantCount: 1,
+            importedRuns: 4,
+            raceNos: [1, 2, 4, 5],
+          },
+        ],
+        rowsByCategory: {
+          "hour:women": [
+            {
+              rank: 1,
+              team: "Doro Team",
+              teamId: "team-doro",
+              yob: 1985,
+              club: "SV Anders",
+              distanceKm: 14,
+              points: 28,
+              races: 4,
+              raceCells: [
+                { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+                { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+                { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+                { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+              ],
+              excluded: false,
+            },
+          ],
+        },
+      })),
+    };
+    render(<StandingsPage />);
+    await waitFor(() => { expect(screen.getByRole("columnheader", { name: "5. Lauf" })).toBeInTheDocument(); });
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "4. Lauf" })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "3. Lauf" })).not.toBeInTheDocument();
   });
 
   it("places excluded rows at the bottom of the list with rank dash and muted styling", async () => {

@@ -37,6 +37,8 @@ export interface StandingsCategory {
   description: string;
   participantCount: number;
   importedRuns: number;
+  /** Effective `race_no` values for each per-race column (same order as row `raceCells`). */
+  raceNos: readonly number[];
 }
 
 export interface StandingsSummary {
