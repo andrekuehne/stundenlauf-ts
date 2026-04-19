@@ -401,6 +401,58 @@ describe("TsAppApi history workflows", () => {
     expect(after.importBatches).toHaveLength(0);
     expect(after.rows).toHaveLength(0);
   });
+
+  it("grouped rollback of one batch leaves later batches intact (cross-category safe)", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2034");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({ import_batch_id: "batch-couples", source_file: "paare-lauf1.xlsx", source_sha256: "sha-c1" }),
+      raceRegistered({
+        race_event_id: "race-couples",
+        import_batch_id: "batch-couples",
+        category: { duration: "hour", division: "couples_mixed" },
+        race_no: 1,
+        entries: [],
+      }),
+      importBatchRecorded({ import_batch_id: "batch-singles", source_file: "einzel-lauf1.xlsx", source_sha256: "sha-s1" }),
+      raceRegistered({
+        race_event_id: "race-singles",
+        import_batch_id: "batch-singles",
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [],
+      }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const before = await api.getHistory(season.season_id);
+    expect(before.importBatches).toHaveLength(2);
+    const couplesBatch = before.importBatches.find((b) => b.importBatchId === "batch-couples");
+    if (!couplesBatch) throw new Error("Expected batch-couples");
+    expect(couplesBatch.state).toBe("active");
+    expect(couplesBatch.categoryLabel).toBe("60 Minuten Paare Mixed");
+
+    const result = await api.rollbackHistory(season.season_id, {
+      mode: "grouped",
+      anchorSeq: couplesBatch.anchorSeq,
+      importBatchId: "batch-couples",
+      reason: "test.cross-category-rollback",
+    });
+    expect(result.severity).toBe("success");
+
+    const after = await api.getHistory(season.season_id);
+    // Event log grows (append-only), not shrinks
+    expect(after.rows.length).toBeGreaterThan(before.rows.length);
+    // Singles batch is still present and active
+    expect(after.importBatches).toHaveLength(2);
+    const singlesBatchAfter = after.importBatches.find((b) => b.importBatchId === "batch-singles");
+    expect(singlesBatchAfter?.state).toBe("active");
+    // Couples batch is now rolled_back
+    const couplesBatchAfter = after.importBatches.find((b) => b.importBatchId === "batch-couples");
+    expect(couplesBatchAfter?.state).toBe("rolled_back");
+  });
 });
 
 describe("TsAppApi import workflows", () => {

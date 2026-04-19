@@ -50,10 +50,11 @@ export function HistoryPage() {
     const { batch } = confirmDialog;
     setBusyBatchId(batch.importBatchId);
     try {
-      const result = await api.hardResetHistoryToSeq(shellData.selectedSeasonId, {
+      const result = await api.rollbackHistory(shellData.selectedSeasonId, {
+        mode: "grouped",
         anchorSeq: batch.anchorSeq,
-        truncateMode: "exclusive",
-        reason: "ui.history.reset_before_import",
+        importBatchId: batch.importBatchId,
+        reason: "ui.history.rollback_batch",
       });
       setStatus({ severity: result.severity, source: "history", message: result.message });
       setConfirmDialog(null);
@@ -82,12 +83,14 @@ export function HistoryPage() {
           <button
             type="button"
             className="button button--ghost button--danger"
-            disabled={busyBatchId === row.importBatchId}
+            disabled={busyBatchId === row.importBatchId || row.state !== "active"}
             onClick={() => {
               setConfirmDialog({ batch: row });
             }}
           >
-            {STR.views.history.actionHardReset}
+            {row.state === "rolled_back"
+              ? STR.views.history.rolledBack
+              : STR.views.history.actionHardReset}
           </button>
         ),
       },
@@ -125,10 +128,10 @@ export function HistoryPage() {
         <div className="confirm-modal__backdrop" role="presentation">
           <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="reset-confirm-title">
             <div className="confirm-modal__header">
-              <h2 id="reset-confirm-title">{STR.views.history.hardResetConfirmTitle}</h2>
+              <h2 id="reset-confirm-title">{STR.views.history.importRollbackConfirmTitle}</h2>
             </div>
             <div className="confirm-modal__body">
-              <p>{STR.views.history.hardResetConfirmBody}</p>
+              <p>{STR.views.history.importRollbackConfirmBody}</p>
               <p>
                 <strong>{STR.views.history.hardResetConfirmFile(confirmDialog.batch.sourceFile)}</strong>
               </p>

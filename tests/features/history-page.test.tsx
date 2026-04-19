@@ -43,6 +43,8 @@ const historyData: HistoryData = {
       sourceFile: "Ergebnisliste_Lauf1.xlsx",
       recordedAt: new Date("2026-04-01T10:00:00").toISOString(),
       anchorSeq: 10,
+      state: "active",
+      categoryLabel: "60 Minuten Herren",
     },
   ],
 };
@@ -110,11 +112,11 @@ describe("HistoryPage", () => {
     expect(setSidebarControls).not.toHaveBeenCalled();
   });
 
-  it("opens confirmation dialog when reset button is clicked", async () => {
+  it("opens confirmation dialog when rollback button is clicked", async () => {
     render(<HistoryPage />);
     await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
-    const resetButton = screen.getByRole("button", { name: /vor diesem import zurücksetzen/i });
-    fireEvent.click(resetButton);
+    const rollbackButton = screen.getByRole("button", { name: /import zurückrollen/i });
+    fireEvent.click(rollbackButton);
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog.textContent).toMatch(/Ergebnisliste_Lauf1\.xlsx/);
@@ -123,26 +125,38 @@ describe("HistoryPage", () => {
   it("cancels confirmation dialog without calling the API", async () => {
     render(<HistoryPage />);
     await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: /vor diesem import zurücksetzen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /import zurückrollen/i }));
     fireEvent.click(screen.getByRole("button", { name: /abbrechen/i }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(apiMock.hardResetHistoryToSeq).not.toHaveBeenCalled();
+    expect(apiMock.rollbackHistory).not.toHaveBeenCalled();
   });
 
-  it("calls hardResetHistoryToSeq with exclusive mode on confirmation", async () => {
+  it("calls rollbackHistory in grouped mode on confirmation", async () => {
     render(<HistoryPage />);
     await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
-    fireEvent.click(screen.getByRole("button", { name: /vor diesem import zurücksetzen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /import zurückrollen/i }));
     fireEvent.click(screen.getByRole("button", { name: /bestätigen/i }));
     await waitFor(() => {
-      expect(apiMock.hardResetHistoryToSeq).toHaveBeenCalledWith(
+      expect(apiMock.rollbackHistory).toHaveBeenCalledWith(
         "season-1",
-        expect.objectContaining({ anchorSeq: 10, truncateMode: "exclusive" }),
+        expect.objectContaining({ mode: "grouped", anchorSeq: 10, importBatchId: "batch-1" }),
       );
     });
     await waitFor(() => {
       expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "history" }));
     });
+  });
+
+  it("disables rollback button for an already rolled-back batch", async () => {
+    const rolledBackData: HistoryData = {
+      ...historyData,
+      importBatches: [{ ...historyData.importBatches[0]!, state: "rolled_back" }],
+    };
+    (apiMock.getHistory as ReturnType<typeof vi.fn>).mockResolvedValue(rolledBackData);
+    render(<HistoryPage />);
+    await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
+    const rollbackButton = screen.getByRole("button", { name: /zurückgerollt/i });
+    expect(rollbackButton).toBeDisabled();
   });
 
   it("does not call getHistory when there is no selected season", () => {

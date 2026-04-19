@@ -256,8 +256,11 @@ export interface ImportBatchSummary {
   importBatchId: string;
   sourceFile: string;
   recordedAt: string;
-  /** seq of the import_batch.recorded event — exclusive reset cuts here (removes this event and all later events) */
+  /** seq of the import_batch.recorded event */
   anchorSeq: number;
+  state: "active" | "rolled_back";
+  /** Human-readable label for the first race category in this batch (e.g. "60 Minuten Herren"), or null if none */
+  categoryLabel: string | null;
 }
 
 export interface HistoryData {

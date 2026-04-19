@@ -302,7 +302,7 @@ export const STR = {
       actionPreview: "Stand ansehen",
       actionRollbackAtomic: "Atomic rollback",
       actionRollbackGroup: "Gruppen rollback",
-      actionHardReset: "Vor diesem Import zurücksetzen",
+      actionHardReset: "Import zurückrollen",
       leavePreview: "Zurueck zum Live-Stand",
       loading: "Historie wird geladen...",
       noSeason: "Bitte zuerst eine Saison auswaehlen.",
@@ -327,7 +327,7 @@ export const STR = {
       noAuditRows: "Keine Korrekturen protokolliert.",
       importRollbackConfirmTitle: "Import zurückrollen?",
       importRollbackConfirmBody:
-        "Der ausgewählte Import und zugehörige Läufe werden als zurückgerollt markiert.",
+        "Die Ergebnisse dieses Imports werden aus der Wertung genommen. Spätere Imports anderer Kategorien bleiben unberührt.",
       rollbackConfirmBodyWithCount: (count: number) =>
         `Die Ergebnisse aller ${count} Läufe aus dieser Datei werden aus der Wertung entfernt und neu berechnet.`,
       rollbackDone: (count: number) => `Datei-Import wurde zurückgenommen (${count} Läufe).`,

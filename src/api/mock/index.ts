@@ -637,6 +637,12 @@ function cloneHistoryData(record: HistoryRecord, query?: HistoryQuery): HistoryD
       ...row,
       actionability: { ...row.actionability },
     }));
+  const rolledBackBatchIds = new Set(
+    record.rows
+      .filter((row) => row.type === "import_batch.rolled_back")
+      .map((row) => row.importBatchId)
+      .filter((id): id is string => id != null),
+  );
   const importBatches = record.rows
     .filter((row) => row.type === "import_batch.recorded")
     .map((row) => ({
@@ -644,6 +650,8 @@ function cloneHistoryData(record: HistoryRecord, query?: HistoryQuery): HistoryD
       sourceFile: row.summary,
       recordedAt: row.recordedAt,
       anchorSeq: row.seq,
+      state: rolledBackBatchIds.has(row.importBatchId ?? "") ? ("rolled_back" as const) : ("active" as const),
+      categoryLabel: null,
     }));
   return {
     seasonId: record.seasonId,

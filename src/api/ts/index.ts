@@ -1258,11 +1258,17 @@ class TsAppApi implements AppApi {
       .filter((event) => event.type === "import_batch.recorded")
       .map((event) => {
         const payload = event.payload as { import_batch_id: string; source_file: string };
+        const batchState = snapshot.state.import_batches.get(payload.import_batch_id)?.state ?? "active";
+        const batchRace = [...snapshot.state.race_events.values()].find(
+          (race) => race.import_batch_id === payload.import_batch_id,
+        );
         return {
           importBatchId: payload.import_batch_id,
           sourceFile: payload.source_file,
           recordedAt: event.recorded_at,
           anchorSeq: event.seq,
+          state: batchState,
+          categoryLabel: batchRace ? categoryLabel(batchRace.category) : null,
         };
       });
 
