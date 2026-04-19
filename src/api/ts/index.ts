@@ -860,11 +860,25 @@ class TsAppApi implements AppApi {
       standings.category_tables.map((table) => {
         const excludedTeamIds = exclusionsForCategory(snapshot.state, table.category_key);
         const marked = markExclusions(table, excludedTeamIds);
+        const orderedRaces = (racesByCategory.get(table.category_key) ?? [])
+          .slice()
+          .sort((a, b) => a.race_no - b.race_no || a.race_event_id.localeCompare(b.race_event_id));
         const rows: StandingsRow[] = marked.rows.map((row) => {
           const team = snapshot.state.teams.get(row.team_id);
           const label = team
             ? teamLabel(team, snapshot.state)
             : { name: row.team_id, club: "—" };
+          const raceCells = orderedRaces.map((race) => {
+            const contribution = row.race_contributions.find(
+              (c) => c.race_event_id === race.race_event_id,
+            ) ?? null;
+            if (!contribution) return null;
+            return {
+              distanceKm: Math.round((contribution.distance_m / 1000) * 1000) / 1000,
+              points: contribution.points,
+              countsTowardTotal: contribution.counts_toward_total,
+            };
+          });
           return {
             rank: row.rank,
             team: label.name,
@@ -875,6 +889,7 @@ class TsAppApi implements AppApi {
             points: row.total_points,
             distanceKm: Math.round((row.total_distance_m / 1000) * 1000) / 1000,
             races: row.race_contributions.filter((entry) => entry.counts_toward_total).length,
+            raceCells,
             excluded: row.excluded,
           };
         });
@@ -1239,6 +1254,24 @@ class TsAppApi implements AppApi {
       [...raceMap.values()].find((race) => isEffectiveRace(snapshot.state, race.race_event_id)) ??
       null;
 
+    const importBatches = snapshot.eventLog
+      .filter((event) => event.type === "import_batch.recorded")
+      .map((event) => {
+        const payload = event.payload as { import_batch_id: string; source_file: string };
+        const batchState = snapshot.state.import_batches.get(payload.import_batch_id)?.state ?? "active";
+        const batchRace = [...snapshot.state.race_events.values()].find(
+          (race) => race.import_batch_id === payload.import_batch_id,
+        );
+        return {
+          importBatchId: payload.import_batch_id,
+          sourceFile: payload.source_file,
+          recordedAt: event.recorded_at,
+          anchorSeq: event.seq,
+          state: batchState,
+          categoryLabel: batchRace ? categoryLabel(batchRace.category) : null,
+        };
+      });
+
     return {
       seasonId,
       seasonLabel: snapshot.descriptor.label,
@@ -1251,6 +1284,7 @@ class TsAppApi implements AppApi {
           }
         : null,
       rows,
+      importBatches,
     };
   }
 
@@ -1354,7 +1388,8 @@ class TsAppApi implements AppApi {
     if (anchorIndex < 0) {
       throw new Error("Der ausgewählte Verlaufspunkt wurde nicht gefunden.");
     }
-    const nextEvents = eventLog.slice(0, anchorIndex + 1);
+    const exclusive = input.truncateMode === "exclusive";
+    const nextEvents = exclusive ? eventLog.slice(0, anchorIndex) : eventLog.slice(0, anchorIndex + 1);
     await repo.clearEventLog(seasonId);
     if (nextEvents.length > 0) {
       await repo.appendEvents(seasonId, nextEvents);

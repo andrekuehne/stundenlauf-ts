@@ -4,6 +4,64 @@ Static-site TypeScript/React port of the Stundenlauf race-series management app.
 
 See `PROJECT_PLAN.md` for the full vision, requirements, and milestone roadmap.
 
+## Kurzer Überblick: Ablauf in der Oberfläche
+
+Die folgenden Screenshots entstehen automatisch mit dem Playwright-Test `e2e/readme-main-screen.spec.ts` und liegen unter `docs/readme/`. Sie zeigen einen typischen Weg von der Saisonverwaltung über den Excel-Import bis zur Auswertung.
+
+**Saisonübersicht:** Nach dem Start siehst du die Liste bestehender Saisons und kannst Metadaten wie importierte Läufe einsehen.
+
+![Saisonübersicht](docs/readme/01-season-overview.png)
+
+**Neue Saison anlegen:** Über „Saison anlegen“ öffnet sich der Dialog; dort gibst du den Saisonnamen ein und erstellst die Saison.
+
+![Dialog Neue Saison](docs/readme/02-season-create-modal.png)
+
+**Import:** Nach dem Anlegen landest du im Import-Tab. Hier wählst du Ergebnisdatei, Disziplin (Einzel/Paare) und den Lauf-Kontext, bevor du zu den Zuordnungen gehst.
+
+![Import – Datei und Kontext](docs/readme/03-import-landing.png)
+
+**Datei gewählt:** Sobald eine passende Excel-Datei ausgewählt ist, wird die Auswahl zusammengefasst und „Weiter zu Zuordnungen“ wird aktiv.
+
+![Import – Datei ausgewählt](docs/readme/04-import-file-selected.png)
+
+**Zuordnungen prüfen:** Im Review-Schritt vergleichst du importierte Zeilen mit bestehenden Teilnehmenden bzw. Teams und arbeitest die Vorschläge ab.
+
+![Import – Zuordnungen / Review](docs/readme/05-import-review-matches.png)
+
+**Import abgeschlossen:** Nach „Import abschließen“ kehrst du zur Dateiauswahl zurück; die Saison enthält nun die importierten Ergebnisse.
+
+![Import – nach Abschluss](docs/readme/06-import-after-finalize.png)
+
+**Zweiter Lauf (Beispiel):** Für einen weiteren Meisterschaftslauf wählst du erneut eine Ergebnisliste — hier ein zweites Einzel-Workbook — und gehst wieder zu den Zuordnungen.
+
+![Import – zweite Datei ausgewählt](docs/readme/07-import-mw2-file-selected.png)
+
+**Zuordnungen beim Folgeimport:** Beim zweiten Import tauchen oft Zuordnungen zu bereits bekannten Starterinnen/Startern auf; du prüfst und bestätigst die Vorschläge.
+
+![Import – Zuordnungen zweiter Lauf](docs/readme/08-import-mw2-zuordnungen.png)
+
+**Kandidat gewählt:** Ein Klick auf einen Merge-Kandidaten markiert die gewünschte Zuordnung, bevor du Daten korrigierst oder weiterklickst.
+
+![Import – Merge-Kandidat ausgewählt](docs/readme/09-import-mw2-candidate-selected.png)
+
+**Daten korrigieren:** Über „Daten korrigieren“ öffnet sich ein Dialog, in dem du Stammdaten (z. B. Name, Verein) anpassen kannst, ohne die Rohdatei zu ändern.
+
+![Import – Korrekturdialog](docs/readme/10-import-correction-modal.png)
+
+**Weiter im Review:** Nach dem Speichern schließt sich der Dialog; mit „Nächste“ arbeitest du die restlichen Review-Einträge ab.
+
+![Import – nach Speichern und Weiter](docs/readme/11-import-after-save-and-next.png)
+
+**Zusammenfassung:** Auf der Import-Zusammenfassung siehst du eine Übersicht der Änderungen, bevor du den Import endgültig abschließt.
+
+![Import – Zusammenfassung](docs/readme/12-import-summary.png)
+
+**Auswertung:** Unter „Auswertung“ erscheinen Gesamtwertung und Laufübersicht nach den importierten Ergebnissen und den Regeln der Serie.
+
+![Auswertung](docs/readme/13-standings-auswertung.png)
+
+---
+
 ## Prerequisites
 
 | Tool | Version | Notes |

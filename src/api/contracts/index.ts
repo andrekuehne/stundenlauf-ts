@@ -47,6 +47,12 @@ export interface StandingsSummary {
   lastUpdatedAt: string;
 }
 
+export interface StandingsRaceCell {
+  distanceKm: number;
+  points: number;
+  countsTowardTotal: boolean;
+}
+
 export interface StandingsRow {
   rank: number | null;
   team: string;
@@ -57,6 +63,7 @@ export interface StandingsRow {
   points: number;
   distanceKm: number;
   races: number;
+  raceCells: (StandingsRaceCell | null)[];
   note?: string;
   excluded?: boolean;
 }
@@ -245,11 +252,23 @@ export interface HistoryRaceContext {
   raceDateLabel: string;
 }
 
+export interface ImportBatchSummary {
+  importBatchId: string;
+  sourceFile: string;
+  recordedAt: string;
+  /** seq of the import_batch.recorded event */
+  anchorSeq: number;
+  state: "active" | "rolled_back";
+  /** Human-readable label for the first race category in this batch (e.g. "60 Minuten Herren"), or null if none */
+  categoryLabel: string | null;
+}
+
 export interface HistoryData {
   seasonId: string;
   seasonLabel: string;
   raceContext: HistoryRaceContext | null;
   rows: HistoryRow[];
+  importBatches: ImportBatchSummary[];
 }
 
 export interface HistoryPreviewState {
@@ -274,6 +293,11 @@ export interface HistoryRollbackInput {
 export interface HistoryHardResetInput {
   anchorSeq: number;
   reason: string;
+  /**
+   * "inclusive" (default): keep events up to and including anchorSeq.
+   * "exclusive": drop anchorSeq and all subsequent events (used for "reset before this import").
+   */
+  truncateMode?: "inclusive" | "exclusive";
 }
 
 export interface AppApi {

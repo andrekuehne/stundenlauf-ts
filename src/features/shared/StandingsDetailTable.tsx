@@ -1,29 +1,13 @@
 import { Fragment } from "react";
-import type { StandingsRow } from "@/api/contracts/index.ts";
+import type { StandingsRaceCell, StandingsRow } from "@/api/contracts/index.ts";
 import { formatKm } from "@/app/format.ts";
 import { STR } from "@/app/strings.ts";
 
-type RaceResult = { distanceKm: number; points: number } | null;
-type StandingsViewRow = StandingsRow & { raceResults: RaceResult[] };
 type StandingsColumnWidth = { key: string; width: string };
 
-function buildRaceResults(row: StandingsRow): RaceResult[] {
-  const totalRaces = Math.max(0, row.races);
-  if (totalRaces === 0) {
-    return [];
-  }
-  const evenlyDistributedDistance = row.distanceKm / totalRaces;
-  const evenlyDistributedPoints = Math.floor(row.points / totalRaces);
-  const remainderPoints = row.points - evenlyDistributedPoints * totalRaces;
-  return Array.from({ length: totalRaces }, (_, index) => ({
-    distanceKm: evenlyDistributedDistance,
-    points: evenlyDistributedPoints + (index < remainderPoints ? 1 : 0),
-  }));
-}
-
-function partitionByExclusion(rows: StandingsViewRow[]): StandingsViewRow[] {
-  const included: StandingsViewRow[] = [];
-  const excluded: StandingsViewRow[] = [];
+function partitionByExclusion(rows: StandingsRow[]): StandingsRow[] {
+  const included: StandingsRow[] = [];
+  const excluded: StandingsRow[] = [];
   for (const row of rows) {
     if (row.excluded) {
       excluded.push(row);
@@ -80,9 +64,7 @@ export function StandingsDetailTable({
   onToggleExcluded,
   onEditRow,
 }: StandingsDetailTableProps) {
-  const viewRows = partitionByExclusion(
-    rows.map((row) => ({ ...row, raceResults: buildRaceResults(row) })),
-  );
+  const viewRows = partitionByExclusion(rows);
 
   const columnWidths = buildColumnWidths(raceColumnCount, showExcludedColumn);
   // rank + optional a.W. + name + club + (raceColumnCount * 2) + total km + total points
@@ -218,7 +200,7 @@ export function StandingsDetailTable({
                     )}
                   </td>
                   {Array.from({ length: raceColumnCount }, (_, index) => {
-                    const result = row.raceResults[index] ?? null;
+                    const result: StandingsRaceCell | null = row.raceCells[index] ?? null;
                     const isPlaceholder = result == null;
                     const placeholderClass = isPlaceholder
                       ? " ui-table--standings-detail__cell--placeholder"

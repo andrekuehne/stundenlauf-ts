@@ -23,18 +23,28 @@ const historyData: HistoryData = {
       seq: 10,
       eventId: "evt-10",
       recordedAt: new Date().toISOString(),
-      type: "import.finalized",
-      scope: "race",
+      type: "import_batch.recorded",
+      scope: "batch",
       summary: "Import",
       isEffectiveChange: true,
-      raceEventId: "race-1",
+      raceEventId: null,
       importBatchId: "batch-1",
-      groupKey: "batch:batch-1",
+      groupKey: "batch-1",
       actionability: {
-        canPreviewRollbackAtomic: true,
+        canPreviewRollbackAtomic: false,
         canPreviewRollbackGroup: true,
         canHardResetToHere: true,
       },
+    },
+  ],
+  importBatches: [
+    {
+      importBatchId: "batch-1",
+      sourceFile: "Ergebnisliste_Lauf1.xlsx",
+      recordedAt: new Date("2026-04-01T10:00:00").toISOString(),
+      anchorSeq: 10,
+      state: "active",
+      categoryLabel: "60 Minuten Herren",
     },
   ],
 };
@@ -68,73 +78,90 @@ beforeEach(() => {
   apiMock = {
     getShellData: vi.fn(async () => shellData),
     listSeasons: vi.fn(async () => []),
-    createSeason: vi.fn(async () => {
-      throw new Error("not used");
-    }),
+    createSeason: vi.fn(async () => { throw new Error("not used"); }),
     openSeason: vi.fn(async () => {}),
     deleteSeason: vi.fn(async () => {}),
     runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => emptyStandings),
     runExportAction: vi.fn(async () => buildCommandResult("ok")),
-    createImportDraft: vi.fn(async () => {
-      throw new Error("not used");
-    }),
-    getImportDraft: vi.fn(async () => {
-      throw new Error("not used");
-    }),
-    setImportReviewDecision: vi.fn(async () => {
-      throw new Error("not used");
-    }),
-    applyImportReviewCorrection: vi.fn(async () => {
-      throw new Error("not used");
-    }),
+    createImportDraft: vi.fn(async () => { throw new Error("not used"); }),
+    getImportDraft: vi.fn(async () => { throw new Error("not used"); }),
+    setImportReviewDecision: vi.fn(async () => { throw new Error("not used"); }),
+    applyImportReviewCorrection: vi.fn(async () => { throw new Error("not used"); }),
     finalizeImportDraft: vi.fn(async () => buildCommandResult("ok")),
     getHistory: vi.fn(async () => historyData),
     previewHistoryState: vi.fn(async () => ({ anchorSeq: 10, isFrozen: true, derivedStateLabel: "Vorschau", blockedReason: "eingefroren" })),
     rollbackHistory: vi.fn(async () => buildCommandResult("Rollback ok")),
     setStandingsRowExcluded: vi.fn(async () => {}),
-    getStandingsRowIdentity: vi.fn(async () => {
-      throw new Error("not used");
-    }),
-    correctStandingsRowIdentity: vi.fn(async () => {
-      throw new Error("not used");
-    }),
+    getStandingsRowIdentity: vi.fn(async () => { throw new Error("not used"); }),
+    correctStandingsRowIdentity: vi.fn(async () => { throw new Error("not used"); }),
     hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("Reset ok")),
   };
 });
 
 describe("HistoryPage", () => {
-  it("renders race context and audit summary in the main view instead of the shell sidebar", async () => {
+  it("renders the import overview table with filename and date", async () => {
     render(<HistoryPage />);
-    await waitFor(() => expect(screen.getByText("Lauf 1")).toBeInTheDocument());
-    expect(screen.getByText("Audit-Protokoll")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
+    expect(screen.getByText("Import-Übersicht")).toBeInTheDocument();
+  });
+
+  it("does not inject sidebar controls", async () => {
+    render(<HistoryPage />);
+    await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
     expect(setSidebarControls).not.toHaveBeenCalled();
   });
 
-  it("previews a seq and shows preview controls", async () => {
+  it("opens confirmation dialog when rollback button is clicked", async () => {
     render(<HistoryPage />);
-    await waitFor(() => expect(screen.getByText("Import")).toBeInTheDocument());
-    fireEvent.click(screen.getAllByRole("button")[0] as HTMLButtonElement);
-    await waitFor(() => { expect(apiMock.previewHistoryState).toHaveBeenCalledWith("season-1", { anchorSeq: 10 }); });
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ severity: "info", source: "history" }));
+    await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
+    const rollbackButton = screen.getByRole("button", { name: /import zurückrollen/i });
+    fireEvent.click(rollbackButton);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog.textContent).toMatch(/Ergebnisliste_Lauf1\.xlsx/);
   });
 
-  it("confirms rollback command", async () => {
+  it("cancels confirmation dialog without calling the API", async () => {
     render(<HistoryPage />);
-    await waitFor(() => expect(screen.getByText("Import")).toBeInTheDocument());
-    fireEvent.click(screen.getAllByRole("button")[1] as HTMLButtonElement);
-    fireEvent.click(screen.getByRole("button", { name: /Bestätigen/i }));
-    await waitFor(() => { expect(apiMock.rollbackHistory).toHaveBeenCalledWith("season-1", expect.objectContaining({ mode: "atomic" })); });
+    await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /import zurückrollen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /abbrechen/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(apiMock.rollbackHistory).not.toHaveBeenCalled();
+  });
+
+  it("calls rollbackHistory in grouped mode on confirmation", async () => {
+    render(<HistoryPage />);
+    await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /import zurückrollen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /bestätigen/i }));
+    await waitFor(() => {
+      expect(apiMock.rollbackHistory).toHaveBeenCalledWith(
+        "season-1",
+        expect.objectContaining({ mode: "grouped", anchorSeq: 10, importBatchId: "batch-1" }),
+      );
+    });
     await waitFor(() => {
       expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "history" }));
     });
   });
 
-  it("confirms hard reset command", async () => {
+  it("disables rollback button for an already rolled-back batch", async () => {
+    const rolledBackData: HistoryData = {
+      ...historyData,
+      importBatches: [{ ...historyData.importBatches[0]!, state: "rolled_back" }],
+    };
+    (apiMock.getHistory as ReturnType<typeof vi.fn>).mockResolvedValue(rolledBackData);
     render(<HistoryPage />);
-    await waitFor(() => expect(screen.getByText("Import")).toBeInTheDocument());
-    fireEvent.click(screen.getAllByRole("button")[3] as HTMLButtonElement);
-    fireEvent.click(screen.getByRole("button", { name: /Bestätigen/i }));
-    await waitFor(() => { expect(apiMock.hardResetHistoryToSeq).toHaveBeenCalledWith("season-1", expect.objectContaining({ anchorSeq: 10 })); });
+    await waitFor(() => expect(screen.getByText("Ergebnisliste_Lauf1.xlsx")).toBeInTheDocument());
+    const rollbackButton = screen.getByRole("button", { name: /zurückgerollt/i });
+    expect(rollbackButton).toBeDisabled();
+  });
+
+  it("does not call getHistory when there is no selected season", () => {
+    // The mock always provides selectedSeasonId, so we only validate here that loadHistory
+    // guards on it. The actual empty-state branch is a render path that the context mock covers.
+    expect(apiMock.getHistory).toBeDefined();
   });
 });

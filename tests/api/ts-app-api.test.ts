@@ -197,7 +197,60 @@ describe("TsAppApi standings and exports", () => {
     const exportResult = await liveApi.runExportAction(created.seasonId, "export_excel");
     expect(exportResult.severity).toBe("success");
     expect(triggerDownloadSpy).toHaveBeenCalledTimes(1);
-  });
+  }, 30_000);
+
+  it("getStandings raceCells reflect real per-race distance and points, not averaged totals", async () => {
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Stundenlauf 2029" });
+    const repo = await getSeasonRepository();
+    await repo.saveImportedSeason(
+      { season_id: created.seasonId, label: created.label, created_at: new Date().toISOString() },
+      [
+        personRegistered({
+          person_id: "person-cells",
+          given_name: "Test",
+          family_name: "Runner",
+          display_name: "Test Runner",
+          name_normalized: "test runner",
+          club: "Club X",
+          club_normalized: "club x",
+        }),
+        teamRegistered({ team_id: "team-cells", member_person_ids: ["person-cells"], team_kind: "solo" }),
+        importBatchRecorded({ import_batch_id: "batch-cells-1", source_file: "lauf1.xlsx", source_sha256: "sha1" }),
+        raceRegistered({
+          race_event_id: "race-cells-1",
+          import_batch_id: "batch-cells-1",
+          category: { duration: "hour", division: "men" },
+          race_no: 1,
+          entries: [defaultEntry({ entry_id: "e1", team_id: "team-cells", points: 10, distance_m: 5000 })],
+        }),
+        importBatchRecorded({ import_batch_id: "batch-cells-2", source_file: "lauf2.xlsx", source_sha256: "sha2" }),
+        raceRegistered({
+          race_event_id: "race-cells-2",
+          import_batch_id: "batch-cells-2",
+          category: { duration: "hour", division: "men" },
+          race_no: 2,
+          entries: [defaultEntry({ entry_id: "e2", team_id: "team-cells", points: 14, distance_m: 8000 })],
+        }),
+      ],
+    );
+
+    await api.openSeason(created.seasonId);
+    const standings = await api.getStandings(created.seasonId);
+    const rows = standings.rowsByCategory["hour:men"] ?? [];
+    const row = rows.find((r) => r.teamId === "team-cells");
+    expect(row).toBeDefined();
+    expect(row!.raceCells).toHaveLength(2);
+
+    const cell0 = row!.raceCells[0];
+    const cell1 = row!.raceCells[1];
+    expect(cell0).not.toBeNull();
+    expect(cell1).not.toBeNull();
+    expect(cell0!.distanceKm).toBe(5);
+    expect(cell0!.points).toBe(10);
+    expect(cell1!.distanceKm).toBe(8);
+    expect(cell1!.points).toBe(14);
+  }, 30_000);
 });
 
 describe("TsAppApi history workflows", () => {
@@ -251,6 +304,154 @@ describe("TsAppApi history workflows", () => {
       reason: "test.hard-reset",
     });
     expect(hardResetResult.severity).toBe("warn");
+  });
+
+  it("exposes importBatches derived from import_batch.recorded events", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2031");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({
+        import_batch_id: "batch-a",
+        source_file: "lauf-1.xlsx",
+        source_sha256: "sha-a",
+      }),
+      raceRegistered({
+        race_event_id: "race-a",
+        import_batch_id: "batch-a",
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [],
+      }),
+      importBatchRecorded({
+        import_batch_id: "batch-b",
+        source_file: "lauf-2.xlsx",
+        source_sha256: "sha-b",
+      }),
+      raceRegistered({
+        race_event_id: "race-b",
+        import_batch_id: "batch-b",
+        category: { duration: "hour", division: "women" },
+        race_no: 2,
+        entries: [],
+      }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+    const history = await api.getHistory(season.season_id);
+    expect(history.importBatches).toHaveLength(2);
+    expect(history.importBatches[0]?.importBatchId).toBe("batch-a");
+    expect(history.importBatches[0]?.sourceFile).toBe("lauf-1.xlsx");
+    expect(history.importBatches[1]?.importBatchId).toBe("batch-b");
+    expect(history.importBatches[1]?.sourceFile).toBe("lauf-2.xlsx");
+  });
+
+  it("exclusive hard reset removes the anchor event and all later events", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2032");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({ import_batch_id: "batch-x1", source_file: "lauf-1.xlsx", source_sha256: "sha-x1" }),
+      raceRegistered({ race_event_id: "race-x1", import_batch_id: "batch-x1", category: { duration: "hour", division: "men" }, race_no: 1, entries: [] }),
+      importBatchRecorded({ import_batch_id: "batch-x2", source_file: "lauf-2.xlsx", source_sha256: "sha-x2" }),
+      raceRegistered({ race_event_id: "race-x2", import_batch_id: "batch-x2", category: { duration: "hour", division: "women" }, race_no: 2, entries: [] }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const before = await api.getHistory(season.season_id);
+    const secondBatch = before.importBatches.find((b) => b.importBatchId === "batch-x2");
+    if (!secondBatch) throw new Error("Expected batch-x2");
+
+    const result = await api.hardResetHistoryToSeq(season.season_id, {
+      anchorSeq: secondBatch.anchorSeq,
+      truncateMode: "exclusive",
+      reason: "test.exclusive-reset",
+    });
+    expect(result.severity).toBe("warn");
+
+    const after = await api.getHistory(season.season_id);
+    expect(after.importBatches).toHaveLength(1);
+    expect(after.importBatches[0]?.importBatchId).toBe("batch-x1");
+    expect(after.rows.every((r) => !r.importBatchId?.includes("batch-x2"))).toBe(true);
+  });
+
+  it("exclusive hard reset on the first import yields an empty event log", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2033");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({ import_batch_id: "batch-only", source_file: "lauf-1.xlsx", source_sha256: "sha-only" }),
+      raceRegistered({ race_event_id: "race-only", import_batch_id: "batch-only", category: { duration: "hour", division: "men" }, race_no: 1, entries: [] }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const before = await api.getHistory(season.season_id);
+    const onlyBatch = before.importBatches[0];
+    if (!onlyBatch) throw new Error("Expected at least one import batch");
+
+    await api.hardResetHistoryToSeq(season.season_id, {
+      anchorSeq: onlyBatch.anchorSeq,
+      truncateMode: "exclusive",
+      reason: "test.exclusive-reset-first",
+    });
+
+    const after = await api.getHistory(season.season_id);
+    expect(after.importBatches).toHaveLength(0);
+    expect(after.rows).toHaveLength(0);
+  });
+
+  it("grouped rollback of one batch leaves later batches intact (cross-category safe)", async () => {
+    const repo = new InMemorySeasonRepository();
+    setSeasonRepositoryForTests(repo);
+    const season = await repo.createSeason("Stundenlauf 2034");
+    await repo.appendEvents(season.season_id, [
+      importBatchRecorded({ import_batch_id: "batch-couples", source_file: "paare-lauf1.xlsx", source_sha256: "sha-c1" }),
+      raceRegistered({
+        race_event_id: "race-couples",
+        import_batch_id: "batch-couples",
+        category: { duration: "hour", division: "couples_mixed" },
+        race_no: 1,
+        entries: [],
+      }),
+      importBatchRecorded({ import_batch_id: "batch-singles", source_file: "einzel-lauf1.xlsx", source_sha256: "sha-s1" }),
+      raceRegistered({
+        race_event_id: "race-singles",
+        import_batch_id: "batch-singles",
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [],
+      }),
+    ]);
+    const api = createTsAppApi();
+    await api.openSeason(season.season_id);
+
+    const before = await api.getHistory(season.season_id);
+    expect(before.importBatches).toHaveLength(2);
+    const couplesBatch = before.importBatches.find((b) => b.importBatchId === "batch-couples");
+    if (!couplesBatch) throw new Error("Expected batch-couples");
+    expect(couplesBatch.state).toBe("active");
+    expect(couplesBatch.categoryLabel).toBe("60 Minuten Paare Mixed");
+
+    const result = await api.rollbackHistory(season.season_id, {
+      mode: "grouped",
+      anchorSeq: couplesBatch.anchorSeq,
+      importBatchId: "batch-couples",
+      reason: "test.cross-category-rollback",
+    });
+    expect(result.severity).toBe("success");
+
+    const after = await api.getHistory(season.season_id);
+    // Event log grows (append-only), not shrinks
+    expect(after.rows.length).toBeGreaterThan(before.rows.length);
+    // Singles batch is still present and active
+    expect(after.importBatches).toHaveLength(2);
+    const singlesBatchAfter = after.importBatches.find((b) => b.importBatchId === "batch-singles");
+    expect(singlesBatchAfter?.state).toBe("active");
+    // Couples batch is now rolled_back
+    const couplesBatchAfter = after.importBatches.find((b) => b.importBatchId === "batch-couples");
+    expect(couplesBatchAfter?.state).toBe("rolled_back");
   });
 });
 

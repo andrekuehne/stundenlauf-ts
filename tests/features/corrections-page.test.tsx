@@ -39,6 +39,11 @@ const standingsData: StandingsData = {
         distanceKm: 9,
         points: 18,
         races: 2,
+        raceCells: [
+          { distanceKm: 4.5, points: 9, countsTowardTotal: true },
+          { distanceKm: 4.5, points: 9, countsTowardTotal: true },
+          null, null, null,
+        ],
         excluded: false,
       },
       {
@@ -50,6 +55,11 @@ const standingsData: StandingsData = {
         distanceKm: 10,
         points: 20,
         races: 2,
+        raceCells: [
+          { distanceKm: 5.0, points: 10, countsTowardTotal: true },
+          { distanceKm: 5.0, points: 10, countsTowardTotal: true },
+          null, null, null,
+        ],
         excluded: true,
       },
     ],
@@ -63,6 +73,11 @@ const standingsData: StandingsData = {
         distanceKm: 14,
         points: 28,
         races: 2,
+        raceCells: [
+          { distanceKm: 7.0, points: 14, countsTowardTotal: true },
+          { distanceKm: 7.0, points: 14, countsTowardTotal: true },
+          null, null, null,
+        ],
         excluded: false,
       },
     ],
