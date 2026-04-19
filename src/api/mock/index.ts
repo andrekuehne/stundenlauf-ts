@@ -119,7 +119,13 @@ function buildStandings(
       participantCount: 0,
       importedRuns: 0,
     },
-  ];
+  ].map((category) => ({
+    ...category,
+    raceNos:
+      category.importedRuns > 0
+        ? Array.from({ length: category.importedRuns }, (_, index) => index + 1)
+        : [],
+  }));
 
   return {
     seasonId,
@@ -692,7 +698,13 @@ function upsertImportedRun(record: MockSeasonRecord, fileName: string, category:
   record.standings.categories = record.standings.categories.map((cat) => {
     const isCouple = cat.label.includes("Paare");
     if ((category === "doubles" && isCouple) || (category === "singles" && !isCouple)) {
-      return { ...cat, importedRuns: Math.max(cat.importedRuns, raceNumber) };
+      const importedRuns = Math.max(cat.importedRuns, raceNumber);
+      return {
+        ...cat,
+        importedRuns,
+        raceNos:
+          importedRuns > 0 ? Array.from({ length: importedRuns }, (_, index) => index + 1) : [],
+      };
     }
     return cat;
   });

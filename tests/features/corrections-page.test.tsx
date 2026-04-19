@@ -25,8 +25,8 @@ const standingsData: StandingsData = {
     lastUpdatedAt: "2025-04-08T12:34:00Z",
   },
   categories: [
-    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 2, importedRuns: 2 },
-    { key: "hour:couples_mixed", label: "Paare Mix 1h", description: "desc", participantCount: 1, importedRuns: 2 },
+    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 2, importedRuns: 2, raceNos: [1, 2] },
+    { key: "hour:couples_mixed", label: "Paare Mix 1h", description: "desc", participantCount: 1, importedRuns: 2, raceNos: [1, 2] },
   ],
   rowsByCategory: {
     "half_hour:women": [
@@ -42,7 +42,6 @@ const standingsData: StandingsData = {
         raceCells: [
           { distanceKm: 4.5, points: 9, countsTowardTotal: true },
           { distanceKm: 4.5, points: 9, countsTowardTotal: true },
-          null, null, null,
         ],
         excluded: false,
       },
@@ -58,7 +57,6 @@ const standingsData: StandingsData = {
         raceCells: [
           { distanceKm: 5.0, points: 10, countsTowardTotal: true },
           { distanceKm: 5.0, points: 10, countsTowardTotal: true },
-          null, null, null,
         ],
         excluded: true,
       },
@@ -76,7 +74,6 @@ const standingsData: StandingsData = {
         raceCells: [
           { distanceKm: 7.0, points: 14, countsTowardTotal: true },
           { distanceKm: 7.0, points: 14, countsTowardTotal: true },
-          null, null, null,
         ],
         excluded: false,
       },
@@ -196,7 +193,7 @@ describe("CorrectionsPage", () => {
     expect(screen.getByText("Halbstunde")).toBeInTheDocument();
     expect(screen.queryByTestId("standings-meta")).not.toBeInTheDocument();
     expect(screen.getByTestId("corrections-kpi-teams")).toHaveTextContent("1");
-    expect(screen.getByTestId("corrections-kpi-races")).toHaveTextContent("2 / 5");
+    expect(screen.getByTestId("corrections-kpi-races")).toHaveTextContent("2 / 2");
     expect(screen.getByTestId("corrections-kpi-excluded")).toHaveTextContent("1");
     expect(screen.getByText("Außer Wertung")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "PDF exportieren" })).not.toBeInTheDocument();
