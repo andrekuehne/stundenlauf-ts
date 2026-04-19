@@ -47,6 +47,12 @@ export interface StandingsSummary {
   lastUpdatedAt: string;
 }
 
+export interface StandingsRaceCell {
+  distanceKm: number;
+  points: number;
+  countsTowardTotal: boolean;
+}
+
 export interface StandingsRow {
   rank: number | null;
   team: string;
@@ -57,6 +63,7 @@ export interface StandingsRow {
   points: number;
   distanceKm: number;
   races: number;
+  raceCells: (StandingsRaceCell | null)[];
   note?: string;
   excluded?: boolean;
 }

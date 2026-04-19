@@ -40,6 +40,11 @@ const standingsData: StandingsData = {
         distanceKm: 9,
         points: 18,
         races: 2,
+        raceCells: [
+          { distanceKm: 4.5, points: 9, countsTowardTotal: true },
+          { distanceKm: 4.5, points: 9, countsTowardTotal: true },
+          null, null, null,
+        ],
         excluded: false,
       },
       {
@@ -51,6 +56,11 @@ const standingsData: StandingsData = {
         distanceKm: 10,
         points: 20,
         races: 2,
+        raceCells: [
+          { distanceKm: 5.0, points: 10, countsTowardTotal: true },
+          { distanceKm: 5.0, points: 10, countsTowardTotal: true },
+          null, null, null,
+        ],
         excluded: true,
       },
       {
@@ -62,6 +72,11 @@ const standingsData: StandingsData = {
         distanceKm: 8,
         points: 16,
         races: 2,
+        raceCells: [
+          { distanceKm: 4.0, points: 8, countsTowardTotal: true },
+          { distanceKm: 4.0, points: 8, countsTowardTotal: true },
+          null, null, null,
+        ],
         excluded: false,
       },
     ],
@@ -75,6 +90,13 @@ const standingsData: StandingsData = {
         distanceKm: 14,
         points: 28,
         races: 4,
+        raceCells: [
+          { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+          { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+          { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+          { distanceKm: 3.5, points: 7, countsTowardTotal: true },
+          null,
+        ],
         excluded: false,
       },
       {
@@ -86,6 +108,13 @@ const standingsData: StandingsData = {
         distanceKm: 12,
         points: 24,
         races: 4,
+        raceCells: [
+          { distanceKm: 3.0, points: 6, countsTowardTotal: true },
+          { distanceKm: 3.0, points: 6, countsTowardTotal: true },
+          { distanceKm: 3.0, points: 6, countsTowardTotal: true },
+          { distanceKm: 3.0, points: 6, countsTowardTotal: true },
+          null,
+        ],
         excluded: false,
       },
     ],

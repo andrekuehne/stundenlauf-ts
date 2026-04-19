@@ -860,11 +860,25 @@ class TsAppApi implements AppApi {
       standings.category_tables.map((table) => {
         const excludedTeamIds = exclusionsForCategory(snapshot.state, table.category_key);
         const marked = markExclusions(table, excludedTeamIds);
+        const orderedRaces = (racesByCategory.get(table.category_key) ?? [])
+          .slice()
+          .sort((a, b) => a.race_no - b.race_no || a.race_event_id.localeCompare(b.race_event_id));
         const rows: StandingsRow[] = marked.rows.map((row) => {
           const team = snapshot.state.teams.get(row.team_id);
           const label = team
             ? teamLabel(team, snapshot.state)
             : { name: row.team_id, club: "—" };
+          const raceCells = orderedRaces.map((race) => {
+            const contribution = row.race_contributions.find(
+              (c) => c.race_event_id === race.race_event_id,
+            ) ?? null;
+            if (!contribution) return null;
+            return {
+              distanceKm: Math.round((contribution.distance_m / 1000) * 1000) / 1000,
+              points: contribution.points,
+              countsTowardTotal: contribution.counts_toward_total,
+            };
+          });
           return {
             rank: row.rank,
             team: label.name,
@@ -875,6 +889,7 @@ class TsAppApi implements AppApi {
             points: row.total_points,
             distanceKm: Math.round((row.total_distance_m / 1000) * 1000) / 1000,
             races: row.race_contributions.filter((entry) => entry.counts_toward_total).length,
+            raceCells,
             excluded: row.excluded,
           };
         });

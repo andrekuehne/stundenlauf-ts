@@ -198,6 +198,59 @@ describe("TsAppApi standings and exports", () => {
     expect(exportResult.severity).toBe("success");
     expect(triggerDownloadSpy).toHaveBeenCalledTimes(1);
   }, 30_000);
+
+  it("getStandings raceCells reflect real per-race distance and points, not averaged totals", async () => {
+    const api = createTsAppApi();
+    const created = await api.createSeason({ label: "Stundenlauf 2029" });
+    const repo = await getSeasonRepository();
+    await repo.saveImportedSeason(
+      { season_id: created.seasonId, label: created.label, created_at: new Date().toISOString() },
+      [
+        personRegistered({
+          person_id: "person-cells",
+          given_name: "Test",
+          family_name: "Runner",
+          display_name: "Test Runner",
+          name_normalized: "test runner",
+          club: "Club X",
+          club_normalized: "club x",
+        }),
+        teamRegistered({ team_id: "team-cells", member_person_ids: ["person-cells"], team_kind: "solo" }),
+        importBatchRecorded({ import_batch_id: "batch-cells-1", source_file: "lauf1.xlsx", source_sha256: "sha1" }),
+        raceRegistered({
+          race_event_id: "race-cells-1",
+          import_batch_id: "batch-cells-1",
+          category: { duration: "hour", division: "men" },
+          race_no: 1,
+          entries: [defaultEntry({ entry_id: "e1", team_id: "team-cells", points: 10, distance_m: 5000 })],
+        }),
+        importBatchRecorded({ import_batch_id: "batch-cells-2", source_file: "lauf2.xlsx", source_sha256: "sha2" }),
+        raceRegistered({
+          race_event_id: "race-cells-2",
+          import_batch_id: "batch-cells-2",
+          category: { duration: "hour", division: "men" },
+          race_no: 2,
+          entries: [defaultEntry({ entry_id: "e2", team_id: "team-cells", points: 14, distance_m: 8000 })],
+        }),
+      ],
+    );
+
+    await api.openSeason(created.seasonId);
+    const standings = await api.getStandings(created.seasonId);
+    const rows = standings.rowsByCategory["hour:men"] ?? [];
+    const row = rows.find((r) => r.teamId === "team-cells");
+    expect(row).toBeDefined();
+    expect(row!.raceCells).toHaveLength(2);
+
+    const cell0 = row!.raceCells[0];
+    const cell1 = row!.raceCells[1];
+    expect(cell0).not.toBeNull();
+    expect(cell1).not.toBeNull();
+    expect(cell0!.distanceKm).toBe(5);
+    expect(cell0!.points).toBe(10);
+    expect(cell1!.distanceKm).toBe(8);
+    expect(cell1!.points).toBe(14);
+  }, 30_000);
 });
 
 describe("TsAppApi history workflows", () => {

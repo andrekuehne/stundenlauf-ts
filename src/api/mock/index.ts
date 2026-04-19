@@ -140,17 +140,60 @@ function buildStandings(
           points: 43,
           distanceKm: 18.211,
           races: 2,
+          raceCells: [
+            { distanceKm: 9.1, points: 22, countsTowardTotal: true },
+            { distanceKm: 9.111, points: 21, countsTowardTotal: true },
+          ],
         },
-        { rank: 2, team: "Paula Kruse", club: "TSV Wolgast", points: 38, distanceKm: 17.012, races: 2 },
+        {
+          rank: 2, team: "Paula Kruse", club: "TSV Wolgast", points: 38, distanceKm: 17.012, races: 2,
+          raceCells: [
+            { distanceKm: 8.5, points: 19, countsTowardTotal: true },
+            { distanceKm: 8.512, points: 19, countsTowardTotal: true },
+          ],
+        },
       ],
       "half_hour:men": [
-        { rank: 1, team: "Max Mustermann", club: "HSG Triathlon", points: 44, distanceKm: 19.123, races: 2 },
-        { rank: 2, team: "Lukas Meyer", club: "SV Anklam", points: 39, distanceKm: 18.678, races: 2 },
+        {
+          rank: 1, team: "Max Mustermann", club: "HSG Triathlon", points: 44, distanceKm: 19.123, races: 2,
+          raceCells: [
+            { distanceKm: 9.6, points: 22, countsTowardTotal: true },
+            { distanceKm: 9.523, points: 22, countsTowardTotal: true },
+          ],
+        },
+        {
+          rank: 2, team: "Lukas Meyer", club: "SV Anklam", points: 39, distanceKm: 18.678, races: 2,
+          raceCells: [
+            { distanceKm: 9.3, points: 20, countsTowardTotal: true },
+            { distanceKm: 9.378, points: 19, countsTowardTotal: true },
+          ],
+        },
       ],
       "hour:men": [
-        { rank: 1, team: "Max Mustermann", club: "HSG Triathlon", points: 75, distanceKm: 48.123, races: 3 },
-        { rank: 2, team: "Lukas Meyer", club: "SV Anklam", points: 71, distanceKm: 45.678, races: 3 },
-        { rank: 3, team: "Tim Becker", club: "Laufteam Nord", points: 66, distanceKm: 42.505, races: 3 },
+        {
+          rank: 1, team: "Max Mustermann", club: "HSG Triathlon", points: 75, distanceKm: 48.123, races: 3,
+          raceCells: [
+            { distanceKm: 16.0, points: 25, countsTowardTotal: true },
+            { distanceKm: 16.1, points: 25, countsTowardTotal: true },
+            { distanceKm: 16.023, points: 25, countsTowardTotal: true },
+          ],
+        },
+        {
+          rank: 2, team: "Lukas Meyer", club: "SV Anklam", points: 71, distanceKm: 45.678, races: 3,
+          raceCells: [
+            { distanceKm: 15.2, points: 24, countsTowardTotal: true },
+            { distanceKm: 15.3, points: 23, countsTowardTotal: true },
+            { distanceKm: 15.178, points: 24, countsTowardTotal: true },
+          ],
+        },
+        {
+          rank: 3, team: "Tim Becker", club: "Laufteam Nord", points: 66, distanceKm: 42.505, races: 3,
+          raceCells: [
+            { distanceKm: 14.1, points: 22, countsTowardTotal: true },
+            { distanceKm: 14.2, points: 22, countsTowardTotal: true },
+            { distanceKm: 14.205, points: 22, countsTowardTotal: true },
+          ],
+        },
       ],
       "hour:women": [
         {
@@ -160,8 +203,20 @@ function buildStandings(
           points: 74,
           distanceKm: 44.211,
           races: 3,
+          raceCells: [
+            { distanceKm: 14.8, points: 25, countsTowardTotal: true },
+            { distanceKm: 14.7, points: 25, countsTowardTotal: true },
+            { distanceKm: 14.711, points: 24, countsTowardTotal: true },
+          ],
         },
-        { rank: 2, team: "Paula Kruse", club: "TSV Wolgast", points: 70, distanceKm: 43.012, races: 3 },
+        {
+          rank: 2, team: "Paula Kruse", club: "TSV Wolgast", points: 70, distanceKm: 43.012, races: 3,
+          raceCells: [
+            { distanceKm: 14.3, points: 24, countsTowardTotal: true },
+            { distanceKm: 14.4, points: 23, countsTowardTotal: true },
+            { distanceKm: 14.312, points: 23, countsTowardTotal: true },
+          ],
+        },
         {
           rank: 3,
           team: "Anna Holm",
@@ -170,11 +225,28 @@ function buildStandings(
           distanceKm: 40.884,
           races: 2,
           note: "ein Lauf noch ausstehend",
+          raceCells: [
+            { distanceKm: 20.5, points: 33, countsTowardTotal: true },
+            { distanceKm: 20.384, points: 32, countsTowardTotal: true },
+            null,
+          ],
         },
       ],
       "half_hour:mixed": [
-        { rank: 1, team: "Lea + Tom", club: "Greifswald Laufteam", points: 39, distanceKm: 18.444, races: 2 },
-        { rank: 2, team: "Nina + Paul", club: "HSG Triathlon", points: 35, distanceKm: 17.901, races: 2 },
+        {
+          rank: 1, team: "Lea + Tom", club: "Greifswald Laufteam", points: 39, distanceKm: 18.444, races: 2,
+          raceCells: [
+            { distanceKm: 9.2, points: 20, countsTowardTotal: true },
+            { distanceKm: 9.244, points: 19, countsTowardTotal: true },
+          ],
+        },
+        {
+          rank: 2, team: "Nina + Paul", club: "HSG Triathlon", points: 35, distanceKm: 17.901, races: 2,
+          raceCells: [
+            { distanceKm: 9.0, points: 18, countsTowardTotal: true },
+            { distanceKm: 8.901, points: 17, countsTowardTotal: true },
+          ],
+        },
       ],
     },
     importedRuns: [
