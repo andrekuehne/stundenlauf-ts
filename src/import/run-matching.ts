@@ -13,8 +13,7 @@ import type {
   PersonRegisteredPayload,
   TeamRegisteredPayload,
 } from "@/domain/events.ts";
-import type { IncomingRowData, PersonIdentity, SeasonState, Team } from "@/domain/types.ts";
-import { canonicalizeClub, canonicalizePersonNames } from "@/domain/person-identity.ts";
+import type { IncomingRowData } from "@/domain/types.ts";
 import type { MatchingConfig } from "@/matching/config.ts";
 import type {
   ResolvedEntry,
@@ -36,41 +35,6 @@ import type {
   StagedEntry,
 } from "./types.ts";
 
-function enrichState(
-  state: SeasonState,
-  personPayloads: readonly PersonRegisteredPayload[],
-  teamPayloads: readonly TeamRegisteredPayload[],
-): SeasonState {
-  const persons = new Map(state.persons);
-  for (const p of personPayloads) {
-    const names = canonicalizePersonNames(p);
-    const club = canonicalizeClub(p);
-    const identity: PersonIdentity = {
-      person_id: p.person_id,
-      given_name: names.given_name,
-      family_name: names.family_name,
-      display_name: names.display_name,
-      name_normalized: names.name_normalized,
-      yob: p.yob,
-      gender: p.gender,
-      club: club.club,
-      club_normalized: club.club_normalized,
-    };
-    persons.set(p.person_id, identity);
-  }
-
-  const teams = new Map(state.teams);
-  for (const t of teamPayloads) {
-    const team: Team = {
-      team_id: t.team_id,
-      member_person_ids: [...t.member_person_ids],
-      team_kind: t.team_kind,
-    };
-    teams.set(t.team_id, team);
-  }
-
-  return { ...state, persons, teams };
-}
 
 function buildStagedEntriesForSingles(
   matchResult: SectionMatchResult,
@@ -172,7 +136,10 @@ export async function runMatching(
 ): Promise<ImportSession> {
   assertPhase(session, "matching");
 
-  let workingState = session.season_state_at_start;
+  // Matching always uses the committed season state at the time import started.
+  // New identities created by earlier sections of this file are intentionally
+  // invisible to later sections: matching is scoped to past races only.
+  const historicalState = session.season_state_at_start;
   const sections: OrchestratedSection[] = [];
   const allReviewEntries: OrchestratedReviewEntry[] = [];
   const allPersonPayloads: PersonRegisteredPayload[] = [];
@@ -181,7 +148,7 @@ export async function runMatching(
   let sectionIndex = 0;
 
   for (const singlesSection of session.parsed.singles_sections) {
-    const matchResult = await processSinglesSection(workingState, singlesSection, config);
+    const matchResult = await processSinglesSection(historicalState, singlesSection, config);
     const stagedEntries = buildStagedEntriesForSingles(
       matchResult,
       singlesSection,
@@ -204,17 +171,11 @@ export async function runMatching(
     allPersonPayloads.push(...matchResult.new_person_payloads);
     allTeamPayloads.push(...matchResult.new_team_payloads);
     report = mergeMatchingReport(report, matchResult.report, singlesSection.rows.length);
-
-    workingState = enrichState(
-      workingState,
-      matchResult.new_person_payloads,
-      matchResult.new_team_payloads,
-    );
     sectionIndex++;
   }
 
   for (const couplesSection of session.parsed.couples_sections) {
-    const matchResult = await processCouplesSection(workingState, couplesSection, config);
+    const matchResult = await processCouplesSection(historicalState, couplesSection, config);
     const stagedEntries = buildStagedEntriesForCouples(
       matchResult,
       couplesSection,
@@ -237,12 +198,6 @@ export async function runMatching(
     allPersonPayloads.push(...matchResult.new_person_payloads);
     allTeamPayloads.push(...matchResult.new_team_payloads);
     report = mergeMatchingReport(report, matchResult.report, couplesSection.rows.length);
-
-    workingState = enrichState(
-      workingState,
-      matchResult.new_person_payloads,
-      matchResult.new_team_payloads,
-    );
     sectionIndex++;
   }
 

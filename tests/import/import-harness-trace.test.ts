@@ -21,7 +21,11 @@ function makeWorkbook(overrides?: Partial<ParsedWorkbook>): ParsedWorkbook {
 }
 
 describe("buildImportTrace", () => {
-  it("captures progressive pool enrichment across sections", async () => {
+  // Regression: the old harness enriched the pool snapshot after each section so
+  // that section N+1 showed the identities created by section N. Matching is now
+  // based on committed historical state only, so the pool snapshot is constant
+  // for all sections within a single trace run.
+  it("pool snapshot is the same committed state for all sections (no progressive enrichment)", async () => {
     const state = emptySeasonState("s1");
     const parsed = makeWorkbook({
       singles_sections: [
@@ -48,10 +52,11 @@ describe("buildImportTrace", () => {
 
     const trace = await buildImportTrace(parsed, state, config);
     expect(trace).toHaveLength(2);
+    // Both sections see the same empty starting pool — no cross-section leakage.
     expect(trace[0]!.pool_before.person_count).toBe(0);
     expect(trace[0]!.pool_before.team_count).toBe(0);
-    expect(trace[1]!.pool_before.person_count).toBe(1);
-    expect(trace[1]!.pool_before.team_count).toBe(1);
+    expect(trace[1]!.pool_before.person_count).toBe(0);
+    expect(trace[1]!.pool_before.team_count).toBe(0);
   });
 
   it("maps incoming row and decision details for solo rows", async () => {

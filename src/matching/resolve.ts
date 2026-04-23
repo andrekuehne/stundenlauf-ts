@@ -77,9 +77,14 @@ export function buildReplayIndex(state: SeasonState): Map<string, string> {
 
 /**
  * Build async fingerprint -> team_id index from event log.
+ *
+ * When `categoryFilter` is provided, only entries from races of that exact
+ * category (`duration` + `division`) are indexed. This prevents a replay
+ * hint from a different category from overriding matching in the current one.
  */
 export async function buildFingerprintReplayIndex(
   state: SeasonState,
+  categoryFilter?: { duration: string; division: string },
 ): Promise<Map<string, string>> {
   const index = new Map<string, string>();
   const tasks: Promise<void>[] = [];
@@ -88,6 +93,11 @@ export async function buildFingerprintReplayIndex(
     if (raceEvent.state !== "active") continue;
     const batch = state.import_batches.get(raceEvent.import_batch_id);
     if (batch && batch.state !== "active") continue;
+    if (
+      categoryFilter &&
+      (raceEvent.category.duration !== categoryFilter.duration ||
+        raceEvent.category.division !== categoryFilter.division)
+    ) continue;
     for (const entry of raceEvent.entries) {
       const { resolution, incoming } = entry;
       const isReplayable =

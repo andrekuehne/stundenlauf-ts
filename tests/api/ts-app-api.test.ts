@@ -838,6 +838,32 @@ describe("TsAppApi import workflows", () => {
           member_person_ids: ["person-correction-existing"],
           team_kind: "solo",
         }),
+        // A historical race entry is required so that the person appears in the
+        // category-scoped candidate pool during matching (hour + men).
+        importBatchRecorded({
+          import_batch_id: "batch-hist-correction",
+          source_sha256: "sha-hist-correction",
+        }),
+        raceRegistered({
+          import_batch_id: "batch-hist-correction",
+          category: { duration: "hour", division: "men" },
+          race_no: 99,
+          entries: [
+            defaultEntry({
+              team_id: "team-correction-existing",
+              incoming: {
+                display_name: "Katharina Moller",
+                yob: 1991,
+                yob_text: null,
+                club: "Altverein",
+                row_kind: "solo",
+                sheet_name: "hist.xlsx",
+                section_name: "Männer 60min",
+                row_index: 0,
+              },
+            }),
+          ],
+        }),
       ],
     );
 
