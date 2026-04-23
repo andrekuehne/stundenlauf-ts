@@ -390,8 +390,12 @@ describe("import with review — create_new_identity", () => {
   });
 });
 
-describe("multi-section progressive enrichment", () => {
-  it("second section sees identities from first section", async () => {
+describe("multi-section category isolation", () => {
+  // Regression: previously the second section saw identities created by the
+  // first section in the same file (progressive enrichment). Matching is now
+  // strictly limited to committed historical data, so each section creates its
+  // own new identity when there is no prior race history for that category.
+  it("sections in different categories each produce a new identity", async () => {
     const state = emptySeasonState("s1");
     const parsed = makeWorkbook({
       singles_sections: [
@@ -421,13 +425,212 @@ describe("multi-section progressive enrichment", () => {
     const teamEvents = events.filter((e) => e.type === "team.registered");
     const raceEvents = events.filter((e) => e.type === "race.registered");
 
-    expect(personEvents).toHaveLength(1);
-    expect(teamEvents).toHaveLength(1);
+    // Each category gets its own identity — no cross-category sharing.
+    expect(personEvents).toHaveLength(2);
+    expect(teamEvents).toHaveLength(2);
     expect(raceEvents).toHaveLength(2);
 
     const race1 = raceEvents[0]!.payload as { entries: { team_id: string }[] };
     const race2 = raceEvents[1]!.payload as { entries: { team_id: string }[] };
-    expect(race1.entries[0]!.team_id).toBe(race2.entries[0]!.team_id);
+    expect(race1.entries[0]!.team_id).not.toBe(race2.entries[0]!.team_id);
+  });
+});
+
+describe("regression: category-scoped matching — cross-duration isolation", () => {
+  // A person who has raced in the 60-minute category must NOT be matched when
+  // importing a 30-minute (half_hour) section, even with identical name/yob/club.
+  it("does not link a half-hour import entry to an existing hour participant", async () => {
+    resetSeqCounter();
+    const batchId = "batch-hour";
+    const personId = "person-hour";
+    const teamId = "team-hour";
+
+    const existingEvents: DomainEvent[] = [
+      importBatchRecorded({ import_batch_id: batchId, source_sha256: "sha-hour" }),
+      personRegistered({
+        person_id: personId,
+        given_name: "Max",
+        family_name: "Müller",
+        yob: 1990,
+        gender: "M",
+        club: "LG A",
+        club_normalized: "lg a",
+      }),
+      teamRegistered({
+        team_id: teamId,
+        member_person_ids: [personId],
+        team_kind: "solo",
+      }),
+      raceRegistered({
+        import_batch_id: batchId,
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [
+          defaultEntry({
+            team_id: teamId,
+            incoming: {
+              display_name: "Müller, Max",
+              yob: 1990,
+              yob_text: null,
+              club: "LG A",
+              row_kind: "solo",
+              sheet_name: "old.xlsx",
+              section_name: "Herren 60min",
+              row_index: 0,
+            },
+          }),
+        ],
+      }),
+    ];
+
+    const state = projectState("s1", existingEvents);
+
+    // Import into the DIFFERENT category (half_hour + men)
+    const parsed = makeWorkbook({
+      singles_sections: [
+        {
+          context: { race_no: 1, duration: "half_hour", division: "men", event_date: null },
+          rows: [
+            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 5, points: 4 },
+          ],
+        },
+      ],
+    });
+
+    const session = createSession(parsed, state);
+    const matched = await runMatching(session, AUTO_CONFIG);
+
+    const events = finalizeImport(matched, { startSeq: existingEvents.length });
+    const personEvents = events.filter((e) => e.type === "person.registered");
+    const teamEvents = events.filter((e) => e.type === "team.registered");
+
+    // Must create a new identity for the half_hour category.
+    expect(personEvents).toHaveLength(1);
+    expect(teamEvents).toHaveLength(1);
+    // Must NOT reuse the existing hour team.
+    const newTeamId = (teamEvents[0]!.payload as { team_id: string }).team_id;
+    expect(newTeamId).not.toBe(teamId);
+  });
+
+  // Positive control: the same person DOES get matched when importing into the
+  // SAME category as their existing race history.
+  it("does link a same-category import entry to an existing participant", async () => {
+    resetSeqCounter();
+    const batchId = "batch-hour";
+    const personId = "person-hour";
+    const teamId = "team-hour";
+
+    const existingEvents: DomainEvent[] = [
+      importBatchRecorded({ import_batch_id: batchId, source_sha256: "sha-hour" }),
+      personRegistered({
+        person_id: personId,
+        given_name: "Max",
+        family_name: "Müller",
+        yob: 1990,
+        gender: "M",
+        club: "LG A",
+        club_normalized: "lg a",
+      }),
+      teamRegistered({
+        team_id: teamId,
+        member_person_ids: [personId],
+        team_kind: "solo",
+      }),
+      raceRegistered({
+        import_batch_id: batchId,
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [
+          defaultEntry({
+            team_id: teamId,
+            incoming: {
+              display_name: "Müller, Max",
+              yob: 1990,
+              yob_text: null,
+              club: "LG A",
+              row_kind: "solo",
+              sheet_name: "old.xlsx",
+              section_name: "Herren 60min",
+              row_index: 0,
+            },
+          }),
+        ],
+      }),
+    ];
+
+    const state = projectState("s1", existingEvents);
+
+    // Import into the SAME category (hour + men) — should auto-link via replay.
+    const parsed = makeWorkbook({
+      singles_sections: [
+        {
+          context: { race_no: 2, duration: "hour", division: "men", event_date: null },
+          rows: [
+            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 13, points: 10 },
+          ],
+        },
+      ],
+    });
+
+    const session = createSession(parsed, state);
+    const matched = await runMatching(session, AUTO_CONFIG);
+
+    const events = finalizeImport(matched, { startSeq: existingEvents.length });
+    const personEvents = events.filter((e) => e.type === "person.registered");
+    const teamEvents = events.filter((e) => e.type === "team.registered");
+    const raceEvents = events.filter((e) => e.type === "race.registered");
+
+    // No new identity — reuses existing.
+    expect(personEvents).toHaveLength(0);
+    expect(teamEvents).toHaveLength(0);
+    expect(raceEvents).toHaveLength(1);
+
+    const racePayload = raceEvents[0]!.payload as { entries: { team_id: string }[] };
+    expect(racePayload.entries[0]!.team_id).toBe(teamId);
+  });
+});
+
+describe("regression: same-file section isolation", () => {
+  // A person introduced as a new identity in section 1 of an import file must
+  // NOT be a matching candidate for section 2 of the same file. Each section
+  // sees only the committed season history, not the current file's earlier output.
+  it("two same-category sections with the same person name produce two separate identities", async () => {
+    const state = emptySeasonState("s1");
+    const parsed = makeWorkbook({
+      singles_sections: [
+        {
+          context: { race_no: 1, duration: "hour", division: "men", event_date: null },
+          rows: [
+            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 8 },
+          ],
+        },
+        {
+          context: { race_no: 2, duration: "hour", division: "men", event_date: null },
+          rows: [
+            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 8 },
+          ],
+        },
+      ],
+    });
+
+    const session = createSession(parsed, state);
+    const matched = await runMatching(session, AUTO_CONFIG);
+
+    expect(matched.section_results).toHaveLength(2);
+
+    const events = finalizeImport(matched, { startSeq: 0 });
+    const personEvents = events.filter((e) => e.type === "person.registered");
+    const teamEvents = events.filter((e) => e.type === "team.registered");
+    const raceEvents = events.filter((e) => e.type === "race.registered");
+
+    // Section 2 cannot see section 1's new identity — creates its own.
+    expect(personEvents).toHaveLength(2);
+    expect(teamEvents).toHaveLength(2);
+    expect(raceEvents).toHaveLength(2);
+
+    const race1 = raceEvents[0]!.payload as { entries: { team_id: string }[] };
+    const race2 = raceEvents[1]!.payload as { entries: { team_id: string }[] };
+    expect(race1.entries[0]!.team_id).not.toBe(race2.entries[0]!.team_id);
   });
 });
 

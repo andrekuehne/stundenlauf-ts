@@ -7,11 +7,10 @@
  * Reference: F-TS03 §7 (Resolution Pipeline), §10 (Workflow)
  */
 
-import type { PersonIdentity, SeasonState, Team } from "@/domain/types.ts";
+import type { Division, PersonIdentity, RaceDuration, SeasonState, Team } from "@/domain/types.ts";
 import type { ParsedSectionCouples, ParsedSectionSingles } from "@/ingestion/types.ts";
 import type { MatchingConfig } from "./config.ts";
 import {
-  buildSoloTeamIdByPersonId,
   buildFingerprintReplayIndex,
   emptyRunStats,
   genderForDivision,
@@ -20,6 +19,46 @@ import {
   resolveTeamRow,
 } from "./resolve.ts";
 import type { MatchingReport, ReviewItem, SectionMatchResult } from "./types.ts";
+
+/**
+ * Build the pool of candidate persons for matching in a given section.
+ *
+ * Only persons who have participated in at least one active, committed race
+ * of the exact same category (`duration` + `division`) are considered. This
+ * enforces two invariants:
+ *  1. Category isolation — a person from a different duration/division is
+ *     never a candidate for the current section.
+ *  2. Same-file isolation — identities introduced by earlier sections of the
+ *     current import have no race history yet and are therefore invisible.
+ */
+function buildCategoryHistoryPersonPool(
+  state: SeasonState,
+  duration: RaceDuration,
+  division: Division,
+): PersonIdentity[] {
+  const personIdsSeen = new Set<string>();
+  const result: PersonIdentity[] = [];
+
+  for (const raceEvent of state.race_events.values()) {
+    if (raceEvent.state !== "active") continue;
+    const batch = state.import_batches.get(raceEvent.import_batch_id);
+    if (batch?.state === "rolled_back") continue;
+    if (raceEvent.category.duration !== duration || raceEvent.category.division !== division) continue;
+
+    for (const entry of raceEvent.entries) {
+      const team = state.teams.get(entry.team_id);
+      if (!team || team.team_kind !== "solo") continue;
+      const personId = team.member_person_ids[0];
+      if (!personId || personIdsSeen.has(personId)) continue;
+      const person = state.persons.get(personId);
+      if (!person) continue;
+      personIdsSeen.add(personId);
+      result.push(person);
+    }
+  }
+
+  return result;
+}
 
 function buildReviewItemForSingles(
   entry: { route: string; confidence: number; features: Record<string, number>; conflict_flags: string[]; top_candidate_uid: string | null; candidate_uids: string[]; candidate_confidences: number[] },
@@ -76,11 +115,12 @@ export async function processSinglesSection(
   section: ParsedSectionSingles,
   config: MatchingConfig,
 ): Promise<SectionMatchResult> {
-  const replayIndex = await buildFingerprintReplayIndex(state);
+  const { duration, division } = section.context;
+  const replayIndex = await buildFingerprintReplayIndex(state, { duration, division });
   const stats = emptyRunStats();
   const usedTeamIds = new Map<string, string>();
 
-  const gender = genderForDivision(section.context.division);
+  const gender = genderForDivision(division);
 
   // Duplicate row detection
   const incomingKeys = new Map<string, number>();
@@ -101,10 +141,8 @@ export async function processSinglesSection(
     }
   }
 
-  const soloTeamIdByPersonId = buildSoloTeamIdByPersonId(state.teams);
-  const candidatePeople = [...soloTeamIdByPersonId.keys()]
-    .map((personId) => state.persons.get(personId))
-    .filter((person): person is PersonIdentity => person != null);
+  // Candidates scoped to same-category race history only.
+  const candidatePeople = buildCategoryHistoryPersonPool(state, duration, division);
   const resolvedEntries: SectionMatchResult["resolved_entries"] = [];
   const reviewItems: ReviewItem[] = [];
   const newPersonPayloads: SectionMatchResult["new_person_payloads"] = [];
@@ -160,7 +198,8 @@ export async function processCouplesSection(
   section: ParsedSectionCouples,
   config: MatchingConfig,
 ): Promise<SectionMatchResult> {
-  const replayIndex = await buildFingerprintReplayIndex(state);
+  const { duration, division } = section.context;
+  const replayIndex = await buildFingerprintReplayIndex(state, { duration, division });
   const stats = emptyRunStats();
   const usedTeamUids = new Map<string, string>();
 

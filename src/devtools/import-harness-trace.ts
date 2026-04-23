@@ -1,14 +1,10 @@
 import type {
-  PersonRegisteredPayload,
-  TeamRegisteredPayload,
-} from "@/domain/events.ts";
-import type {
   Division,
   PersonIdentity,
   RaceDuration,
   SeasonState,
 } from "@/domain/types.ts";
-import { canonicalizeClub, canonicalizePersonNames } from "@/domain/person-identity.ts";
+import { canonicalizePersonNames } from "@/domain/person-identity.ts";
 import type {
   ParsedSectionCouples,
   ParsedSectionSingles,
@@ -104,43 +100,6 @@ function summarizePool(state: SeasonState): PoolSnapshot {
   };
 }
 
-function enrichState(
-  state: SeasonState,
-  personPayloads: readonly PersonRegisteredPayload[],
-  teamPayloads: readonly TeamRegisteredPayload[],
-): SeasonState {
-  const persons = new Map(state.persons);
-  for (const payload of personPayloads) {
-    const names = canonicalizePersonNames(payload);
-    const club = canonicalizeClub(payload);
-    persons.set(payload.person_id, {
-      person_id: payload.person_id,
-      given_name: names.given_name,
-      family_name: names.family_name,
-      display_name: names.display_name,
-      name_normalized: names.name_normalized,
-      yob: payload.yob,
-      gender: payload.gender,
-      club: club.club,
-      club_normalized: club.club_normalized,
-    });
-  }
-
-  const teams = new Map(state.teams);
-  for (const payload of teamPayloads) {
-    teams.set(payload.team_id, {
-      team_id: payload.team_id,
-      member_person_ids: [...payload.member_person_ids],
-      team_kind: payload.team_kind,
-    });
-  }
-
-  return {
-    ...state,
-    persons,
-    teams,
-  };
-}
 
 function mapSinglesRow(
   row: ParsedSectionSingles["rows"][number],
@@ -285,43 +244,22 @@ export async function buildImportTrace(
   startState: SeasonState,
   config: MatchingConfig,
 ): Promise<HarnessSectionTrace[]> {
-  let workingState = startState;
+  // Matching always uses the committed start state — no progressive enrichment.
+  // This matches the behavior of runMatching: identities created earlier in
+  // the same file are not visible to later sections during matching.
+  const poolSnapshot = summarizePool(startState);
   let sectionIndex = 0;
   const traces: HarnessSectionTrace[] = [];
 
   for (const singlesSection of parsed.singles_sections) {
-    const poolBefore = summarizePool(workingState);
-    const matchResult = await processSinglesSection(
-      workingState,
-      singlesSection,
-      config,
-    );
-    traces.push(
-      mapSinglesSection(singlesSection, matchResult, sectionIndex, poolBefore),
-    );
-    workingState = enrichState(
-      workingState,
-      matchResult.new_person_payloads,
-      matchResult.new_team_payloads,
-    );
+    const matchResult = await processSinglesSection(startState, singlesSection, config);
+    traces.push(mapSinglesSection(singlesSection, matchResult, sectionIndex, poolSnapshot));
     sectionIndex++;
   }
 
   for (const couplesSection of parsed.couples_sections) {
-    const poolBefore = summarizePool(workingState);
-    const matchResult = await processCouplesSection(
-      workingState,
-      couplesSection,
-      config,
-    );
-    traces.push(
-      mapCouplesSection(couplesSection, matchResult, sectionIndex, poolBefore),
-    );
-    workingState = enrichState(
-      workingState,
-      matchResult.new_person_payloads,
-      matchResult.new_team_payloads,
-    );
+    const matchResult = await processCouplesSection(startState, couplesSection, config);
+    traces.push(mapCouplesSection(couplesSection, matchResult, sectionIndex, poolSnapshot));
     sectionIndex++;
   }
 

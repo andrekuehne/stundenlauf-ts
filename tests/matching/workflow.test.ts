@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultMatchingConfig } from "@/matching/config.ts";
 import { processCouplesSection, processSinglesSection } from "@/matching/workflow.ts";
-import type { PersonIdentity, SeasonState, Team } from "@/domain/types.ts";
+import type { ImportBatch, PersonIdentity, RaceCategory, RaceEntry, RaceEvent, SeasonState, Team } from "@/domain/types.ts";
 import type { ParsedSectionCouples, ParsedSectionSingles } from "@/ingestion/types.ts";
 
 function emptyState(overrides?: Partial<SeasonState>): SeasonState {
@@ -30,6 +30,67 @@ function makePerson(
     club_normalized: "",
     ...overrides,
   };
+}
+
+/**
+ * Build a SeasonState containing a committed race event for the given category,
+ * so that all provided teams appear in the category-scoped candidate pool.
+ *
+ * Matching now requires persons to have historical race entries in the target
+ * category — this helper makes that relationship explicit in unit tests.
+ */
+function stateWithHistoricalRace(
+  persons: Map<string, PersonIdentity>,
+  teams: Map<string, Team>,
+  category: RaceCategory,
+): SeasonState {
+  const batchId = "batch-history";
+  const batch: ImportBatch = {
+    import_batch_id: batchId,
+    source_file: "history.xlsx",
+    source_sha256: "sha-history",
+    parser_version: "1",
+    state: "active",
+  };
+
+  const entries: RaceEntry[] = [...teams.values()]
+    .filter((t) => t.team_kind === "solo")
+    .map((t, i) => ({
+      entry_id: `entry-hist-${i}`,
+      startnr: String(i + 1),
+      team_id: t.team_id,
+      distance_m: 10000,
+      points: 10,
+      incoming: {
+        display_name: persons.get(t.member_person_ids[0] ?? "")?.display_name ?? "",
+        yob: persons.get(t.member_person_ids[0] ?? "")?.yob ?? 0,
+        yob_text: null,
+        club: null,
+        row_kind: "solo",
+        sheet_name: "history.xlsx",
+        section_name: "hist",
+        row_index: i,
+      },
+      resolution: { method: "new_identity", confidence: null, candidate_count: 0 },
+    }));
+
+  const raceEvent: RaceEvent = {
+    race_event_id: "race-history",
+    import_batch_id: batchId,
+    category,
+    race_no: 0,
+    race_date: "2024-01-01",
+    state: "active",
+    imported_at: "2024-01-01T00:00:00Z",
+    entries,
+  };
+
+  return emptyState({
+    persons,
+    teams,
+    import_batches: new Map([[batchId, batch]]),
+    race_events: new Map([["race-history", raceEvent]]),
+  });
 }
 
 describe("processSinglesSection", () => {
@@ -68,12 +129,14 @@ describe("processSinglesSection", () => {
       member_person_ids: ["p-anna"],
       team_kind: "solo",
     };
-    const state = emptyState({
-      persons: new Map([["p-anna", anna]]),
-      teams: new Map([["t-anna", annaTeam]]),
-    });
+    // Person must have race history in the same category to appear as a candidate.
+    const state = stateWithHistoricalRace(
+      new Map([["p-anna", anna]]),
+      new Map([["t-anna", annaTeam]]),
+      { duration: "hour", division: "women" },
+    );
     const section: ParsedSectionSingles = {
-      context: { race_no: 1, duration: "hour", division: "women", event_date: null },
+      context: { race_no: 2, duration: "hour", division: "women", event_date: null },
       rows: [
         { startnr: "1", name: "Anna Schmidt", yob: 1988, club: "TSV", distance_km: 10, points: 1 },
       ],
@@ -115,12 +178,13 @@ describe("processSinglesSection", () => {
       member_person_ids: ["p-anna"],
       team_kind: "solo",
     };
-    const state = emptyState({
-      persons: new Map([["p-anna", anna]]),
-      teams: new Map([["t-anna", annaTeam]]),
-    });
+    const state = stateWithHistoricalRace(
+      new Map([["p-anna", anna]]),
+      new Map([["t-anna", annaTeam]]),
+      { duration: "hour", division: "women" },
+    );
     const section: ParsedSectionSingles = {
-      context: { race_no: 1, duration: "hour", division: "women", event_date: null },
+      context: { race_no: 2, duration: "hour", division: "women", event_date: null },
       rows: [
         { startnr: "1", name: "Anna Schmidt", yob: 1988, club: "TSV", distance_km: 10, points: 1 },
       ],
@@ -146,12 +210,13 @@ describe("processSinglesSection", () => {
       member_person_ids: ["p-anna"],
       team_kind: "solo",
     };
-    const state = emptyState({
-      persons: new Map([["p-anna", anna]]),
-      teams: new Map([["t-anna", annaTeam]]),
-    });
+    const state = stateWithHistoricalRace(
+      new Map([["p-anna", anna]]),
+      new Map([["t-anna", annaTeam]]),
+      { duration: "hour", division: "women" },
+    );
     const section: ParsedSectionSingles = {
-      context: { race_no: 1, duration: "hour", division: "women", event_date: null },
+      context: { race_no: 2, duration: "hour", division: "women", event_date: null },
       rows: [
         { startnr: "1", name: "Anna Schmidta", yob: 1988, club: "TSV", distance_km: 10, points: 1 },
       ],
@@ -176,12 +241,13 @@ describe("processSinglesSection", () => {
       member_person_ids: ["p-anna"],
       team_kind: "solo",
     };
-    const state = emptyState({
-      persons: new Map([["p-anna", anna]]),
-      teams: new Map([["t-anna", annaTeam]]),
-    });
+    const state = stateWithHistoricalRace(
+      new Map([["p-anna", anna]]),
+      new Map([["t-anna", annaTeam]]),
+      { duration: "hour", division: "women" },
+    );
     const section: ParsedSectionSingles = {
-      context: { race_no: 1, duration: "hour", division: "women", event_date: null },
+      context: { race_no: 2, duration: "hour", division: "women", event_date: null },
       rows: [
         { startnr: "1", name: "Anna Schmidt", yob: 1988, club: "TSV", distance_km: 10, points: 1 },
       ],
@@ -213,12 +279,13 @@ describe("processSinglesSection", () => {
       member_person_ids: ["p-anna"],
       team_kind: "solo",
     };
-    const state = emptyState({
-      persons: new Map([["p-anna", anna]]),
-      teams: new Map([["t-anna", annaTeam]]),
-    });
+    const state = stateWithHistoricalRace(
+      new Map([["p-anna", anna]]),
+      new Map([["t-anna", annaTeam]]),
+      { duration: "hour", division: "women" },
+    );
     const section: ParsedSectionSingles = {
-      context: { race_no: 1, duration: "hour", division: "women", event_date: null },
+      context: { race_no: 2, duration: "hour", division: "women", event_date: null },
       rows: [
         { startnr: "1", name: "Anna Schmidt", yob: 1988, club: "TSV", distance_km: 10, points: 1 },
       ],
