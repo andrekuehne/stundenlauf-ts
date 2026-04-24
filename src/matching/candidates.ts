@@ -15,6 +15,18 @@ function prefix(token: string, length = 3): string {
   return token.slice(0, length);
 }
 
+function pushBlockKeys(
+  keys: string[],
+  fam: string,
+  giv: string,
+  yob: number,
+): void {
+  if (fam && yob > 0) keys.push(`fam|${prefix(fam)}|${yob}`);
+  if (giv && yob > 0) keys.push(`giv|${prefix(giv)}|${yob}`);
+  if (fam) keys.push(`fam|${prefix(fam)}|no_yob`);
+  if (giv) keys.push(`giv|${prefix(giv)}|no_yob`);
+}
+
 export function buildPersonBlockIndex(
   people: Iterable<PersonIdentity>,
   gender: Gender,
@@ -52,18 +64,19 @@ export function candidatePersonKeys(
   incoming: ParsedName,
   yob: number,
 ): string[] {
-  const fam =
-    incoming.family || (incoming.tokens.length > 0 ? incoming.tokens[incoming.tokens.length - 1] : "");
-  const giv =
-    (incoming.given ? incoming.given.split(/\s+/)[0] : "") ||
-    (incoming.tokens.length > 0 ? incoming.tokens[0] : "");
+  const fam: string =
+    incoming.family || (incoming.tokens.length > 0 ? (incoming.tokens[incoming.tokens.length - 1] ?? "") : "");
+  const giv: string =
+    (incoming.given ? incoming.given.split(/\s+/)[0] ?? "" : "") ||
+    (incoming.tokens.length > 0 ? (incoming.tokens[0] ?? "") : "");
 
-  const keys: string[] = [];
-  if (fam && yob > 0) keys.push(`fam|${prefix(fam)}|${yob}`);
-  if (giv && yob > 0) keys.push(`giv|${prefix(giv)}|${yob}`);
-  if (fam) keys.push(`fam|${prefix(fam)}|no_yob`);
-  if (giv) keys.push(`giv|${prefix(giv)}|no_yob`);
-  return keys;
+  const raw: string[] = [];
+  pushBlockKeys(raw, fam, giv, yob);
+  // Also query with family and given swapped so "Meyer Anna" finds "Anna Meyer"
+  pushBlockKeys(raw, giv, fam, yob);
+
+  // Dedupe while preserving insertion order
+  return [...new Set(raw)];
 }
 
 export function gatherCandidates(
