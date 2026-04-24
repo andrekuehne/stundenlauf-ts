@@ -25,22 +25,40 @@ function makePerson(
 }
 
 describe("candidatePersonKeys", () => {
-  it("generates 4 keys with YOB", () => {
+  it("contains forward orientation keys with YOB", () => {
     const parsed = parsePersonName("Anna Meyer");
     const keys = candidatePersonKeys(parsed, 1990);
-    expect(keys).toHaveLength(4);
     expect(keys).toContain("fam|mey|1990");
     expect(keys).toContain("giv|ann|1990");
     expect(keys).toContain("fam|mey|no_yob");
     expect(keys).toContain("giv|ann|no_yob");
   });
 
-  it("generates 2 keys without YOB", () => {
+  it("contains swapped orientation keys with YOB", () => {
+    const parsed = parsePersonName("Anna Meyer");
+    const keys = candidatePersonKeys(parsed, 1990);
+    // Swapped: treat given (anna) as family key, family (meyer) as given key
+    expect(keys).toContain("fam|ann|1990");
+    expect(keys).toContain("giv|mey|1990");
+    expect(keys).toContain("fam|ann|no_yob");
+    expect(keys).toContain("giv|mey|no_yob");
+  });
+
+  it("deduplicates keys when orientations overlap (single-token name)", () => {
+    const parsed = parsePersonName("Meyer");
+    const keys = candidatePersonKeys(parsed, 1990);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("contains no_yob keys without YOB", () => {
     const parsed = parsePersonName("Anna Meyer");
     const keys = candidatePersonKeys(parsed, 0);
-    expect(keys).toHaveLength(2);
     expect(keys).toContain("fam|mey|no_yob");
     expect(keys).toContain("giv|ann|no_yob");
+    expect(keys).toContain("fam|ann|no_yob");
+    expect(keys).toContain("giv|mey|no_yob");
+    // No YOB-qualified keys should be present
+    expect(keys.some((k) => k.endsWith("|1990"))).toBe(false);
   });
 });
 
@@ -93,6 +111,18 @@ describe("gatherCandidates", () => {
     const candidates = gatherCandidates(parsed, 1990, "F", index, config);
     const ids = candidates.map((c) => c.person_id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("finds a candidate whose given/family are swapped in the incoming name", () => {
+    const people = [
+      makePerson({ person_id: "p1", given_name: "anna", family_name: "meyer", gender: "F", yob: 1990 }),
+    ];
+    const index = buildPersonBlockIndex(people, "F");
+    // Incoming has the names in the wrong order relative to how they were stored
+    const parsed = parsePersonName("Meyer Anna");
+    const config = defaultMatchingConfig();
+    const candidates = gatherCandidates(parsed, 1990, "F", index, config);
+    expect(candidates.map((c) => c.person_id)).toContain("p1");
   });
 
   it("respects max_candidates_per_row cap", () => {
