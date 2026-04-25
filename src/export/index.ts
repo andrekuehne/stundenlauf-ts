@@ -6,6 +6,7 @@ export {
 export {
   renderExcelBlob,
   exportGesamtwertungWorkbook,
+  exportKidsParticipationWorkbook,
   type ExcelExportArtifact,
 } from "./excel.ts";
 export {

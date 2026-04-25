@@ -1338,6 +1338,20 @@ textarea {
   color: var(--season-action-accent-hover);
 }
 
+.season-row-action--kids-excel {
+  --season-action-accent: #8a5a00;
+  --season-action-accent-hover: #684300;
+  background: var(--color-surface);
+  border-color: var(--season-action-accent);
+  color: var(--season-action-accent);
+}
+
+.season-row-action--kids-excel:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--season-action-accent) 8%, var(--color-surface) 92%);
+  border-color: var(--season-action-accent-hover);
+  color: var(--season-action-accent-hover);
+}
+
 .season-row-action--delete {
   background: var(--color-surface);
   border-color: color-mix(in srgb, var(--color-danger) 55%, var(--color-border) 45%);

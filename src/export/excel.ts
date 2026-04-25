@@ -12,8 +12,10 @@ import {
   type ExportBodyRow,
   type ExportCell,
   type ExportHeaderRow,
+  type ExportParticipant,
   type ExportSection,
 } from "./projection.ts";
+import { EXPORT_EMPTY_CELL } from "./formatting.ts";
 import type { ExportSpec } from "./spec.ts";
 
 const XLSX_MIME_TYPE =
@@ -21,6 +23,7 @@ const XLSX_MIME_TYPE =
 
 const EXCEL_SHEET_EINZEL = "Gesamtwertung_Einzel";
 const EXCEL_SHEET_PAARE = "Gesamtwertung_Paare";
+const EXCEL_SHEET_KIDS = "Kids_Teilnahme";
 const HEADER_FILL = "FFE8F5E9";
 const PODIUM_FILL = "FFC8DCFF";
 const ZEBRA_FILL = "FFF5F5F5";
@@ -40,6 +43,18 @@ interface ExcelExportOptions {
   readonly seasonYear: number;
   readonly filenameBase?: string;
   readonly layoutPreset?: string | null;
+}
+
+interface KidsExcelExportOptions {
+  readonly seasonYear: number;
+  readonly cutoffYear?: number;
+  readonly filenameBase?: string;
+  readonly layoutPreset?: string | null;
+}
+
+interface KidsParticipationRow {
+  readonly participant: ExportParticipant;
+  readonly raceNos: Set<number>;
 }
 
 function toExcelSpec(spec: ExportSpec): ExportSpec {
@@ -593,6 +608,194 @@ function writeBufferToBlob(buffer: ArrayBuffer | Uint8Array): Blob {
   return new Blob([bytes], { type: XLSX_MIME_TYPE });
 }
 
+function buildLaufuebersichtSections(
+  state: SeasonState,
+  options: Pick<KidsExcelExportOptions, "seasonYear" | "layoutPreset">,
+): ExportSection[] {
+  const specs = buildGuiLaufuebersichtDualSpecs(state, {
+    layoutPreset: options.layoutPreset,
+  });
+  const einzelSections = specs.einzel
+    ? buildExportSections(state, toExcelSpec(specs.einzel), {
+        seasonYear: options.seasonYear,
+      })
+    : [];
+  const paareSections = specs.paare
+    ? buildExportSections(state, toExcelSpec(specs.paare), {
+        seasonYear: options.seasonYear,
+      })
+    : [];
+  return [...einzelSections, ...paareSections];
+}
+
+function raceNosForSection(section: ExportSection): number[] {
+  const raceNos = new Set<number>();
+  section.columns.forEach((column) => {
+    if (column.role === "race_km" && column.raceNo != null) {
+      raceNos.add(column.raceNo);
+    }
+  });
+  return [...raceNos];
+}
+
+function participationRaceNosForCells(
+  section: ExportSection,
+  cells: readonly ExportCell[],
+): Set<number> {
+  const raceNos = new Set<number>();
+  section.columns.forEach((column, columnIndex) => {
+    if (column.role !== "race_km" || column.raceNo == null) {
+      return;
+    }
+    const text = cells[columnIndex]?.text.trim() ?? "";
+    if (text !== "" && text !== EXPORT_EMPTY_CELL) {
+      raceNos.add(column.raceNo);
+    }
+  });
+  return raceNos;
+}
+
+function mergeKidsParticipant(
+  rowsByPersonId: Map<string, KidsParticipationRow>,
+  participant: ExportParticipant | undefined,
+  raceNos: Iterable<number>,
+): void {
+  if (!participant) {
+    return;
+  }
+  const existing = rowsByPersonId.get(participant.personId);
+  if (existing) {
+    for (const raceNo of raceNos) {
+      existing.raceNos.add(raceNo);
+    }
+    return;
+  }
+  rowsByPersonId.set(participant.personId, {
+    participant,
+    raceNos: new Set(raceNos),
+  });
+}
+
+function buildKidsParticipationRows(
+  sections: readonly ExportSection[],
+  cutoffYear: number,
+): { raceNos: number[]; rows: KidsParticipationRow[] } {
+  const allRaceNos = new Set<number>();
+  const rowsByPersonId = new Map<string, KidsParticipationRow>();
+
+  for (const section of sections) {
+    raceNosForSection(section).forEach((raceNo) => allRaceNos.add(raceNo));
+    const isCouples = isCouplesSection(section);
+    for (let index = 0; index < section.bodyRows.length; index += 1) {
+      const row = section.bodyRows[index];
+      if (!row) {
+        continue;
+      }
+
+      if (!isCouples) {
+        mergeKidsParticipant(
+          rowsByPersonId,
+          row.participant,
+          participationRaceNosForCells(section, row.cells),
+        );
+        continue;
+      }
+
+      if (row.kind !== "team_primary") {
+        continue;
+      }
+      const secondary = section.bodyRows[index + 1];
+      const raceNos = participationRaceNosForCells(section, row.cells);
+      mergeKidsParticipant(rowsByPersonId, row.participant, raceNos);
+      mergeKidsParticipant(rowsByPersonId, secondary?.participant, raceNos);
+    }
+  }
+
+  const rows = [...rowsByPersonId.values()]
+    .filter((row) => row.participant.yob >= cutoffYear)
+    .sort((left, right) => {
+      const family = left.participant.familyName.localeCompare(right.participant.familyName, "de");
+      if (family !== 0) {
+        return family;
+      }
+      const given = left.participant.givenName.localeCompare(right.participant.givenName, "de");
+      if (given !== 0) {
+        return given;
+      }
+      return left.participant.personId.localeCompare(right.participant.personId, "de");
+    });
+
+  return {
+    raceNos: [...allRaceNos].sort((left, right) => left - right),
+    rows,
+  };
+}
+
+function renderKidsTitleRow(
+  worksheet: ExcelJS.Worksheet,
+  seasonYear: number,
+  columnCount: number,
+): void {
+  worksheet.mergeCells(1, 1, 1, columnCount);
+  const cell = worksheet.getCell(1, 1);
+  cell.value = `Kids Excel Saison ${seasonYear}`;
+  cell.font = titleFont();
+  cell.alignment = { horizontal: "center", vertical: "middle" };
+  cell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: styleColor(WHITE_FILL),
+  };
+  cell.border = {
+    bottom: { style: "medium", color: styleColor(BORDER_GREY) },
+  };
+  worksheet.getRow(1).height = 22;
+}
+
+function renderKidsWorksheet(
+  worksheet: ExcelJS.Worksheet,
+  seasonYear: number,
+  raceNos: readonly number[],
+  rows: readonly KidsParticipationRow[],
+): void {
+  const headers = ["Name", "Vorname", "Jahrg.", "Verein", ...raceNos.map((raceNo) => `Lauf ${raceNo}`)];
+  const columnCount = headers.length;
+  renderKidsTitleRow(worksheet, seasonYear, columnCount);
+
+  worksheet.getColumn(1).width = 22;
+  worksheet.getColumn(2).width = 18;
+  worksheet.getColumn(3).width = 10;
+  worksheet.getColumn(4).width = 24;
+  raceNos.forEach((_, index) => {
+    worksheet.getColumn(index + 5).width = 11;
+  });
+
+  headers.forEach((header, index) => {
+    setHeaderCell(worksheet, 2, index + 1, header, {
+      red: index >= 4,
+    });
+  });
+
+  rows.forEach((row, rowOffset) => {
+    const excelRow = rowOffset + 3;
+    const fill = rowOffset % 2 === 0 ? WHITE_FILL : ZEBRA_FILL;
+    setBodyCell(worksheet, excelRow, 1, row.participant.familyName, fill, "left");
+    setBodyCell(worksheet, excelRow, 2, row.participant.givenName, fill, "left");
+    setBodyCell(worksheet, excelRow, 3, String(row.participant.yob), fill, "center");
+    setBodyCell(worksheet, excelRow, 4, row.participant.club ?? EXPORT_EMPTY_CELL, fill, "left");
+    raceNos.forEach((raceNo, index) => {
+      setBodyCell(
+        worksheet,
+        excelRow,
+        index + 5,
+        row.raceNos.has(raceNo) ? "x" : EXPORT_EMPTY_CELL,
+        fill,
+        "center",
+      );
+    });
+  });
+}
+
 export async function renderExcelBlob(
   state: SeasonState,
   spec: ExportSpec,
@@ -635,6 +838,27 @@ export async function exportGesamtwertungWorkbook(
   const buffer = await workbook.xlsx.writeBuffer();
   return {
     filename: excelFilename(options.filenameBase ?? `stundenlauf-${options.seasonYear}-ergebnisse`),
+    blob: writeBufferToBlob(buffer as ArrayBuffer | Uint8Array),
+  };
+}
+
+export async function exportKidsParticipationWorkbook(
+  state: SeasonState,
+  options: KidsExcelExportOptions,
+): Promise<ExcelExportArtifact> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "stundenlauf-ts";
+  workbook.created = new Date();
+
+  const cutoffYear = options.cutoffYear ?? options.seasonYear - 12;
+  const sections = buildLaufuebersichtSections(state, options);
+  const { raceNos, rows } = buildKidsParticipationRows(sections, cutoffYear);
+  const worksheet = workbook.addWorksheet(EXCEL_SHEET_KIDS);
+  renderKidsWorksheet(worksheet, options.seasonYear, raceNos, rows);
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return {
+    filename: excelFilename(options.filenameBase ?? `stundenlauf-${options.seasonYear}-kids`),
     blob: writeBufferToBlob(buffer as ArrayBuffer | Uint8Array),
   };
 }

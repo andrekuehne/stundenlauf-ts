@@ -349,6 +349,7 @@ export const STR = {
       exportAction: "Datensicherung",
       exportPdfAction: "PDF",
       exportExcelAction: "Excel",
+      kidsExcelAction: "Kids Excel",
       noSeasons: "Noch keine Saisons vorhanden.",
       activeTag: "Aktiv",
       importedEvents: "Importierte Läufe",

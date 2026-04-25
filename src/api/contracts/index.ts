@@ -79,7 +79,7 @@ export interface ImportedRunRow {
 }
 
 export interface ExportActionDescriptor {
-  id: "export_pdf" | "export_excel";
+  id: "export_pdf" | "export_excel" | "export_kids_excel";
   label: string;
   description: string;
   availability: "ready" | "planned";
