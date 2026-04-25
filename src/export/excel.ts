@@ -6,6 +6,7 @@
 
 import ExcelJS from "exceljs";
 import type { SeasonState } from "@/domain/types.ts";
+import { normalizeToken } from "@/matching/normalize.ts";
 import { buildGuiLaufuebersichtDualSpecs } from "./gui-pdf-spec.ts";
 import {
   buildExportSections,
@@ -50,12 +51,15 @@ interface KidsExcelExportOptions {
   readonly cutoffYear?: number;
   readonly filenameBase?: string;
   readonly layoutPreset?: string | null;
+  readonly participationMergeStrategy?: KidsParticipationMergeStrategy;
 }
 
 interface KidsParticipationRow {
   readonly participant: ExportParticipant;
   readonly raceNos: Set<number>;
 }
+
+type KidsParticipationMergeStrategy = "strict_name_yob" | "none";
 
 function toExcelSpec(spec: ExportSpec): ExportSpec {
   return {
@@ -676,9 +680,89 @@ function mergeKidsParticipant(
   });
 }
 
+function kidsStrictIdentityKey(participant: ExportParticipant): string | null {
+  const given = normalizeToken(participant.givenName);
+  const family = normalizeToken(participant.familyName);
+  if (!given || !family || !Number.isFinite(participant.yob)) {
+    return null;
+  }
+  return `${participant.yob}|${[given, family].sort().join("|")}`;
+}
+
+function cloneKidsParticipationRow(row: KidsParticipationRow): KidsParticipationRow {
+  return {
+    participant: row.participant,
+    raceNos: new Set(row.raceNos),
+  };
+}
+
+function raceNosOverlap(left: ReadonlySet<number>, right: ReadonlySet<number>): boolean {
+  for (const raceNo of right) {
+    if (left.has(raceNo)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function addRaceNos(target: Set<number>, source: Iterable<number>): void {
+  for (const raceNo of source) {
+    target.add(raceNo);
+  }
+}
+
+function mergeKidsRowsAcrossIdentity(
+  rows: readonly KidsParticipationRow[],
+  strategy: KidsParticipationMergeStrategy,
+): KidsParticipationRow[] {
+  if (strategy === "none") {
+    return rows.map(cloneKidsParticipationRow);
+  }
+
+  const mergedRows: KidsParticipationRow[] = [];
+  const rowsByIdentity = new Map<string, KidsParticipationRow[]>();
+
+  for (const row of rows) {
+    const key = kidsStrictIdentityKey(row.participant);
+    if (!key) {
+      mergedRows.push(cloneKidsParticipationRow(row));
+      continue;
+    }
+
+    const identityRows = rowsByIdentity.get(key) ?? [];
+    const mergeTarget = identityRows.find((candidate) => !raceNosOverlap(candidate.raceNos, row.raceNos));
+    if (mergeTarget) {
+      addRaceNos(mergeTarget.raceNos, row.raceNos);
+      continue;
+    }
+
+    const nextRow = cloneKidsParticipationRow(row);
+    identityRows.push(nextRow);
+    rowsByIdentity.set(key, identityRows);
+    mergedRows.push(nextRow);
+  }
+
+  return mergedRows;
+}
+
+function sortKidsParticipationRows(rows: readonly KidsParticipationRow[]): KidsParticipationRow[] {
+  return [...rows].sort((left, right) => {
+    const family = left.participant.familyName.localeCompare(right.participant.familyName, "de");
+    if (family !== 0) {
+      return family;
+    }
+    const given = left.participant.givenName.localeCompare(right.participant.givenName, "de");
+    if (given !== 0) {
+      return given;
+    }
+    return left.participant.personId.localeCompare(right.participant.personId, "de");
+  });
+}
+
 function buildKidsParticipationRows(
   sections: readonly ExportSection[],
   cutoffYear: number,
+  mergeStrategy: KidsParticipationMergeStrategy = "strict_name_yob",
 ): { raceNos: number[]; rows: KidsParticipationRow[] } {
   const allRaceNos = new Set<number>();
   const rowsByPersonId = new Map<string, KidsParticipationRow>();
@@ -711,19 +795,11 @@ function buildKidsParticipationRows(
     }
   }
 
-  const rows = [...rowsByPersonId.values()]
-    .filter((row) => row.participant.yob >= cutoffYear)
-    .sort((left, right) => {
-      const family = left.participant.familyName.localeCompare(right.participant.familyName, "de");
-      if (family !== 0) {
-        return family;
-      }
-      const given = left.participant.givenName.localeCompare(right.participant.givenName, "de");
-      if (given !== 0) {
-        return given;
-      }
-      return left.participant.personId.localeCompare(right.participant.personId, "de");
-    });
+  const rows = sortKidsParticipationRows(
+    mergeKidsRowsAcrossIdentity([...rowsByPersonId.values()], mergeStrategy).filter(
+      (row) => row.participant.yob >= cutoffYear,
+    ),
+  );
 
   return {
     raceNos: [...allRaceNos].sort((left, right) => left - right),
@@ -852,7 +928,11 @@ export async function exportKidsParticipationWorkbook(
 
   const cutoffYear = options.cutoffYear ?? options.seasonYear - 12;
   const sections = buildLaufuebersichtSections(state, options);
-  const { raceNos, rows } = buildKidsParticipationRows(sections, cutoffYear);
+  const { raceNos, rows } = buildKidsParticipationRows(
+    sections,
+    cutoffYear,
+    options.participationMergeStrategy ?? "strict_name_yob",
+  );
   const worksheet = workbook.addWorksheet(EXCEL_SHEET_KIDS);
   renderKidsWorksheet(worksheet, options.seasonYear, raceNos, rows);
 
