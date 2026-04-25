@@ -54,6 +54,15 @@ export interface ExportCell {
   readonly colorRole?: "headerRunRed";
 }
 
+export interface ExportParticipant {
+  readonly personId: string;
+  readonly givenName: string;
+  readonly familyName: string;
+  readonly displayName: string;
+  readonly yob: number;
+  readonly club: string | null;
+}
+
 export interface ColumnDef {
   readonly id: string;
   readonly header: string;
@@ -73,6 +82,7 @@ export interface ExportBodyRow {
   readonly cells: readonly ExportCell[];
   readonly bandGroup: number;
   readonly podium: boolean;
+  readonly participant?: ExportParticipant;
 }
 
 export interface CellSpan {
@@ -128,6 +138,8 @@ interface ExportTeamMember {
   readonly member: "a" | "b";
   readonly uid: string;
   readonly name: string;
+  readonly givenName: string;
+  readonly familyName: string;
   readonly yob: number;
   readonly club: string | null;
 }
@@ -138,6 +150,7 @@ interface StandingsIdentity {
   readonly display_name: string;
   readonly yob: number | string | null;
   readonly club: string | null;
+  readonly participant?: ExportParticipant;
   readonly team_members?: readonly ExportTeamMember[];
 }
 
@@ -156,6 +169,7 @@ interface ProjectedStandingsRow {
   readonly club: string | null;
   readonly entity_uid: string;
   readonly entity_kind: "participant" | "team";
+  readonly participant?: ExportParticipant;
   readonly team_members?: readonly ExportTeamMember[];
   readonly distanz_gesamt: number;
   readonly punkte_gesamt: number;
@@ -164,6 +178,21 @@ interface ProjectedStandingsRow {
 
 function km(distanceM: number): number {
   return Math.round((distanceM / 1000) * 1000) / 1000;
+}
+
+function participantForPerson(personId: string, state: SeasonState): ExportParticipant | null {
+  const person = state.persons.get(personId);
+  if (!person) {
+    return null;
+  }
+  return {
+    personId,
+    givenName: person.given_name,
+    familyName: person.family_name,
+    displayName: person.display_name,
+    yob: person.yob,
+    club: person.club,
+  };
 }
 
 function teamMembersForPreview(team: Team, state: SeasonState): ExportTeamMember[] {
@@ -175,6 +204,8 @@ function teamMembersForPreview(team: Team, state: SeasonState): ExportTeamMember
         member: index === 0 ? "a" : "b",
         uid: personId,
         name: person?.display_name ?? personId,
+        givenName: person?.given_name ?? "",
+        familyName: person?.family_name ?? personId,
         yob: person?.yob ?? 0,
         club: person?.club ?? null,
       } as const;
@@ -197,12 +228,14 @@ function standingsIdentity(teamId: string, state: SeasonState): StandingsIdentit
   if (team.team_kind === "solo") {
     const personId = team.member_person_ids[0];
     const person = personId ? state.persons.get(personId) : null;
+    const participant = personId ? participantForPerson(personId, state) : null;
     return {
       entity_uid: personId ?? teamId,
       entity_kind: "participant",
       display_name: person?.display_name ?? personId ?? teamId,
       yob: person?.yob ?? null,
       club: person?.club ?? null,
+      ...(participant ? { participant } : {}),
     };
   }
 
@@ -272,6 +305,7 @@ function projectStandingsRow(
     club: identity.club,
     entity_uid: identity.entity_uid,
     entity_kind: identity.entity_kind,
+    ...(identity.participant ? { participant: identity.participant } : {}),
     ...(identity.team_members ? { team_members: identity.team_members } : {}),
     distanz_gesamt: km(row.total_distance_m),
     punkte_gesamt: row.total_points,
@@ -564,6 +598,14 @@ function buildLaufuebersichtBodyRows(rows: readonly ProjectedStandingsRow[]): Ex
         kind: "team_primary",
         bandGroup,
         podium,
+        participant: {
+          personId: firstMember.uid,
+          givenName: firstMember.givenName,
+          familyName: firstMember.familyName,
+          displayName: firstMember.name,
+          yob: firstMember.yob,
+          club: firstMember.club,
+        },
         cells: [
           bodyCell(platz),
           bodyCell(displayNameYobLine(firstMember.name, firstMember.yob)),
@@ -575,6 +617,14 @@ function buildLaufuebersichtBodyRows(rows: readonly ProjectedStandingsRow[]): Ex
         kind: "team_secondary",
         bandGroup,
         podium,
+        participant: {
+          personId: secondMember.uid,
+          givenName: secondMember.givenName,
+          familyName: secondMember.familyName,
+          displayName: secondMember.name,
+          yob: secondMember.yob,
+          club: secondMember.club,
+        },
         cells: [
           bodyCell(""),
           bodyCell(displayNameYobLine(secondMember.name, secondMember.yob)),
@@ -590,6 +640,7 @@ function buildLaufuebersichtBodyRows(rows: readonly ProjectedStandingsRow[]): Ex
       kind: "single",
       bandGroup,
       podium,
+      ...(row.participant ? { participant: row.participant } : {}),
       cells: [
         bodyCell(platz),
         bodyCell(displayNameYobLine(row.display_name, row.yob)),

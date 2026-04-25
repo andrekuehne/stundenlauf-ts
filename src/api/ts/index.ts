@@ -20,6 +20,7 @@ import {
 import { defaultMatchingConfig } from "@/matching/config.ts";
 import { alignCoupleMembersForDisplay } from "@/matching/review-display.ts";
 import { canonicalizeClub, canonicalizePersonNames } from "@/domain/person-identity.ts";
+import { resolveSeasonYear } from "@/domain/season-year.ts";
 import { splitDisplayNameParts } from "@/lib/normalization.ts";
 import { triggerDownload } from "@/portability/download.ts";
 import { computeStandings } from "@/ranking/index.ts";
@@ -138,18 +139,6 @@ function categoryLabel(category: RaceCategory): string {
     couples_mixed: "Paare Mixed",
   };
   return `${duration} ${divisionLabels[category.division]}`;
-}
-
-function extractSeasonYear(label: string, createdAt: string): number {
-  const explicit = label.match(/\b(19|20)\d{2}\b/);
-  if (explicit) {
-    return Number(explicit[0]);
-  }
-  const created = new Date(createdAt);
-  if (!Number.isNaN(created.getTime())) {
-    return created.getFullYear();
-  }
-  return new Date().getFullYear();
 }
 
 async function promptForFile(accept: string): Promise<File | null> {
@@ -953,11 +942,11 @@ class TsAppApi implements AppApi {
 
   async runExportAction(
     seasonId: string,
-    actionId: "export_pdf" | "export_excel",
+    actionId: "export_pdf" | "export_excel" | "export_kids_excel",
     options?: { pdfLayoutPreset?: "default" | "compact" },
   ) {
     const snapshot = await this.loadSnapshot(seasonId);
-    const seasonYear = extractSeasonYear(snapshot.descriptor.label, snapshot.descriptor.created_at);
+    const seasonYear = resolveSeasonYear(snapshot.descriptor.label, snapshot.descriptor.created_at);
     if (actionId === "export_pdf") {
       const { exportLaufuebersichtDualPdfs } = await import("@/export/pdf.ts");
       const layoutPreset = options?.pdfLayoutPreset ?? "compact";
@@ -970,6 +959,17 @@ class TsAppApi implements AppApi {
         triggerDownload(artifact.blob, artifact.filename);
       }
       return asSuccess(`PDF-Export abgeschlossen (${artifacts.length} Datei(en)).`);
+    }
+
+    if (actionId === "export_kids_excel") {
+      const { exportKidsParticipationWorkbook } = await import("@/export/excel.ts");
+      const artifact = await exportKidsParticipationWorkbook(snapshot.state, {
+        seasonYear,
+        cutoffYear: seasonYear - 12,
+        filenameBase: `stundenlauf-${seasonYear}-kids`,
+      });
+      triggerDownload(artifact.blob, artifact.filename);
+      return asSuccess(`Kids Excel-Export "${artifact.filename}" wurde erstellt.`);
     }
 
     const { exportGesamtwertungWorkbook } = await import("@/export/excel.ts");

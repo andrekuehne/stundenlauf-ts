@@ -198,6 +198,11 @@ describe("TsAppApi standings and exports", () => {
     const exportResult = await liveApi.runExportAction(created.seasonId, "export_excel");
     expect(exportResult.severity).toBe("success");
     expect(triggerDownloadSpy).toHaveBeenCalledTimes(1);
+
+    const kidsExportResult = await liveApi.runExportAction(created.seasonId, "export_kids_excel");
+    expect(kidsExportResult.severity).toBe("success");
+    expect(triggerDownloadSpy).toHaveBeenCalledTimes(2);
+    expect(triggerDownloadSpy.mock.calls[1]?.[1]).toBe("stundenlauf-2028-kids.xlsx");
   }, 30_000);
 
   it("getStandings raceCells reflect real per-race distance and points, not averaged totals", async () => {

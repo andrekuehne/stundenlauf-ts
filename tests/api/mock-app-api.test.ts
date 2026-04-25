@@ -44,9 +44,11 @@ describe("MockAppApi", () => {
 
     const standings = await api.getStandings(shell.selectedSeasonId);
     const exportResult = await api.runExportAction(shell.selectedSeasonId, "export_pdf");
+    const kidsExportResult = await api.runExportAction(shell.selectedSeasonId, "export_kids_excel");
 
     expect(standings.categories.length).toBeGreaterThan(0);
     expect(exportResult.message).toContain("Mock-Modus");
+    expect(kidsExportResult.message).toContain("Kids Excel");
   });
 
   it("re-ranks eligible rows when exclusion toggles", async () => {

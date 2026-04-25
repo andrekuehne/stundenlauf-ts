@@ -125,7 +125,7 @@ export function SeasonPage() {
   );
 
   const handleExport = useCallback(
-    async (seasonId: string, actionId: "export_excel" | "export_pdf") => {
+    async (seasonId: string, actionId: "export_excel" | "export_kids_excel" | "export_pdf") => {
       setActionSeasonId(seasonId);
       try {
         const result =
@@ -320,6 +320,16 @@ export function SeasonPage() {
                             }}
                           >
                             {STR.views.season.exportExcelAction}
+                          </button>
+                          <button
+                            type="button"
+                            className="button season-row-action season-row-action--kids-excel"
+                            disabled={isBusy}
+                            onClick={() => {
+                              void handleExport(row.seasonId, "export_kids_excel");
+                            }}
+                          >
+                            {STR.views.season.kidsExcelAction}
                           </button>
                           <button
                             type="button"

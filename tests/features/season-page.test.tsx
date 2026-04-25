@@ -256,6 +256,11 @@ describe("SeasonPage", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement);
     await waitFor(() => { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"); });
 
+    fireEvent.click(screen.getAllByRole("button", { name: "Kids Excel" })[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_kids_excel");
+    });
+
     fireEvent.click(screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement);
     await waitFor(() =>
       { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", { pdfLayoutPreset: "compact" }); },
@@ -326,14 +331,16 @@ describe("SeasonPage", () => {
     expect(inactiveRow).not.toHaveClass("is-active-season");
   });
 
-  it("styles Excel and PDF row exports with distinct accent classes", async () => {
+  it("styles Excel, Kids Excel and PDF row exports with distinct accent classes", async () => {
     render(<SeasonPage />);
     await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
 
     const excelButton = screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement;
+    const kidsExcelButton = screen.getAllByRole("button", { name: "Kids Excel" })[0] as HTMLButtonElement;
     const pdfButton = screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement;
 
     expect(excelButton.className).toContain("season-row-action--excel");
+    expect(kidsExcelButton.className).toContain("season-row-action--kids-excel");
     expect(pdfButton.className).toContain("season-row-action--pdf");
     expect(excelButton.className).not.toContain("season-row-action--pdf");
   });
