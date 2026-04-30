@@ -463,6 +463,7 @@ export async function resolveTeamRow(opts: {
   genderB: Gender;
   persons: ReadonlyMap<string, PersonIdentity>;
   teams: ReadonlyMap<string, Team>;
+  candidateTeams: readonly Team[];
   replayIndex: Map<string, string>;
   usedTeamUids: Map<string, string>;
   config: MatchingConfig;
@@ -476,6 +477,7 @@ export async function resolveTeamRow(opts: {
     genderB,
     persons,
     teams,
+    candidateTeams,
     replayIndex,
     usedTeamUids,
     config,
@@ -512,7 +514,7 @@ export async function resolveTeamRow(opts: {
   }
 
   // 2. CANDIDATE SCORING
-  const coupleTeams = [...teams.values()].filter((t) => t.team_kind === "couple");
+  const coupleTeams = candidateTeams.filter((t) => t.team_kind === "couple");
   const coupleIndex = buildCoupleBlockIndex(coupleTeams, persons, division);
   const candidates = gatherCoupleCandidates(parsedA, row.yob_a, parsedB, row.yob_b, coupleIndex, config);
 

@@ -53,26 +53,36 @@ function stateWithHistoricalRace(
     state: "active",
   };
 
-  const entries: RaceEntry[] = [...teams.values()]
-    .filter((t) => t.team_kind === "solo")
-    .map((t, i) => ({
+  const entries: RaceEntry[] = [...teams.values()].map((t, i) => {
+    const members = t.member_person_ids
+      .map((personId) => persons.get(personId))
+      .filter((person): person is PersonIdentity => person != null);
+    const displayName = members.map((person) => person.display_name).join(" / ");
+    const yobText = members.map((person) => String(person.yob)).join(" / ");
+    const club = members
+      .map((person) => person.club)
+      .filter(Boolean)
+      .join(" / ") || null;
+
+    return {
       entry_id: `entry-hist-${i}`,
       startnr: String(i + 1),
       team_id: t.team_id,
       distance_m: 10000,
       points: 10,
       incoming: {
-        display_name: persons.get(t.member_person_ids[0] ?? "")?.display_name ?? "",
-        yob: persons.get(t.member_person_ids[0] ?? "")?.yob ?? 0,
-        yob_text: null,
-        club: null,
-        row_kind: "solo",
+        display_name: displayName,
+        yob: t.team_kind === "solo" ? members[0]?.yob ?? 0 : null,
+        yob_text: t.team_kind === "couple" ? yobText : null,
+        club,
+        row_kind: t.team_kind === "solo" ? "solo" : "team",
         sheet_name: "history.xlsx",
         section_name: "hist",
         row_index: i,
       },
       resolution: { method: "new_identity", confidence: null, candidate_count: 0 },
-    }));
+    };
+  });
 
   const raceEvent: RaceEvent = {
     race_event_id: "race-history",
@@ -336,6 +346,7 @@ describe("processCouplesSection", () => {
       person_id: "pa",
       given_name: "max",
       family_name: "mustermann",
+      display_name: "Max Mustermann",
       yob: 1988,
       gender: "M",
     });
@@ -343,6 +354,7 @@ describe("processCouplesSection", () => {
       person_id: "pb",
       given_name: "eva",
       family_name: "beispiel",
+      display_name: "Eva Beispiel",
       yob: 1990,
       gender: "F",
     });
@@ -351,10 +363,11 @@ describe("processCouplesSection", () => {
       member_person_ids: ["pa", "pb"],
       team_kind: "couple",
     };
-    const state = emptyState({
-      persons: new Map([["pa", ma], ["pb", mb]]),
-      teams: new Map([["t-couple", coupleTeam]]),
-    });
+    const state = stateWithHistoricalRace(
+      new Map([["pa", ma], ["pb", mb]]),
+      new Map([["t-couple", coupleTeam]]),
+      { duration: "hour", division: "couples_mixed" },
+    );
     const section: ParsedSectionCouples = {
       context: { race_no: 2, duration: "hour", division: "couples_mixed", event_date: null },
       rows: [
@@ -376,5 +389,109 @@ describe("processCouplesSection", () => {
     expect(result.resolved_entries[0]!.route).toBe("auto");
     expect(result.resolved_entries[0]!.team_id).toBe("t-couple");
     expect(result.report.auto_links).toBe(1);
+  });
+
+  it("does not offer couple teams whose only race history is rolled back", async () => {
+    const ma = makePerson({
+      person_id: "pa",
+      given_name: "max",
+      family_name: "mustermann",
+      display_name: "Max Mustermann",
+      yob: 1988,
+      gender: "M",
+    });
+    const mb = makePerson({
+      person_id: "pb",
+      given_name: "eva",
+      family_name: "beispiel",
+      display_name: "Eva Beispiel",
+      yob: 1990,
+      gender: "F",
+    });
+    const staleTeam: Team = {
+      team_id: "t-rolled-back-couple",
+      member_person_ids: ["pa", "pb"],
+      team_kind: "couple",
+    };
+    const state = stateWithHistoricalRace(
+      new Map([["pa", ma], ["pb", mb]]),
+      new Map([["t-rolled-back-couple", staleTeam]]),
+      { duration: "hour", division: "couples_mixed" },
+    );
+    const race = state.race_events.get("race-history");
+    if (!race) throw new Error("Expected historical race");
+    state.race_events.set("race-history", { ...race, state: "rolled_back" });
+
+    const section: ParsedSectionCouples = {
+      context: { race_no: 2, duration: "hour", division: "couples_mixed", event_date: null },
+      rows: [
+        {
+          startnr: "1",
+          name_a: "Max Mustermann",
+          yob_a: 1988,
+          club_a: null,
+          name_b: "Eva Beispiel",
+          yob_b: 1990,
+          club_b: null,
+          distance_km: 20,
+          points: 2,
+        },
+      ],
+    };
+    const config = defaultMatchingConfig();
+    const result = await processCouplesSection(state, section, config);
+    expect(result.resolved_entries[0]!.route).toBe("new_identity");
+    expect(result.resolved_entries[0]!.candidate_uids).not.toContain("t-rolled-back-couple");
+    expect(result.review_items).toHaveLength(0);
+  });
+
+  it("does not offer couple teams from other categories", async () => {
+    const ma = makePerson({
+      person_id: "pa",
+      given_name: "max",
+      family_name: "mustermann",
+      display_name: "Max Mustermann",
+      yob: 1988,
+      gender: "M",
+    });
+    const mb = makePerson({
+      person_id: "pb",
+      given_name: "eva",
+      family_name: "beispiel",
+      display_name: "Eva Beispiel",
+      yob: 1990,
+      gender: "F",
+    });
+    const otherCategoryTeam: Team = {
+      team_id: "t-other-category-couple",
+      member_person_ids: ["pa", "pb"],
+      team_kind: "couple",
+    };
+    const state = stateWithHistoricalRace(
+      new Map([["pa", ma], ["pb", mb]]),
+      new Map([["t-other-category-couple", otherCategoryTeam]]),
+      { duration: "half_hour", division: "couples_mixed" },
+    );
+
+    const section: ParsedSectionCouples = {
+      context: { race_no: 2, duration: "hour", division: "couples_mixed", event_date: null },
+      rows: [
+        {
+          startnr: "1",
+          name_a: "Max Mustermann",
+          yob_a: 1988,
+          club_a: null,
+          name_b: "Eva Beispiel",
+          yob_b: 1990,
+          club_b: null,
+          distance_km: 20,
+          points: 2,
+        },
+      ],
+    };
+    const config = defaultMatchingConfig();
+    const result = await processCouplesSection(state, section, config);
+    expect(result.resolved_entries[0]!.route).toBe("new_identity");
+    expect(result.resolved_entries[0]!.candidate_uids).not.toContain("t-other-category-couple");
   });
 });

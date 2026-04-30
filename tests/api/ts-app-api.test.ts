@@ -696,6 +696,33 @@ describe("TsAppApi import workflows", () => {
           member_person_ids: ["person-couple-a", "person-couple-b"],
           team_kind: "couple",
         }),
+        importBatchRecorded({
+          import_batch_id: "batch-couple-existing",
+          source_file: "paare-lauf-1.xlsx",
+          source_sha256: "sha-couple-existing",
+        }),
+        raceRegistered({
+          race_event_id: "race-couple-existing",
+          import_batch_id: "batch-couple-existing",
+          category: { duration: "hour", division: "couples_mixed" },
+          race_no: 1,
+          entries: [
+            defaultEntry({
+              entry_id: "entry-couple-existing",
+              team_id: "team-couple-existing",
+              incoming: {
+                display_name: "Lea Beispiel / Tom Beispiel",
+                yob: null,
+                yob_text: "1992 / 1990",
+                club: "Club A / Club B",
+                row_kind: "team",
+                sheet_name: "paare-lauf-1.xlsx",
+                section_name: "Paare Mix",
+                row_index: 0,
+              },
+            }),
+          ],
+        }),
       ],
     );
 
@@ -772,6 +799,33 @@ describe("TsAppApi import workflows", () => {
           team_id: "team-couple-swapped",
           member_person_ids: ["person-swapped-a", "person-swapped-b"],
           team_kind: "couple",
+        }),
+        importBatchRecorded({
+          import_batch_id: "batch-couple-swapped",
+          source_file: "paare-lauf-1.xlsx",
+          source_sha256: "sha-couple-swapped",
+        }),
+        raceRegistered({
+          race_event_id: "race-couple-swapped",
+          import_batch_id: "batch-couple-swapped",
+          category: { duration: "hour", division: "couples_mixed" },
+          race_no: 1,
+          entries: [
+            defaultEntry({
+              entry_id: "entry-couple-swapped",
+              team_id: "team-couple-swapped",
+              incoming: {
+                display_name: "Tom Beispiel / Lea Beispiel",
+                yob: null,
+                yob_text: "1990 / 1992",
+                club: "Club B / Club A",
+                row_kind: "team",
+                sheet_name: "paare-lauf-1.xlsx",
+                section_name: "Paare Mix",
+                row_index: 0,
+              },
+            }),
+          ],
         }),
       ],
     );
