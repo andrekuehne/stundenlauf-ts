@@ -60,6 +60,32 @@ function buildCategoryHistoryPersonPool(
   return result;
 }
 
+function buildCategoryHistoryCoupleTeamPool(
+  state: SeasonState,
+  duration: RaceDuration,
+  division: Division,
+): Team[] {
+  const teamIdsSeen = new Set<string>();
+  const result: Team[] = [];
+
+  for (const raceEvent of state.race_events.values()) {
+    if (raceEvent.state !== "active") continue;
+    const batch = state.import_batches.get(raceEvent.import_batch_id);
+    if (batch?.state === "rolled_back") continue;
+    if (raceEvent.category.duration !== duration || raceEvent.category.division !== division) continue;
+
+    for (const entry of raceEvent.entries) {
+      const team = state.teams.get(entry.team_id);
+      if (!team || team.team_kind !== "couple") continue;
+      if (teamIdsSeen.has(team.team_id)) continue;
+      teamIdsSeen.add(team.team_id);
+      result.push(team);
+    }
+  }
+
+  return result;
+}
+
 function buildReviewItemForSingles(
   entry: { route: string; confidence: number; features: Record<string, number>; conflict_flags: string[]; top_candidate_uid: string | null; candidate_uids: string[]; candidate_confidences: number[] },
   entryId: string,
@@ -204,6 +230,7 @@ export async function processCouplesSection(
   const usedTeamUids = new Map<string, string>();
 
   const [genderA, genderB] = memberGendersForCouples(section.context.division);
+  const candidateTeams = buildCategoryHistoryCoupleTeamPool(state, duration, division);
 
   const resolvedEntries: SectionMatchResult["resolved_entries"] = [];
   const reviewItems: ReviewItem[] = [];
@@ -216,8 +243,7 @@ export async function processCouplesSection(
     club: string | null;
   }>();
 
-  for (const team of state.teams.values()) {
-    if (team.team_kind !== "couple") continue;
+  for (const team of candidateTeams) {
     const memberA = state.persons.get(team.member_person_ids[0] ?? "");
     const memberB = state.persons.get(team.member_person_ids[1] ?? "");
     if (!memberA || !memberB) continue;
@@ -242,6 +268,7 @@ export async function processCouplesSection(
       genderB,
       persons: state.persons,
       teams: state.teams,
+      candidateTeams,
       replayIndex,
       usedTeamUids,
       config,
