@@ -423,7 +423,7 @@ Update this section during implementation. Keep planned work separate from compl
 
 | Package | Status | Owner | Commit/PR | Validation evidence | Independent reviewer / outcome | Remaining action |
 |---|---|---|---|---|---|---|
-| WP-00 | Ready for Review | /root + target_research | Candidate below | Baseline reproduced; registry matrix and audit inventory below | independent_reviewer pending | Accept exact candidate review. |
+| WP-00 | Done | /root + target_research | 091e08c | Baseline, exact targets, full/prod inventory verified | independent_reviewer accepted 091e08c after correction/re-review | Future external checks assigned below. |
 | WP-01 | Planned | TBD | — | — | Pending | Apply and regression-test the diagnostic fix. |
 | WP-02 | Planned | TBD | — | — | Pending | Reconcile configs and repair CLI dependencies. |
 | WP-03 | Planned | TBD | — | — | Pending | Align runtime, types, and pnpm. |
@@ -442,6 +442,10 @@ For each independent review, record: package/subpackage; reviewer; exact reviewe
 For each advisory disposition, record: package/version; advisory URL; dependency path; execution context and reachability; chosen action; supporting verification; owner; next review trigger.
 
 For each version decision, record: family; selected versions; Node/peer constraints; reason for any holdback; primary-source links; affected work package; verification evidence.
+
+### Review acceptance log
+
+- WP-00: independent_reviewer accepted exact revision `091e08cfcd59de300fd9f801ed9aa23efcaa2397`; baseline install/check logs and current engine/peer guidance inspected, typecheck/lint/CLI independently reproduced, tarball integrity verified. Required finding on advisory path-context conflation fixed in 091e08c; re-review checked all78 exact labels against production audit. No actionable findings remain. Root recorded acceptance before releasing WP-01/WP-02. External Windows/settings/Dependabot/organizer gates remain assigned, not verified.
 
 ### Implementation baseline (WP-00)
 
