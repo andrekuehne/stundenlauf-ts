@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(import.meta.dirname, "src"),
+      // Unit tests mock the hook; production browser tests exercise the actual SW.
+      "virtual:pwa-register/react": resolve(import.meta.dirname, "tests/mocks/pwa-register.ts"),
     },
   },
   test: {

@@ -12,7 +12,7 @@
     "prepare": "simple-git-hooks",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage && tsx scripts/check-coverage-scope.ts",
     "lint": "eslint src/ tests/ scripts/ e2e/ \"*.config.ts\"",
     "lint:fix": "eslint src/ tests/ scripts/ e2e/ \"*.config.ts\" --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"e2e/**/*.ts\" \"*.config.ts\"",
