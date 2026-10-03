@@ -273,13 +273,13 @@ The baseline included Windows development-server advisories for Vite, a Vitest U
 
 **Definition of Done:**
 
-- [ ] The installed SheetJS version is from an official versioned source and exceeds the applicable vulnerable ranges.
-- [ ] Clean Linux/Windows frozen installs can obtain the chosen artifact, with integrity captured in the lockfile.
-- [ ] Existing ingestion/API import tests and relevant export/portability tests pass.
-- [ ] Synthetic regression coverage preserves parser values and error behavior; organizer workbooks remain tracked separately in WP-12.
-- [ ] No change to matching, ranking, event formats, or IndexedDB schema is introduced incidentally.
-- [ ] A manual upstream release-check procedure, source, owner, and review cadence are documented; no recurring automation is created by this package.
-- [ ] ExcelJS remains under review for advisories/maintenance without claiming a nonexistent newer official release.
+- [x] The installed SheetJS version is from an official versioned source and exceeds the applicable vulnerable ranges.
+- [x] Clean Linux/Windows frozen installs can obtain the chosen artifact, with integrity captured in the lockfile.
+- [x] Existing ingestion/API import tests and relevant export/portability tests pass.
+- [x] Synthetic regression coverage preserves parser values and error behavior; organizer workbooks remain tracked separately in WP-12.
+- [x] No change to matching, ranking, event formats, or IndexedDB schema is introduced incidentally.
+- [x] A manual upstream release-check procedure, source, owner, and review cadence are documented; no recurring automation is created by this package.
+- [x] ExcelJS remains under review for advisories/maintenance without claiming a nonexistent newer official release.
 - [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 The npm registry's xlsx release remained 0.18.5 at investigation time. See [official SheetJS installation](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/), [prototype-pollution advisory](https://github.com/advisories/GHSA-4r6h-8v6p-xvw6), [ReDoS advisory](https://github.com/advisories/GHSA-5pgg-2g8v-p4x9), and [ExcelJS releases](https://github.com/exceljs/exceljs/releases).
@@ -512,6 +512,13 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - No production source/parser/matching/ranking/event/schema change. Existing synthetic ingestion/API and export/archive matrix passes within677tests/66files; Unicode/German decimals/missing values/empty rows/duration/division/routing/error behavior stay covered. Linux Node24.21.0/pnpm10.34.6 frozen full `ci:local` passes: format/lint/types/coverage74.31%lines/statements/78.29%branches/82.12%functions/build/postlint/CLI, wp08-gates.log. BothOS artifact retrieval/quality evidence is required before Done.
 - Full audit3moderate/0high/0critical; production1moderate/0high/0critical (wp08-audit{,-prod}.json). Both SheetJS records absent and0.20.3 exceeds affected ranges; Vitest/mocker WP-09B and reviewed ExcelJS UUID residual remain as above. README documents coordinator-owned manual quarterly/advisory-triggered official source/version/license/integrity/migration review and bothOS checks; no recurring automation. ExcelJS4.4.0 retained. Organizer/desktop acceptance remains WP-12.
 - Real [run37132912040](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37132912040) at exactee7b423: Linux job111231432628 Ubuntu24.04.5 and Windows job111231432524 Server2025/windows-2025-vs2026, runner2.337.0, Node24.21.0/pnpm10.34.6. Both frozen installs downloaded675packages/reused0, including officialxlsx0.20.3; native tools/root hooks and all required677-test gates pass. Coverage Linux74.31/78.28/82.12; Windows74.32/78.31/82.12 (lines/branches/functions), unchanged thresholds. Pages skipped. Raw wp08-remote-{linux,windows}.log; independently fetched and accepted by reviewer.
+
+### WP-09A compiler decisions and evidence
+
+- Revalidated TypeScript5.9.3 then6.0.3; Node>=14.17, selected24.21.0 satisfies engines. typescript-eslint8.71.0 explicitly supports>=4.8.4<6.1 and ESLint8/9/10. Selected manifest `~6.0.3` keeps the supported compiler line; registry7.0.2 held back until lint-tool support extends, reviewed next tooling refresh. Sources: [5.9 migration](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-9.html), [6.0 migration](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html), [lint compiler support](https://typescript-eslint.io/users/dependency-versions/).
+- Implementation `b305e28` advances5.9 with three byte-view conversions authored by target_research; private hash conversion now guarantees ArrayBuffer backing while public inputs and exact byteOffset/byteLength are preserved. No casts/config relaxations. Known-digest offset Uint8Array/DataView regression includes sentinel allocation bytes and SharedArrayBuffer: red shared-buffer rejection, green16focused export/archive/integrity tests. `719ec15` separately repairs eight test-only lint findings from more precise DOM/TextEncoder types; all100focused tests retain assertions and nullable array access.
+- Actual normal frozen full gates on5.9.3 and6.0.3 both exit0:679tests/66files, coverage74.31%lines/statements/78.31%branches/82.12%functions, unchanged thresholds; format, strict expanded lint, both no-emit type projects, production build, postlint and fixture CLI. Compiler6 defaults/deprecations require no suppression: explicit ES2022/ESNext/bundler/strict/noEmit/relative aliases retained, tooling node types explicit, app ambient modules already covered. Lock updates limited to compiler/peer contexts. Logs wp09a-ts59-gates-fixed.log/wp09a-ts60-gates.log; earlier expanded-lint failure and scoped corrections retained.
+- Full/prod advisory results remain3moderate/1moderate, zero high/critical; unchanged residual assignments to09B and reviewed UUID. Final dependency set bothOS evidence is assigned to WP-09D integration before browser release; this compiler package's implementation review does not assert that future remote run.
 
 ### Review acceptance log
 
