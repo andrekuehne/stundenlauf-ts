@@ -11,6 +11,10 @@ import {
   waitForServiceWorker,
 } from "./helpers/smoke-flow.ts";
 
+test.beforeAll(({ browser }) => {
+  console.log(`Production browser: Chromium ${browser.version()}`);
+});
+
 test.beforeEach(async ({ request }) => {
   const response = await request.post("/__smoke__/build/a");
   expect(response.ok()).toBe(true);
