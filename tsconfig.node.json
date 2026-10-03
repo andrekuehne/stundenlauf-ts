@@ -1,14 +1,7 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2023"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "composite": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "skipLibCheck": true
+    "types": ["node"]
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "eslint.config.ts"]
+  "include": ["*.config.ts", "scripts", "e2e"]
 }

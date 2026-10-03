@@ -7,7 +7,8 @@
  *
  * See README.md ("Manual Excel parse dump") and F-TS02 Test Plan for details.
  *
- * Uses vite-node so `@/` imports match the app. Requires Node (global Web Crypto for SHA-256).
+ * Uses the directly declared tsx runner and tsconfig paths for `@/` imports.
+ * Requires Node (global Web Crypto for SHA-256).
  */
 
 import { readFileSync } from "node:fs";

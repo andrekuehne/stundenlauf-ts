@@ -48,7 +48,7 @@ async function buildArchiveFile(
   fileName = "archive.stundenlauf-season.zip",
 ): Promise<File> {
   const archive = await buildSeasonArchive(repo, seasonId, { filename: fileName });
-  const buffer = archive.zip_bytes.buffer.slice(0);
+  const buffer = new Uint8Array(archive.zip_bytes).buffer;
   const file = new File([buffer], fileName, { type: "application/zip" });
   Object.defineProperty(file, "arrayBuffer", {
     value: () => Promise.resolve(buffer.slice(0)),
@@ -190,7 +190,7 @@ describe("season archive export/import", () => {
     const zip = await JSZip.loadAsync(archive.zip_bytes);
     zip.file("eventlog.json", '{"format":"stundenlauf-ts-eventlog","format_version":1,"season_id":"season-source","label":"Manipuliert","events":[]}');
     const tamperedBytes = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
-    const tamperedBuffer = tamperedBytes.buffer.slice(0);
+    const tamperedBuffer = new Uint8Array(tamperedBytes).buffer;
     const file = new File([tamperedBuffer], "tampered.stundenlauf-season.zip", {
       type: "application/zip",
     });

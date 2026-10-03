@@ -6,19 +6,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "pnpm run typecheck && vite build",
     "preview": "vite preview",
     "ci:local": "pnpm install --frozen-lockfile && pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build",
     "prepare": "simple-git-hooks",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src/ tests/",
-    "lint:fix": "eslint src/ tests/ --fix",
+    "lint": "eslint src/ tests/ scripts/ e2e/ \"*.config.ts\"",
+    "lint:fix": "eslint src/ tests/ scripts/ e2e/ \"*.config.ts\" --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit",
-    "inspect:excel-fixtures": "vite-node scripts/dump-local-excel-fixtures.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "inspect:excel-fixtures": "tsx scripts/dump-local-excel-fixtures.ts",
     "playwright:install": "playwright install chromium",
     "screenshots:readme": "playwright test e2e/readme-main-screen.spec.ts"
   },
@@ -57,7 +57,8 @@
     "typescript-eslint": "^8",
     "vite": "^6",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^3"
+    "vitest": "^3",
+    "tsx": "4.23.15"
   },
   "simple-git-hooks": {
     "pre-push": "pnpm run ci:local"

@@ -31,7 +31,7 @@ async function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
 async function loadWorkbook(blob: Blob): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
   const buffer = await readBlobAsArrayBuffer(blob);
-  await workbook.xlsx.load(new Uint8Array(buffer));
+  await workbook.xlsx.load(buffer);
   return workbook;
 }
 

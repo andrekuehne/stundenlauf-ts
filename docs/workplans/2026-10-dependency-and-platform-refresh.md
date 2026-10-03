@@ -425,7 +425,7 @@ Update this section during implementation. Keep planned work separate from compl
 |---|---|---|---|---|---|---|
 | WP-00 | Done | /root + target_research | 091e08c | Baseline, exact targets, full/prod inventory verified | independent_reviewer accepted 091e08c after correction/re-review | Future external checks assigned below. |
 | WP-01 | Done | browser_prep | 400aa93 | Deterministic red; 130 ingestion/API + 674 full coverage pass on Linux Node24.21.0 | independent_reviewer accepted400aa93; independently reran130 tests | Windows verification assigned WP-05. |
-| WP-02 | Planned | TBD | — | — | Pending | Reconcile configs and repair CLI dependencies. |
+| WP-02 | Ready for Review | target_research + /root coordinator | Candidate below | Expanded lint/types; config regressions red/green; two builds; clean CLI | independent_reviewer pending | Accept candidate. |
 | WP-03 | Planned | TBD | — | — | Pending | Align runtime, types, and pnpm. |
 | WP-04 | Planned | TBD | — | — | Pending | Establish formatting baseline. |
 | WP-05 | Planned | TBD | — | — | Pending | Verify both OSes and deployment workflow. |
@@ -452,6 +452,15 @@ For each version decision, record: family; selected versions; Node/peer constrai
 
 - Changed only synthetic helper and new regression: `new Uint8Array(buf).buffer` copies exactly the returned view; production parsers/ranking/matching untouched. Actual workbook bytes are embedded in an explicitly allocated Buffer view with37-byte prefix and53-byte suffix. Red returned16132 bytes versus16042 expected; green asserts length, byte content and parsed Unicode/custom-sheet values, independent of pool size. Second normal-workbook round-trip passes.
 - Linux Node24.21.0/pnpm10.33.0: focused regressions2/2; ingestion/API130/130 across10files; full coverage674/674 across65files; lines/statements74.69%, branches78.29%, functions82.12%. Thresholds unchanged. Focused lint/format and typecheck pass. Evidence `/tmp/stundenlauf-refresh-evidence/wp01-*.log`. Windows verification remains WP-05.
+
+### WP-02 implementation evidence
+
+- Authoritative root `.ts` configs; removed six stale adjacent JS/declaration files. App/tooling configs perform strict no-emit checks, covering src/tests/scripts/e2e/allroot configs with explicit shared aliases and ESM paths. Tooling regression red3 failures, green6 build tests: no generated emissions, browser/config inclusion, alias resolution.
+- Preserved the five previously active JS test-only lint exemptions explicitly in `eslint.config.ts`; application/scripts/e2e/tooling retain strict typed lint. Expanded lint passes. ESLint defineConfig replaces deprecated tseslint.config.
+- Coordinator directly declared TSX4.23.15 (Node>=18), changed fixture CLI and portable build/type/lint scripts, serialized install/lock update. Lock diff adds TSX/esbuild0.28 native optional packages/peer context, without routine-family upgrades.
+- Fresh no-emit checks exposed four pre-existing test-only buffer typing errors previously masked by build/reference output. Root fixed two ExcelJS test loads to use actual ArrayBuffer, and two archive Blob inputs to copy view bytes into ArrayBuffer. Relevant export/portability behavior remains covered by existing tests.
+- Linux Node24.21.0/pnpm10.33.0: full coverage plus expanded types/lint pass; two successive builds and post-build lint pass without changing tracked state or recreating config artifacts. Root isolated clean frozen install `/tmp/stundenlauf-clean-wp02` passed; directly declared CLI exits0 and reports no fixtures. TSX IPC needs unsandboxed execution in this agent container; normal CI/developer environments are checked separately. Raw evidence wp02-*.log/status in session evidence directory.
+- GitHub settings browser recovery found no available connected browser (`agent.browsers.list()` empty); API protection403 / settings endpoint unavailable remain external administrator actions. No setting activation asserted.
 
 ### Review acceptance log
 
