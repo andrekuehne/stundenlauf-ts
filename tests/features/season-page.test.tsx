@@ -91,7 +91,7 @@ vi.mock("react-router-dom", async () => {
 });
 
 beforeEach(() => {
-  vi.restoreAllMocks();
+  // Reset this suite's owned mocks; setup owns the global console warning guard.
   setStatus.mockReset();
   setSidebarControls.mockReset();
   setNavigationGuard.mockReset();
@@ -144,6 +144,12 @@ beforeEach(() => {
 });
 
 describe("SeasonPage", () => {
+  it("keeps the global act-warning guard active after season-suite cleanup", () => {
+    expect(() => {
+      console.error("An update to SeasonPage inside a test was not wrapped in act(...).");
+    }).toThrow("React act warning detected:");
+  });
+
   it("does not inject season sidebar controls", async () => {
     render(<SeasonPage />);
     await waitFor(() => {
