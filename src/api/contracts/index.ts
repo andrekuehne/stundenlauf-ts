@@ -170,8 +170,7 @@ export interface ImportTeamIdentityCorrectionInput {
 }
 
 export type ImportIdentityCorrectionInput =
-  | ImportSingleIdentityCorrectionInput
-  | ImportTeamIdentityCorrectionInput;
+  ImportSingleIdentityCorrectionInput | ImportTeamIdentityCorrectionInput;
 
 export interface ImportReviewCorrectionInput {
   reviewId: string;

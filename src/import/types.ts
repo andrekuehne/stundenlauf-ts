@@ -12,13 +12,7 @@ import type { MatchRoute, ReviewItem } from "@/matching/types.ts";
 // --- Phase ---
 
 export type ImportPhase =
-  | "parsing"
-  | "validating"
-  | "matching"
-  | "reviewing"
-  | "committing"
-  | "done"
-  | "failed";
+  "parsing" | "validating" | "matching" | "reviewing" | "committing" | "done" | "failed";
 
 // --- Staged entry ---
 
@@ -54,8 +48,7 @@ export interface OrchestratedReviewEntry {
 }
 
 export type ReviewAction =
-  | { type: "link_existing"; team_id: string }
-  | { type: "create_new_identity" };
+  { type: "link_existing"; team_id: string } | { type: "create_new_identity" };
 
 // --- Report ---
 
