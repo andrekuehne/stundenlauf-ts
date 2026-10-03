@@ -323,15 +323,15 @@ Choose an integration order from actual peer constraints. Vitest/coverage may ne
 
 **Definition of Done:**
 
-- [ ] A documented browser-test command succeeds from a clean checkout with no organizer XLSX files.
-- [ ] Dedicated smoke tests run on Linux and Windows CI using a known browser version; failures retain useful trace/screenshot evidence.
-- [ ] Tests run against production output, exercise the configured subpath, and handle first service-worker activation deterministically.
-- [ ] IndexedDB persistence and season archive round-trip retain the expected season/event data.
-- [ ] XLSX/PDF downloads are valid and contain expected synthetic results; browser checks go beyond testing a download filename alone.
-- [ ] Offline startup and the update prompt are verified, with season data preserved after applying an update.
-- [ ] CI smoke tests do not require private fixtures or overwrite tracked README screenshots.
-- [ ] Browser-test sources/configs receive the agreed type/lint coverage; the currently unconfigured browser support assumptions are stated accurately.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] A documented browser-test command succeeds from a clean checkout with no organizer XLSX files.
+- [x] Dedicated smoke tests run on Linux and Windows CI using a known browser version; failures retain useful trace/screenshot evidence.
+- [x] Tests run against production output, exercise the configured subpath, and handle first service-worker activation deterministically.
+- [x] IndexedDB persistence and season archive round-trip retain the expected season/event data.
+- [x] XLSX/PDF downloads are valid and contain expected synthetic results; browser checks go beyond testing a download filename alone.
+- [x] Offline startup and the update prompt are verified, with season data preserved after applying an update.
+- [x] CI smoke tests do not require private fixtures or overwrite tracked README screenshots.
+- [x] Browser-test sources/configs receive the agreed type/lint coverage; the currently unconfigured browser support assumptions are stated accurately.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-11 — Documentation and final integration
 
@@ -437,8 +437,8 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-09B | Done | /root coordinator + browser_prep + target_research | 954a139; f2eabd2/e9046a5/cbb7ff1; remote740ae4a | Full695tests;118-source scope; finalbothOS gates | independent_reviewer accepted954a139 after required fix/re-review + supplement055a99e | Production PWA lifecycle in10. |
 | WP-09C | Done | /root coordinator + build_migration | 42586ff; implementation835a522; remote740ae4a | Frozen695-test gates; real production2-test interop; nativebothOS builds | independent_reviewer accepted42586ff + supplement055a99e | Root production browser integration/CI in10. |
 | WP-09D | Done | /root coordinator + build_migration | 055a99e; implementationbfc34fd; run37137700317 | Actual10lint/sequence checks; finalbothOS allgates695/68/118 | independent_reviewer accepted055a99e, independently fetchedbothOS logs | No remaining dependency-set OS gate. |
-| WP-10 | In Progress | /root coordinator + browser_prep preparation + scoped browser validation | — | Six-file real production prototype accepted as09Cinterop proof | Pending actual root integration review | Integrate separate smoke config/script/CI; verifybothOS browsers. |
-| WP-11 | Planned | TBD | — | — | Pending | Document and verify final integration. |
+| WP-10 | Done | /root coordinator + browser_prep + build_migration | 187455e; implementation0daf081/d9ce3ff; run37138602220 | BothOS695unit+2production tests; real matchedChromium153; allquality118scope | combined_reviewer accepted187455e incl independent production rerun andactualbothOS logs | Organizer/desktop/historical acceptance remains12; Windows temp cleanup unverified. |
+| WP-11 | In Progress | /root coordinator + docs_preparation | — | Scoped documentation draft ready; allintegratedquality/browser prerequisites reviewed | Pending actual final documentation/integration review | Update docs/evidence; finalfrozen gates/combined review/PR. WP06defaultbranchjob remains external. |
 | WP-12 | Awaiting fixtures | TBD | — | — | Pending | Receive fixtures and perform desktop acceptance. |
 
 For each independent review, record: package/subpackage; reviewer; exact reviewed revision; acceptance or findings; finding dispositions; fixes and re-review evidence; unresolved external gates. Add separate WP-09A through WP-09D execution rows when their migrations begin.
@@ -560,6 +560,8 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Actual [browser CI run37138602220](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37138602220), exactd9ce3ff6b1b10f43c4d5454ba1f85fa676fb16a5: Linux111248164007 and Windows111248164158 both success with all frozen quality/build/postlint/CLI/gitdiff gates,695tests/68files/118-source scope plus2production smoke tests (Linux20.2s, Windows19.1s). Both install matching Chromium1243 and actual launched version log153.0.8010.12; Linux installs system libraries via--with-deps, Windows uses bundled win64 Chrome without system channel/default. Same Node24.21.0/pnpm10.34.6/runner2.337.0 and OS images as09D. Linux coverage statements72.67/lines74.15/branches61.50/functions72.88%, Windows72.65/74.13/61.47/72.88%; unchanged thresholds/source scope, small render/instrumentation variation recorded. Real production imports/exports/archive/offline/update pass, feature Pages deploy skips. Logs wp10-{linux,windows}-ci.log; final independent actual remote/doc review remains before10 Done and11 release.
 
 ### Review acceptance log
+
+- WP-10: combined_reviewer (non-author) accepted `187455eecb5c50d606d27f4c49aa3becac8f7bbc`, actualimplementation0daf081/d9ce3ff. No required findings. Independently actual2-test production run13.2s, strict e2e/config lint/format/both type projects and corrected list selectivity; inspected all sources/scripts/config/workflow and restored accidental optional-screenshot writes to exact clean blobs. Independently fetched actual run37138602220 metadata/both decoded logs proving matched installed/launched Chromium153, all695unit/2production/118scope gates and correct feature-deploy/failure-upload skips. Root records acceptance and9individually evidenced10DoD items before releasing11; missing organizer/desktop/historical inputs remain12. WP06new default-branch update job/generated PR remain external activation verification, not a claim of completion.
 
 - WP-09D: independent_reviewer accepted `055a99e41e3f6f526996d91fdd06e2d9f449a3f3`, implementationbfc34fd and realbothOS source740ae4a. No required findings. Independently31API/store/history tests/full lint/new-rule config/public3-case sequence probe; independently fetched run37137700317 job metadata and both decoded logs confirming fresh frozen624-package installs/native setup/selected toolchain/allgates695tests/68files/118-source coverage/build/postlint/CLI/gitdiff and correct Pages skip. This accepts finalbothOS supplements for09A/09B/09C. Root records each09A–D and09 Done before releasing10; browserintegration/CI10 and organizer/desktop12 remain separate.
 
