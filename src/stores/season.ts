@@ -300,7 +300,7 @@ export const useSeasonStore = create<SeasonStoreState>((set, get) => ({
       );
     }
     events.push(
-      nextEnvelope(seq++, "import_batch.rolled_back", {
+      nextEnvelope(seq, "import_batch.rolled_back", {
         import_batch_id: importBatchId,
         reason,
       }),

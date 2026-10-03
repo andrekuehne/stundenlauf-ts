@@ -1389,7 +1389,7 @@ class TsAppApi implements AppApi {
       }
       newEvents.push({
         event_id: crypto.randomUUID(),
-        seq: nextSeq++,
+        seq: nextSeq,
         recorded_at: new Date().toISOString(),
         type: "race.rolled_back",
         schema_version: 1,
@@ -1432,7 +1432,7 @@ class TsAppApi implements AppApi {
     }
     newEvents.push({
       event_id: crypto.randomUUID(),
-      seq: nextSeq++,
+      seq: nextSeq,
       recorded_at: new Date().toISOString(),
       type: "import_batch.rolled_back",
       schema_version: 1,
