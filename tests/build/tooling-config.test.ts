@@ -51,6 +51,7 @@ describe("tooling type checks", () => {
       "vite.config.ts",
       "vitest.config.ts",
       "eslint.config.ts",
+      ".pnpmfile.cjs",
       "playwright.config.ts",
       "e2e/readme-main-screen.spec.ts",
       "scripts/dump-local-excel-fixtures.ts",
@@ -65,6 +66,27 @@ describe("tooling type checks", () => {
       const source = projectPath("scripts/dump-local-excel-fixtures.ts");
       const module = ts.resolveModuleName("@/ingestion/errors", source, config.options, ts.sys);
       expect(module.resolvedModule?.resolvedFileName).toBe(projectPath("src/ingestion/errors.ts"));
+    }
+  });
+
+  it("checks JavaScript hook types without emitting files", () => {
+    const directory = mkdtempSync(resolve(tmpdir(), "stundenlauf-hook-types-"));
+    try {
+      const source = resolve(directory, "hook.cjs");
+      writeFileSync(
+        source,
+        '/** @type {number} */\nconst value = "wrong";\nmodule.exports = { value };\n',
+      );
+      const config = readProjectConfig("tsconfig.node.json");
+      const program = ts.createProgram([source], config.options);
+      expect(ts.getPreEmitDiagnostics(program).some((diagnostic) => diagnostic.code === 2322)).toBe(
+        true,
+      );
+      const emitted: string[] = [];
+      program.emit(undefined, (fileName) => emitted.push(fileName));
+      expect(emitted).toEqual([]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
     }
   });
 });

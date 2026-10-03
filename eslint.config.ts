@@ -22,7 +22,7 @@ export default defineConfig(
     },
   },
   {
-    files: ["*.config.ts", "scripts/**/*.ts", "e2e/**/*.ts"],
+    files: ["*.config.ts", ".pnpmfile.cjs", "scripts/**/*.ts", "e2e/**/*.ts"],
     languageOptions: {
       globals: { ...globals.node },
     },

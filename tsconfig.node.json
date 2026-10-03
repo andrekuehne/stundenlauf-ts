@@ -1,7 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": true
   },
-  "include": ["*.config.ts", "scripts", "e2e"]
+  "include": ["*.config.ts", ".pnpmfile.cjs", "scripts", "e2e"]
 }
