@@ -427,7 +427,7 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-01 | Done | browser_prep | 400aa93 | Deterministic red; 130 ingestion/API + 674 full coverage pass on Linux Node24.21.0 | independent_reviewer accepted400aa93; independently reran130 tests | Windows verification assigned WP-05. |
 | WP-02 | Done | target_research + /root coordinator | f116db4 | Expanded lint/types; 677tests; two builds; clean CLI | independent_reviewer acceptedf116db4, reran16 focused tests/types/lint/CLI | Browser additions reviewed again WP-10. |
 | WP-03 | Reviewed / Pending External Verification | /root dependency coordinator | 44c7438 | Clean frozen Linux install, unchanged lock, real hooks; 677tests/types/lint/build/CLI pass | independent_reviewer accepted44c7438, reproduced version/types/hook | Windows native install verification in WP-05. |
-| WP-04 | In Progress | /root exclusive formatter | — | Pure formatting sweep of established scope | independent_reviewer pending | Format/lint/types then review. |
+| WP-04 | Done | /root exclusive formatter | 6f43378 | format/lint/types pass;104files pure Prettier3.8.2 output | independent_reviewer accepted6f43378, allfiles compared to formatted baseline | CI owner receives passing baseline. |
 | WP-05 | Planned | TBD | — | — | Pending | Verify both OSes and deployment workflow. |
 | WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f | Version2 YAML parsed; upstream npm/pnpm10 options verified | independent_reviewer acceptedbd7bc4f, no findings | Settings, actual update job and representative PR pending. |
 | WP-07 | Planned | TBD | — | — | Pending | Refresh compatible dependencies and audit. |
@@ -471,6 +471,8 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Node24.21.0/pnpm10.34.6 Linux:677tests/66files; coverage74.69% lines/statements,78.28% branches,82.12% functions, thresholds unchanged. Both type projects, expanded lint, production build, post-build lint, empty-fixture CLI pass. Raw wp03 logs/hash files retained in session evidence directory. Windows native install is explicitly delayed to WP-05 as specified by WP-03 DoD.
 
 ### Review acceptance log
+
+- WP-04: independent_reviewer accepted `6f4337897ba87548e39df4186ee90b7d5106a20a`; independently verified all104files equal Prettier3.8.2 applied to prior revision, no behavior/dependency/docs changes; reproduced format/lint/both typechecks. No findings. Acceptance recorded before releasing WP-05.
 
 - WP-03: independent_reviewer accepted `44c7438`; inspected actual pins/lock/policy/hook/line endings; reproduced10.34.6/types24.19.1/both strict type checks; clean frozen lock hashes verified. No findings. Status remains Reviewed / Pending External Verification until the explicitly assigned WP-05 Windows native install/OS checks. The local accepted result releases formatting/CI preparation, whose remote checks supply that delayed evidence.
 
