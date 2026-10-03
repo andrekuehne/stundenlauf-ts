@@ -294,11 +294,11 @@ Versions below are the resolved versions validated for this refresh; compatible 
 - **`src/app/`**, **`src/features/`**, **`src/components/`**, **`src/stores/`** — Routing/shell, workflow screens, reusable UI and Zustand state.
 - **`scripts/`**, **`tests/`**, **`e2e/`** — Developer CLIs, unit/integration checks and dedicated production browser checks. Root TS configs are authoritative; type checks do not regenerate adjacent JS/declaration files.
 
-Coverage thresholds remain 50% for lines/statements/functions and 45% for branches. The coverage command also verifies that every expected application `.ts`/`.tsx` source is present in LCOV (118 files at this refresh, excluding the browser entry and declarations). This inventory is derived from the source tree rather than a fixed file-count threshold. Vitest 5's instrumentation differs from the previous provider; detailed counter/scope evidence is in the workplan.
+Coverage thresholds remain 50% for lines/statements/functions and 45% for branches. The coverage command also verifies that every expected application `.ts`/`.tsx` source is present in LCOV (118 files at this refresh, excluding the browser entry, declarations and co-located test modules). This inventory is derived from the source tree rather than a fixed file-count threshold. Vitest 5's instrumentation differs from the previous provider; detailed counter/scope evidence is in the workplan.
 
 ### Key Design Decisions
 
 1. **Domain logic is framework-agnostic** — `src/domain/` has zero React imports. This makes the event-sourced core independently testable and portable.
 2. **Feature modules map to feature plans** — each subdirectory under `src/` corresponds to one or more `F-TS*` feature documents in `docs/features/`.
-3. **Tests mirror source** — `tests/domain/` tests `src/domain/`, etc. The canonical Vitest config selects `tests/**/*.test.{ts,tsx}`; production browser tests use their dedicated Playwright config.
+3. **Tests mirror source** — `tests/domain/` tests `src/domain/`, etc. The canonical Vitest config selects `tests/**/*.test.{ts,tsx}` and co-located `src/**/*.test.{ts,tsx}`. Test modules are excluded from application coverage; production browser tests use their dedicated Playwright config.
 4. **Path alias** — `@/` maps to `src/` for clean imports (configured in TypeScript and the canonical Vite/Vitest configs; the direct TSX fixture runner also resolves it).
