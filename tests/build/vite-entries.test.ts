@@ -4,7 +4,7 @@ import viteConfig from "../../vite.config.ts";
 
 describe("vite build entrypoints", () => {
   it("does not include legacy bridge entrypoint", () => {
-    const input = viteConfig.build?.rollupOptions?.input;
+    const input = viteConfig.build?.rolldownOptions?.input;
     expect(input).toEqual({
       main: expect.stringContaining("index.html"),
     });
