@@ -303,15 +303,15 @@ Choose an integration order from actual peer constraints. Vitest/coverage may ne
 
 **Definition of Done:**
 
-- [ ] Each subpackage records selected exact versions, engine/peer compatibility, migration steps, and its separate evidence.
-- [ ] All families resolve together without unreviewed peer or engine incompatibilities.
-- [ ] Runner and coverage package versions match; coverage gates remain meaningful after any instrumentation change.
-- [ ] Vite build configuration and build-entry tests reflect the chosen bundler API; lazy loading and base-path behavior remain verified.
-- [ ] The fixture CLI still runs after the test-tooling migration with its explicitly declared runner/replacement.
-- [ ] Build, lint, type checks, format checks, tests, and coverage pass on both OS CI jobs for the final dependency set.
-- [ ] Any held-back major has a specific compatibility blocker and follow-up, not a blanket dependency ignore.
-- [ ] Advisory results are refreshed; no unreviewed high/critical residual remains.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] Each subpackage records selected exact versions, engine/peer compatibility, migration steps, and its separate evidence.
+- [x] All families resolve together without unreviewed peer or engine incompatibilities.
+- [x] Runner and coverage package versions match; coverage gates remain meaningful after any instrumentation change.
+- [x] Vite build configuration and build-entry tests reflect the chosen bundler API; lazy loading and base-path behavior remain verified.
+- [x] The fixture CLI still runs after the test-tooling migration with its explicitly declared runner/replacement.
+- [x] Build, lint, type checks, format checks, tests, and coverage pass on both OS CI jobs for the final dependency set.
+- [x] Any held-back major has a specific compatibility blocker and follow-up, not a blanket dependency ignore.
+- [x] Advisory results are refreshed; no unreviewed high/critical residual remains.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-10 — Browser, persistence, export, and PWA verification
 
@@ -432,12 +432,12 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f; 63f8f30 | YAML/options and actual graph/alerts/security activation verified | independent_reviewer acceptedbd7bc4f and63f8f30 after ruleset correction | Actual new configuration update job and representative PR pending. |
 | WP-07 | Done | /root coordinator + target_research | 597cc8f; implementation16ff2ae | Frozen full gates677tests; full5/prod3 reviewed findings | independent_reviewer accepted597cc8f;216 independently reproduced tests; no findings | SheetJS→08, Vitest→09B, reviewed UUID residual. |
 | WP-08 | Done | /root coordinator | ee7b423; implementation8a445a8; run37132912040 | Official0.20.3/integrity; full677tests; fresh bothOS retrieval/gates | independent_reviewer acceptedee7b423 local155tests and independent bothOS logs; no findings | Organizer/desktop acceptance remains12. |
-| WP-09 | In Progress | /root coordinator + scoped implementation agents | — | Serial orderA→B→C→D from verified peer ranges | Independent review required per subpackage | Final dependency set bothOS checks in09D before10 release, browser rerun in10. |
-| WP-09A | Reviewed / Pending External Verification | /root coordinator + target_research | 0b08413; compiler5f977c7 | Actual5.9+6 full679-test gates; independent116tests/lint/types | independent_reviewer accepted0b08413; no findings | Final dependency set bothOS proof in09D. |
-| WP-09B | Reviewed / Pending External Verification | /root coordinator + browser_prep + target_research | 954a139; f2eabd2/e9046a5/cbb7ff1 | Full695tests;118-source scope; independent34repair+75migration tests | independent_reviewer accepted954a139 after required coverage fix/re-review | Final bothOS dependency-set proof in09D. |
-| WP-09C | Reviewed / Pending External Verification | /root coordinator + build_migration | 42586ff; implementation835a522 | Frozen full695-test gates;118-source coverage; real production2-test interoperability | independent_reviewer accepted42586ff; independently16build tests/types and2browser tests | Final dependency set bothOS proof in09D. |
-| WP-09D | In Progress | /root coordinator + scoped lint agent | — | Fresh official versions/engines/peers and ESLint10 guidance revalidated | Pending | Apply lint migration; final dependency set bothOS checks before10. |
-| WP-10 | Planned | TBD | — | — | Pending | Add production browser/PWA checks. |
+| WP-09 | Done | /root coordinator + scoped implementation agents | 055a99e; run37137700317 | Compatible serialA→B→C→D; final realbothOS695/68/118 gates pass | independent_reviewer accepted each subpackage and finalbothOS supplement | Production browser integration/remote smoke in10. |
+| WP-09A | Done | /root coordinator + target_research | 0b08413; compiler5f977c7; remote740ae4a | Actual5.9+6 full679-test gates; finalbothOS695-test dependency set | independent_reviewer accepted0b08413 + supplement055a99e; no findings | TS7 holdback has specific peer blocker/trigger. |
+| WP-09B | Done | /root coordinator + browser_prep + target_research | 954a139; f2eabd2/e9046a5/cbb7ff1; remote740ae4a | Full695tests;118-source scope; finalbothOS gates | independent_reviewer accepted954a139 after required fix/re-review + supplement055a99e | Production PWA lifecycle in10. |
+| WP-09C | Done | /root coordinator + build_migration | 42586ff; implementation835a522; remote740ae4a | Frozen695-test gates; real production2-test interop; nativebothOS builds | independent_reviewer accepted42586ff + supplement055a99e | Root production browser integration/CI in10. |
+| WP-09D | Done | /root coordinator + build_migration | 055a99e; implementationbfc34fd; run37137700317 | Actual10lint/sequence checks; finalbothOS allgates695/68/118 | independent_reviewer accepted055a99e, independently fetchedbothOS logs | No remaining dependency-set OS gate. |
+| WP-10 | In Progress | /root coordinator + browser_prep preparation + scoped browser validation | — | Six-file real production prototype accepted as09Cinterop proof | Pending actual root integration review | Integrate separate smoke config/script/CI; verifybothOS browsers. |
 | WP-11 | Planned | TBD | — | — | Pending | Document and verify final integration. |
 | WP-12 | Awaiting fixtures | TBD | — | — | Pending | Receive fixtures and perform desktop acceptance. |
 
@@ -550,6 +550,8 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Final dependency-set actual [CI run37137700317](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37137700317), exacthead740ae4a563d768576010d287c32a27b7d0e64abb: Linux job111245488912 and Windows111245489178 both success; feature-branch Pages deployment correctly skipped. Fresh normal frozen installs download624packages with zero reuse on bothOS, approved esbuild0.28.2 native setup/root hooks succeed, actual Rolldown/Oxc production build and Workbox34-entry SW succeed. Ubuntu24.04.5 image20260927.320.1 and Windows Server2025 imagewindows-2025-vs2026/20260925.250.1, runner2.337.0, Node24.21.0/pnpm10.34.6. All format/lint/types/coverage/build/postlint/emptyCLI/gitdiff gates pass; each695tests/68files and118source gate, statements72.65/lines74.13/branches61.47/functions72.88%, unchanged thresholds. Logs wp09d-{linux,windows}-ci.log and jobs metadata inspected by root; final independent remote review remains required before WP-09A–D/09 Done and10 release.
 
 ### Review acceptance log
+
+- WP-09D: independent_reviewer accepted `055a99e41e3f6f526996d91fdd06e2d9f449a3f3`, implementationbfc34fd and realbothOS source740ae4a. No required findings. Independently31API/store/history tests/full lint/new-rule config/public3-case sequence probe; independently fetched run37137700317 job metadata and both decoded logs confirming fresh frozen624-package installs/native setup/selected toolchain/allgates695tests/68files/118-source coverage/build/postlint/CLI/gitdiff and correct Pages skip. This accepts finalbothOS supplements for09A/09B/09C. Root records each09A–D and09 Done before releasing10; browserintegration/CI10 and organizer/desktop12 remain separate.
 
 - WP-09C: independent_reviewer accepted `42586fffc5280bf3e45adab660399a3dfa3caf9e`, actual migration835a522. No required findings. Independently16build tests/both type projects/118-source gate; actual lock/native policy/engine/peers/migration guidance/PWA2 stable source comparison inspected. Independently compared exact candidate hashes, inspected all real smoke assertions and reran2production Chromium tests (12.4s) with actual imports/exports/archive/offline/update/events preserved; clean root and teardown verified. Full frozen695-test gates/unchanged thresholds/UUID-only audits accepted. Root records acceptance before09D release; final bothOS dependency-set proof assigned09D and root browser integration/remote smoke10.
 
