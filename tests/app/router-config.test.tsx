@@ -1,13 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-const createHashRouterMock = vi.fn((...args: unknown[]) => {
-  void args;
-  return {};
-});
-const routerProviderMock = vi.fn((props?: unknown) => {
-  void props;
-  return null;
-});
+const createHashRouterMock = vi.fn<(...args: unknown[]) => unknown>(() => ({}));
+const routerProviderMock = vi.fn<(props?: unknown) => null>(() => null);
 
 vi.mock("react-router-dom", () => ({
   createHashRouter: (...args: unknown[]) => createHashRouterMock(...args),

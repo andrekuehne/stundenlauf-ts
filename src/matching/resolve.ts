@@ -55,15 +55,11 @@ export function buildReplayIndex(state: SeasonState): Map<string, string> {
     const batch = state.import_batches.get(raceEvent.import_batch_id);
     if (batch && batch.state !== "active") continue;
     for (const entry of raceEvent.entries) {
-      const { resolution, incoming } = entry;
+      const { resolution } = entry;
       const isReplayable =
         (resolution.method === "auto" && resolution.confidence === 1.0) ||
         resolution.method === "manual";
       if (!isReplayable) continue;
-      // Recompute fingerprint from incoming data
-      // We store it keyed by display_name|yob|row_kind for later async lookup
-      // The actual fingerprint computation happens in the resolve functions
-      void incoming;
       // Store team_id keyed by entry for later fingerprint resolution
       index.set(entry.entry_id, entry.team_id);
     }

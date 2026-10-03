@@ -66,8 +66,7 @@ class InMemoryEventDb {
     return undefined;
   }
 
-  transaction(storeNames: string | string[], mode: "readwrite") {
-    void mode;
+  transaction(storeNames: string | string[]) {
     const allowed = new Set(Array.isArray(storeNames) ? storeNames : [storeNames]);
     return {
       objectStore: (storeName: string) => {

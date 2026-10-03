@@ -375,9 +375,7 @@ beforeEach(() => {
     getImportDraft: vi.fn(async () => {
       throw new Error("not used");
     }),
-    setImportReviewDecision: vi.fn(async (draftId: string, decision: ImportReviewDecision) => {
-      void draftId;
-      void decision;
+    setImportReviewDecision: vi.fn<AppApi["setImportReviewDecision"]>(async () => {
       throw new Error("not used");
     }),
     applyImportReviewCorrection: vi.fn(async () => {

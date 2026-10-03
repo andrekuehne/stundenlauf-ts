@@ -75,12 +75,11 @@ export function candidatePersonKeys(incoming: ParsedName, yob: number): string[]
 export function gatherCandidates(
   incoming: ParsedName,
   yob: number,
-  gender: Gender,
+  _gender: Gender,
   index: Map<string, PersonIdentity[]>,
   config: MatchingConfig,
 ): PersonIdentity[] {
-  // gender parameter is for API consistency; the index is pre-filtered by gender
-  void gender;
+  // The gender parameter is for API consistency; the index is pre-filtered by gender.
   const keys = candidatePersonKeys(incoming, yob);
   const seen = new Set<string>();
   const out: PersonIdentity[] = [];

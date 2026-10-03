@@ -896,7 +896,7 @@ export async function renderExcelBlob(
   const sections = buildExportSections(state, toExcelSpec(spec), options);
   buildWorkbookSheet(workbook, EXCEL_SHEET_EINZEL, sections);
   const buffer = await workbook.xlsx.writeBuffer();
-  return writeBufferToBlob(buffer as ArrayBuffer | Uint8Array);
+  return writeBufferToBlob(buffer);
 }
 
 export async function exportGesamtwertungWorkbook(
@@ -927,7 +927,7 @@ export async function exportGesamtwertungWorkbook(
   const buffer = await workbook.xlsx.writeBuffer();
   return {
     filename: excelFilename(options.filenameBase ?? `stundenlauf-${options.seasonYear}-ergebnisse`),
-    blob: writeBufferToBlob(buffer as ArrayBuffer | Uint8Array),
+    blob: writeBufferToBlob(buffer),
   };
 }
 
@@ -952,6 +952,6 @@ export async function exportKidsParticipationWorkbook(
   const buffer = await workbook.xlsx.writeBuffer();
   return {
     filename: excelFilename(options.filenameBase ?? `stundenlauf-${options.seasonYear}-kids`),
-    blob: writeBufferToBlob(buffer as ArrayBuffer | Uint8Array),
+    blob: writeBufferToBlob(buffer),
   };
 }
