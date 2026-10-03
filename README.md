@@ -208,6 +208,8 @@ The [workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) record
 
 Dependabot's three-day cooldown can reject newly reviewed versions already present in the lockfile during an unrelated update. The temporary `minimumReleaseAgeExclude` entries in `pnpm-workspace.yaml` name only exact reviewed releases; future versions remain subject to that cooldown. Remove these entries after 2026-10-06 14:14 UTC, when every listed release is older than three days. Node-types major updates require a coordinated runtime-major review; their minor and patch updates remain enabled.
 
+The reviewed `.pnpmfile.cjs` hook preserves the official SheetJS 0.20.3 checksum when pnpm 10 drops remote-tarball integrity during a warm lockfile-only update. It restores only that exact artifact's missing checksum and rejects conflicting URL, version or hash metadata. A SheetJS update must revalidate the official archive and update this pin as part of the same reviewed change. After changing the hook, run `pnpm install --lockfile-only` to refresh `pnpmfileChecksum`, then verify frozen installation and the full quality gates. Remove the workaround only after a supported pnpm release preserves integrity through the complete warm update/install sequence; track [the upstream defect](https://github.com/pnpm/pnpm/issues/14351).
+
 Organizer workbooks, agreed reference outcomes, an existing season archive, and Windows Excel/Linux LibreOffice application acceptance are tracked separately as **WP-12: Awaiting Fixtures**. The automated Linux/Windows browser checks use synthetic inputs.
 
 ## Technology Stack
