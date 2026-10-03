@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppApi, AppCommandResult, HistoryData, ShellData, StandingsData } from "@/api/contracts/index.ts";
+import type {
+  AppApi,
+  AppCommandResult,
+  HistoryData,
+  ShellData,
+  StandingsData,
+} from "@/api/contracts/index.ts";
 import { HistoryPage } from "@/features/history/HistoryPage.tsx";
 
 const setSidebarControls = vi.fn();
@@ -17,7 +23,12 @@ const shellData: ShellData = {
 const historyData: HistoryData = {
   seasonId: "season-1",
   seasonLabel: "Saison 1",
-  raceContext: { raceEventId: "race-1", raceLabel: "Lauf 1", categoryLabel: "Frauen", raceDateLabel: "2026-01-01" },
+  raceContext: {
+    raceEventId: "race-1",
+    raceLabel: "Lauf 1",
+    categoryLabel: "Frauen",
+    raceDateLabel: "2026-01-01",
+  },
   rows: [
     {
       seq: 10,
@@ -51,7 +62,13 @@ const historyData: HistoryData = {
 
 const emptyStandings: StandingsData = {
   seasonId: "season-1",
-  summary: { seasonLabel: "Saison 1", totalTeams: 0, totalParticipants: 0, totalRuns: 0, lastUpdatedAt: new Date().toISOString() },
+  summary: {
+    seasonLabel: "Saison 1",
+    totalTeams: 0,
+    totalParticipants: 0,
+    totalRuns: 0,
+    lastUpdatedAt: new Date().toISOString(),
+  },
   categories: [],
   rowsByCategory: {},
   importedRuns: [],
@@ -68,7 +85,8 @@ vi.mock("@/app/shell-context.ts", () => ({
   useAppShellContext: () => ({ shellData, setSidebarControls, setNavigationGuard }),
 }));
 vi.mock("@/stores/status.ts", () => ({
-  useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) => selector({ setStatus }),
+  useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) =>
+    selector({ setStatus }),
 }));
 
 beforeEach(() => {
@@ -78,23 +96,42 @@ beforeEach(() => {
   apiMock = {
     getShellData: vi.fn(async () => shellData),
     listSeasons: vi.fn(async () => []),
-    createSeason: vi.fn(async () => { throw new Error("not used"); }),
+    createSeason: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     openSeason: vi.fn(async () => {}),
     deleteSeason: vi.fn(async () => {}),
     runSeasonCommand: vi.fn(async () => buildCommandResult("ok")),
     getStandings: vi.fn(async () => emptyStandings),
     runExportAction: vi.fn(async () => buildCommandResult("ok")),
-    createImportDraft: vi.fn(async () => { throw new Error("not used"); }),
-    getImportDraft: vi.fn(async () => { throw new Error("not used"); }),
-    setImportReviewDecision: vi.fn(async () => { throw new Error("not used"); }),
-    applyImportReviewCorrection: vi.fn(async () => { throw new Error("not used"); }),
+    createImportDraft: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    getImportDraft: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    setImportReviewDecision: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    applyImportReviewCorrection: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     finalizeImportDraft: vi.fn(async () => buildCommandResult("ok")),
     getHistory: vi.fn(async () => historyData),
-    previewHistoryState: vi.fn(async () => ({ anchorSeq: 10, isFrozen: true, derivedStateLabel: "Vorschau", blockedReason: "eingefroren" })),
+    previewHistoryState: vi.fn(async () => ({
+      anchorSeq: 10,
+      isFrozen: true,
+      derivedStateLabel: "Vorschau",
+      blockedReason: "eingefroren",
+    })),
     rollbackHistory: vi.fn(async () => buildCommandResult("Rollback ok")),
     setStandingsRowExcluded: vi.fn(async () => {}),
-    getStandingsRowIdentity: vi.fn(async () => { throw new Error("not used"); }),
-    correctStandingsRowIdentity: vi.fn(async () => { throw new Error("not used"); }),
+    getStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    correctStandingsRowIdentity: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     hardResetHistoryToSeq: vi.fn(async () => buildCommandResult("Reset ok")),
   };
 });

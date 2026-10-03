@@ -62,8 +62,22 @@ describe("all-auto import into empty season", () => {
             event_date: "2025-06-01",
           },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 12.5, points: 10 },
-            { startnr: "2", name: "Schmidt, Hans", yob: 1985, club: "LG B", distance_km: 10.0, points: 8 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 12.5,
+              points: 10,
+            },
+            {
+              startnr: "2",
+              name: "Schmidt, Hans",
+              yob: 1985,
+              club: "LG B",
+              distance_km: 10.0,
+              points: 8,
+            },
           ],
         },
       ],
@@ -127,9 +141,7 @@ describe("all-auto import into empty season", () => {
       singles_sections: [
         {
           context: { race_no: 1, duration: "hour", division: "men", event_date: null },
-          rows: [
-            { startnr: "1", name: "A, B", yob: 1990, club: null, distance_km: 10, points: 8 },
-          ],
+          rows: [{ startnr: "1", name: "A, B", yob: 1990, club: null, distance_km: 10, points: 8 }],
         },
       ],
     });
@@ -249,7 +261,14 @@ describe("import with review", () => {
         {
           context: { race_no: 2, duration: "hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 13, points: 11 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 13,
+              points: 11,
+            },
           ],
         },
       ],
@@ -354,7 +373,14 @@ describe("import with review — create_new_identity", () => {
         {
           context: { race_no: 2, duration: "hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Maximilian", yob: 1990, club: "LG A", distance_km: 13, points: 11 },
+            {
+              startnr: "1",
+              name: "Müller, Maximilian",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 13,
+              points: 11,
+            },
           ],
         },
       ],
@@ -402,13 +428,27 @@ describe("multi-section category isolation", () => {
         {
           context: { race_no: 1, duration: "hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 8 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 10,
+              points: 8,
+            },
           ],
         },
         {
           context: { race_no: 1, duration: "half_hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 5, points: 4 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 5,
+              points: 4,
+            },
           ],
         },
       ],
@@ -491,7 +531,14 @@ describe("regression: category-scoped matching — cross-duration isolation", ()
         {
           context: { race_no: 1, duration: "half_hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 5, points: 4 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 5,
+              points: 4,
+            },
           ],
         },
       ],
@@ -566,7 +613,14 @@ describe("regression: category-scoped matching — cross-duration isolation", ()
         {
           context: { race_no: 2, duration: "hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 13, points: 10 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 13,
+              points: 10,
+            },
           ],
         },
       ],
@@ -601,13 +655,27 @@ describe("regression: same-file section isolation", () => {
         {
           context: { race_no: 1, duration: "hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 8 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 10,
+              points: 8,
+            },
           ],
         },
         {
           context: { race_no: 2, duration: "hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 8 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 10,
+              points: 8,
+            },
           ],
         },
       ],
@@ -670,9 +738,7 @@ describe("eligibility clearing", () => {
       singles_sections: [
         {
           context: { race_no: 1, duration: "hour", division: "men", event_date: null },
-          rows: [
-            { startnr: "1", name: "A, B", yob: 1990, club: null, distance_km: 10, points: 8 },
-          ],
+          rows: [{ startnr: "1", name: "A, B", yob: 1990, club: null, distance_km: 10, points: 8 }],
         },
       ],
     });

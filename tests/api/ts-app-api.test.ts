@@ -133,7 +133,9 @@ describe("TsAppApi season and shell flows", () => {
 
     await api.deleteSeason(createdSecond.seasonId);
     const seasonsAfterDelete = await api.listSeasons();
-    expect(seasonsAfterDelete.map((season) => season.seasonId)).not.toContain(createdSecond.seasonId);
+    expect(seasonsAfterDelete.map((season) => season.seasonId)).not.toContain(
+      createdSecond.seasonId,
+    );
   });
 });
 
@@ -221,22 +223,38 @@ describe("TsAppApi standings and exports", () => {
           club: "Club X",
           club_normalized: "club x",
         }),
-        teamRegistered({ team_id: "team-cells", member_person_ids: ["person-cells"], team_kind: "solo" }),
-        importBatchRecorded({ import_batch_id: "batch-cells-1", source_file: "lauf1.xlsx", source_sha256: "sha1" }),
+        teamRegistered({
+          team_id: "team-cells",
+          member_person_ids: ["person-cells"],
+          team_kind: "solo",
+        }),
+        importBatchRecorded({
+          import_batch_id: "batch-cells-1",
+          source_file: "lauf1.xlsx",
+          source_sha256: "sha1",
+        }),
         raceRegistered({
           race_event_id: "race-cells-1",
           import_batch_id: "batch-cells-1",
           category: { duration: "hour", division: "men" },
           race_no: 1,
-          entries: [defaultEntry({ entry_id: "e1", team_id: "team-cells", points: 10, distance_m: 5000 })],
+          entries: [
+            defaultEntry({ entry_id: "e1", team_id: "team-cells", points: 10, distance_m: 5000 }),
+          ],
         }),
-        importBatchRecorded({ import_batch_id: "batch-cells-2", source_file: "lauf2.xlsx", source_sha256: "sha2" }),
+        importBatchRecorded({
+          import_batch_id: "batch-cells-2",
+          source_file: "lauf2.xlsx",
+          source_sha256: "sha2",
+        }),
         raceRegistered({
           race_event_id: "race-cells-2",
           import_batch_id: "batch-cells-2",
           category: { duration: "hour", division: "men" },
           race_no: 2,
-          entries: [defaultEntry({ entry_id: "e2", team_id: "team-cells", points: 14, distance_m: 8000 })],
+          entries: [
+            defaultEntry({ entry_id: "e2", team_id: "team-cells", points: 14, distance_m: 8000 }),
+          ],
         }),
       ],
     );
@@ -401,10 +419,30 @@ describe("TsAppApi history workflows", () => {
     setSeasonRepositoryForTests(repo);
     const season = await repo.createSeason("Stundenlauf 2032");
     await repo.appendEvents(season.season_id, [
-      importBatchRecorded({ import_batch_id: "batch-x1", source_file: "lauf-1.xlsx", source_sha256: "sha-x1" }),
-      raceRegistered({ race_event_id: "race-x1", import_batch_id: "batch-x1", category: { duration: "hour", division: "men" }, race_no: 1, entries: [] }),
-      importBatchRecorded({ import_batch_id: "batch-x2", source_file: "lauf-2.xlsx", source_sha256: "sha-x2" }),
-      raceRegistered({ race_event_id: "race-x2", import_batch_id: "batch-x2", category: { duration: "hour", division: "women" }, race_no: 2, entries: [] }),
+      importBatchRecorded({
+        import_batch_id: "batch-x1",
+        source_file: "lauf-1.xlsx",
+        source_sha256: "sha-x1",
+      }),
+      raceRegistered({
+        race_event_id: "race-x1",
+        import_batch_id: "batch-x1",
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [],
+      }),
+      importBatchRecorded({
+        import_batch_id: "batch-x2",
+        source_file: "lauf-2.xlsx",
+        source_sha256: "sha-x2",
+      }),
+      raceRegistered({
+        race_event_id: "race-x2",
+        import_batch_id: "batch-x2",
+        category: { duration: "hour", division: "women" },
+        race_no: 2,
+        entries: [],
+      }),
     ]);
     const api = createTsAppApi();
     await api.openSeason(season.season_id);
@@ -431,8 +469,18 @@ describe("TsAppApi history workflows", () => {
     setSeasonRepositoryForTests(repo);
     const season = await repo.createSeason("Stundenlauf 2033");
     await repo.appendEvents(season.season_id, [
-      importBatchRecorded({ import_batch_id: "batch-only", source_file: "lauf-1.xlsx", source_sha256: "sha-only" }),
-      raceRegistered({ race_event_id: "race-only", import_batch_id: "batch-only", category: { duration: "hour", division: "men" }, race_no: 1, entries: [] }),
+      importBatchRecorded({
+        import_batch_id: "batch-only",
+        source_file: "lauf-1.xlsx",
+        source_sha256: "sha-only",
+      }),
+      raceRegistered({
+        race_event_id: "race-only",
+        import_batch_id: "batch-only",
+        category: { duration: "hour", division: "men" },
+        race_no: 1,
+        entries: [],
+      }),
     ]);
     const api = createTsAppApi();
     await api.openSeason(season.season_id);
@@ -457,7 +505,11 @@ describe("TsAppApi history workflows", () => {
     setSeasonRepositoryForTests(repo);
     const season = await repo.createSeason("Stundenlauf 2034");
     await repo.appendEvents(season.season_id, [
-      importBatchRecorded({ import_batch_id: "batch-couples", source_file: "paare-lauf1.xlsx", source_sha256: "sha-c1" }),
+      importBatchRecorded({
+        import_batch_id: "batch-couples",
+        source_file: "paare-lauf1.xlsx",
+        source_sha256: "sha-c1",
+      }),
       raceRegistered({
         race_event_id: "race-couples",
         import_batch_id: "batch-couples",
@@ -465,7 +517,11 @@ describe("TsAppApi history workflows", () => {
         race_no: 1,
         entries: [],
       }),
-      importBatchRecorded({ import_batch_id: "batch-singles", source_file: "einzel-lauf1.xlsx", source_sha256: "sha-s1" }),
+      importBatchRecorded({
+        import_batch_id: "batch-singles",
+        source_file: "einzel-lauf1.xlsx",
+        source_sha256: "sha-s1",
+      }),
       raceRegistered({
         race_event_id: "race-singles",
         import_batch_id: "batch-singles",
@@ -968,7 +1024,11 @@ describe("TsAppApi import workflows", () => {
     });
 
     expect(corrected.decisions).toEqual([
-      { reviewId: review.reviewId, action: "merge_with_typo_fix", candidateId: candidate.candidateId },
+      {
+        reviewId: review.reviewId,
+        action: "merge_with_typo_fix",
+        candidateId: candidate.candidateId,
+      },
     ]);
     expect(corrected.summary.typoCorrections).toBe(1);
 
@@ -1024,13 +1084,24 @@ describe("TsAppApi corrections – identity lookup and correction", () => {
         member_person_ids: ["person-solo"],
         team_kind: "solo",
       }),
-      importBatchRecorded({ import_batch_id: "batch-corr", source_file: "lauf.xlsx", source_sha256: "sha" }),
+      importBatchRecorded({
+        import_batch_id: "batch-corr",
+        source_file: "lauf.xlsx",
+        source_sha256: "sha",
+      }),
       raceRegistered({
         race_event_id: "race-corr",
         import_batch_id: "batch-corr",
         category: { duration: "hour", division: "women" },
         race_no: 1,
-        entries: [defaultEntry({ entry_id: "entry-corr", team_id: "team-solo", points: 10, distance_m: 5000 })],
+        entries: [
+          defaultEntry({
+            entry_id: "entry-corr",
+            team_id: "team-solo",
+            points: 10,
+            distance_m: 5000,
+          }),
+        ],
       }),
     ]);
     return season;
@@ -1064,13 +1135,24 @@ describe("TsAppApi corrections – identity lookup and correction", () => {
         member_person_ids: ["person-a", "person-b"],
         team_kind: "couple",
       }),
-      importBatchRecorded({ import_batch_id: "batch-couple", source_file: "paare.xlsx", source_sha256: "sha2" }),
+      importBatchRecorded({
+        import_batch_id: "batch-couple",
+        source_file: "paare.xlsx",
+        source_sha256: "sha2",
+      }),
       raceRegistered({
         race_event_id: "race-couple",
         import_batch_id: "batch-couple",
         category: { duration: "hour", division: "couples_mixed" },
         race_no: 1,
-        entries: [defaultEntry({ entry_id: "entry-couple", team_id: "team-couple", points: 15, distance_m: 8000 })],
+        entries: [
+          defaultEntry({
+            entry_id: "entry-couple",
+            team_id: "team-couple",
+            points: 15,
+            distance_m: 8000,
+          }),
+        ],
       }),
     ]);
     return season;

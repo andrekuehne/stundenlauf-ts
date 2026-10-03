@@ -3,11 +3,7 @@ import { emptySeasonState } from "@/domain/projection.ts";
 import type { PersonRegisteredPayload, TeamRegisteredPayload } from "@/domain/events.ts";
 import { emptyImportReport } from "@/import/report.ts";
 import { finalizeImport } from "@/import/finalize.ts";
-import type {
-  ImportSession,
-  OrchestratedSection,
-  StagedEntry,
-} from "@/import/types.ts";
+import type { ImportSession, OrchestratedSection, StagedEntry } from "@/import/types.ts";
 import type { ParsedWorkbook } from "@/ingestion/types.ts";
 
 function makeResolvedStaged(overrides?: Partial<StagedEntry>): StagedEntry {
@@ -154,11 +150,7 @@ describe("finalizeImport", () => {
       all_resolved: true,
     };
 
-    const session = makeCommittingSession(
-      [section],
-      [personPayload, personPayload],
-      [],
-    );
+    const session = makeCommittingSession([section], [personPayload, personPayload], []);
     const events = finalizeImport(session, { startSeq: 0 });
 
     const personEvents = events.filter((e) => e.type === "person.registered");
@@ -178,11 +170,7 @@ describe("finalizeImport", () => {
       all_resolved: true,
     };
 
-    const session = makeCommittingSession(
-      [section],
-      [],
-      [teamPayload, teamPayload],
-    );
+    const session = makeCommittingSession([section], [], [teamPayload, teamPayload]);
     const events = finalizeImport(session, { startSeq: 0 });
 
     const teamEvents = events.filter((e) => e.type === "team.registered");
@@ -240,9 +228,7 @@ describe("finalizeImport", () => {
     };
 
     const events = finalizeImport(sessionWithExclusions, { startSeq: 0 });
-    const eligEvents = events.filter(
-      (e) => e.type === "ranking.eligibility_set",
-    );
+    const eligEvents = events.filter((e) => e.type === "ranking.eligibility_set");
 
     expect(eligEvents).toHaveLength(2);
     for (const evt of eligEvents) {
@@ -260,9 +246,7 @@ describe("finalizeImport", () => {
 
     const session = makeCommittingSession([section]);
     const events = finalizeImport(session, { startSeq: 0 });
-    const eligEvents = events.filter(
-      (e) => e.type === "ranking.eligibility_set",
-    );
+    const eligEvents = events.filter((e) => e.type === "ranking.eligibility_set");
 
     expect(eligEvents).toHaveLength(0);
   });
@@ -292,8 +276,6 @@ describe("finalizeImport", () => {
     };
 
     const session = makeCommittingSession([section]);
-    expect(() => finalizeImport(session, { startSeq: 0 })).toThrow(
-      "not all entries are resolved",
-    );
+    expect(() => finalizeImport(session, { startSeq: 0 })).toThrow("not all entries are resolved");
   });
 });

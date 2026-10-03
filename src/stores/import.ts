@@ -6,7 +6,13 @@
 
 import { create } from "zustand";
 import type { SeasonState } from "@/domain/types.ts";
-import { finalizeImport, getReviewQueue, resolveReviewEntry, runMatching, startImport } from "@/import/orchestrator.ts";
+import {
+  finalizeImport,
+  getReviewQueue,
+  resolveReviewEntry,
+  runMatching,
+  startImport,
+} from "@/import/orchestrator.ts";
 import type { ImportSession, OrchestratedReviewEntry, ReviewAction } from "@/import/types.ts";
 import { detectSourceType, parseRaceNo } from "@/ingestion/helpers.ts";
 import {
@@ -191,7 +197,9 @@ export const useImportStore = create<ImportStoreState>((set, get) => ({
   startImportFlow: async (seasonState) => {
     const state = get();
     if (state.openReviewCount > 0) {
-      set({ error: "Solange offene Prüfungen bestehen, kann kein weiterer Lauf importiert werden." });
+      set({
+        error: "Solange offene Prüfungen bestehen, kann kein weiterer Lauf importiert werden.",
+      });
       return null;
     }
     if (!state.selectedFile || !state.raceNo) {

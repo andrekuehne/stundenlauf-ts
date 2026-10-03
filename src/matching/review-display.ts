@@ -189,24 +189,12 @@ export function buildCoupleLineHighlights(
 
   const lines: PersonLineHighlights[] = [];
   for (let idx = 0; idx < 2; idx++) {
-    const [incName, incYob, incClub] = splitTeamIncomingLine(
-      displayName,
-      yobF,
-      clubF,
-      idx,
-    );
+    const [incName, incYob, incClub] = splitTeamIncomingLine(displayName, yobF, clubF, idx);
     const mem = members[idx];
     if (!mem) continue;
     const memberName = mem.display_name;
     lines.push(
-      fieldHighlightsForPersonLine(
-        incName,
-        incYob,
-        incClub || null,
-        memberName,
-        mem.yob,
-        mem.club,
-      ),
+      fieldHighlightsForPersonLine(incName, incYob, incClub || null, memberName, mem.yob, mem.club),
     );
   }
   return lines;

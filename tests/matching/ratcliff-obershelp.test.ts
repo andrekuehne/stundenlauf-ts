@@ -40,10 +40,7 @@ describe("sequenceMatcherRatio", () => {
   });
 
   it("matches Python for 'anna meyer' vs 'anna meyer'", () => {
-    expect(sequenceMatcherRatio("anna meyer", "anna meyer")).toBeCloseTo(
-      1.0,
-      4,
-    );
+    expect(sequenceMatcherRatio("anna meyer", "anna meyer")).toBeCloseTo(1.0, 4);
   });
 
   it("matches Python for 'anna' vs 'meyer'", () => {
@@ -57,9 +54,7 @@ describe("sequenceMatcherRatio", () => {
   });
 
   it("matches Python for 'tristan wolter' vs 'tristan wolter'", () => {
-    expect(
-      sequenceMatcherRatio("tristan wolter", "tristan wolter"),
-    ).toBeCloseTo(1.0, 4);
+    expect(sequenceMatcherRatio("tristan wolter", "tristan wolter")).toBeCloseTo(1.0, 4);
   });
 
   it("matches Python for 'muller' vs 'mueller'", () => {

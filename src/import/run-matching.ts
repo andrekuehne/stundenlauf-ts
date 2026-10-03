@@ -9,16 +9,10 @@
  * Reference: F-TS05 §3 (Match + Stage Phase)
  */
 
-import type {
-  PersonRegisteredPayload,
-  TeamRegisteredPayload,
-} from "@/domain/events.ts";
+import type { PersonRegisteredPayload, TeamRegisteredPayload } from "@/domain/events.ts";
 import type { IncomingRowData } from "@/domain/types.ts";
 import type { MatchingConfig } from "@/matching/config.ts";
-import type {
-  ResolvedEntry,
-  SectionMatchResult,
-} from "@/matching/types.ts";
+import type { ResolvedEntry, SectionMatchResult } from "@/matching/types.ts";
 import { processCouplesSection, processSinglesSection } from "@/matching/workflow.ts";
 import type { ImportRaceContext } from "@/ingestion/types.ts";
 import {
@@ -35,10 +29,19 @@ import type {
   StagedEntry,
 } from "./types.ts";
 
-
 function buildStagedEntriesForSingles(
   matchResult: SectionMatchResult,
-  section: { context: ImportRaceContext; rows: readonly { startnr: string; distance_km: number; points: number; name: string; yob: number; club: string | null }[] },
+  section: {
+    context: ImportRaceContext;
+    rows: readonly {
+      startnr: string;
+      distance_km: number;
+      points: number;
+      name: string;
+      yob: number;
+      club: string | null;
+    }[];
+  },
   sourceFile: string,
 ): StagedEntry[] {
   return matchResult.resolved_entries.map((resolved, i) => {
@@ -58,7 +61,20 @@ function buildStagedEntriesForSingles(
 
 function buildStagedEntriesForCouples(
   matchResult: SectionMatchResult,
-  section: { context: ImportRaceContext; rows: readonly { startnr: string; distance_km: number; points: number; name_a: string; yob_a: number; club_a: string | null; name_b: string; yob_b: number; club_b: string | null }[] },
+  section: {
+    context: ImportRaceContext;
+    rows: readonly {
+      startnr: string;
+      distance_km: number;
+      points: number;
+      name_a: string;
+      yob_a: number;
+      club_a: string | null;
+      name_b: string;
+      yob_b: number;
+      club_b: string | null;
+    }[];
+  },
   sourceFile: string,
 ): StagedEntry[] {
   return matchResult.resolved_entries.map((resolved, i) => {
@@ -155,11 +171,7 @@ export async function runMatching(
       session.source_file,
     );
 
-    const reviewEntries = buildOrchestratedReviewEntries(
-      matchResult,
-      stagedEntries,
-      sectionIndex,
-    );
+    const reviewEntries = buildOrchestratedReviewEntries(matchResult, stagedEntries, sectionIndex);
 
     sections.push({
       context: singlesSection.context,
@@ -182,11 +194,7 @@ export async function runMatching(
       session.source_file,
     );
 
-    const reviewEntries = buildOrchestratedReviewEntries(
-      matchResult,
-      stagedEntries,
-      sectionIndex,
-    );
+    const reviewEntries = buildOrchestratedReviewEntries(matchResult, stagedEntries, sectionIndex);
 
     sections.push({
       context: couplesSection.context,

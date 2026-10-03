@@ -119,17 +119,22 @@ export const STR = {
       selectFileTitle: "Datei und Kontext auswählen",
       selectFileHint: "Wählen Sie Datei, Wettbewerb und Laufnummer. Danach startet die Prüfliste.",
       seasonOverviewTitle: "Bisher importierte Läufe",
-      seasonOverviewHint: "Übersicht der Läufe in der aktuellen Saison. Tippen Sie auf einen freien Lauf, um ihn vorzuwählen.",
+      seasonOverviewHint:
+        "Übersicht der Läufe in der aktuellen Saison. Tippen Sie auf einen freien Lauf, um ihn vorzuwählen.",
       seasonOverviewSinglesLabel: "Einzel",
       seasonOverviewDoublesLabel: "Paare",
       seasonOverviewLegendImported: "importiert",
       seasonOverviewLegendFree: "frei",
-      seasonOverviewChipImported: (race: number, category: string) => `${category} Lauf ${race} bereits importiert`,
-      seasonOverviewChipFree: (race: number, category: string) => `${category} Lauf ${race} noch frei – auswählen`,
+      seasonOverviewChipImported: (race: number, category: string) =>
+        `${category} Lauf ${race} bereits importiert`,
+      seasonOverviewChipFree: (race: number, category: string) =>
+        `${category} Lauf ${race} noch frei – auswählen`,
       selectionStatusNoFile: "Wählen Sie zunächst eine Datei aus.",
-      selectionStatusDetected: (category: string, race: number) => `Erkannt: ${category} · Lauf ${race}`,
+      selectionStatusDetected: (category: string, race: number) =>
+        `Erkannt: ${category} · Lauf ${race}`,
       selectionStatusDetectedSub: "Stimmt das nicht? Wählen Sie links den richtigen Lauf.",
-      selectionStatusRaceMissing: (category: string) => `Erkannt: ${category} — Laufnummer nicht im Dateinamen.`,
+      selectionStatusRaceMissing: (category: string) =>
+        `Erkannt: ${category} — Laufnummer nicht im Dateinamen.`,
       selectionStatusRaceMissingSub: "Bitte wählen Sie links den Ziel-Lauf.",
       pickFile: "Datei auswählen",
       fileNameLabel: "Dateiname",
@@ -163,8 +168,7 @@ export const STR = {
       reviewProgressShort: (current: number, total: number) => `Zuordnung ${current} von ${total}`,
       reviewHintLayout:
         "Oben sehen Sie den eingehenden Eintrag. Darunter vorhandene Kandidaten nach Treffersicherheit.",
-      reviewHintNoMatch:
-        'Wenn kein Kandidat passt, wählen Sie "Keine passt: neue Person anlegen".',
+      reviewHintNoMatch: 'Wenn kein Kandidat passt, wählen Sie "Keine passt: neue Person anlegen".',
       reviewBackEntry: "Vorige",
       reviewNextEntry: "Nächste",
       reviewTypoFix: "Zusammenführen und Namen korrigieren",
@@ -211,7 +215,8 @@ export const STR = {
         "Der aktuelle Import-/Matching-Prozess ist noch nicht abgeschlossen. Beim Verlassen werden die aktuellen Schritte verworfen.",
       leaveInProgressProceed: "Trotzdem verlassen",
       raceWord: "Lauf",
-      inferenceDetectedBoth: (typeLabel: string, racePart: string) => `Erkannt: ${typeLabel} · ${racePart}`,
+      inferenceDetectedBoth: (typeLabel: string, racePart: string) =>
+        `Erkannt: ${typeLabel} · ${racePart}`,
       inferenceDetectedTypeOnly: (typeLabel: string) =>
         `Erkannt: ${typeLabel} · Laufnummer nicht im Dateinamen, bitte wählen.`,
       reviewIncoming: "Eingehend",
@@ -262,7 +267,8 @@ export const STR = {
       matchingModeHintManual: "Manuell zeigt alle Kandidaten ohne Auto-Zuordnung.",
       matchingModeHintAutoZone: "Fuzzy-Automatik: oberster Treffer liegt in der Auto-Zone.",
       matchingModeHintReviewList: "Fuzzy-Automatik: oberster Treffer bleibt in der Prüfliste.",
-      visibleCandidatesCount: (visible: number, total: number) => `Sichtbare Kandidaten: ${visible} von ${total}`,
+      visibleCandidatesCount: (visible: number, total: number) =>
+        `Sichtbare Kandidaten: ${visible} von ${total}`,
       autoSelectTopCandidateLabel: "Ersten Treffer automatisch auswählen",
       autoSelectTopCandidateHint:
         "Wenn aktiviert, wird der beste sichtbare Treffer vorausgewählt. Sonst müssen Sie je Eintrag aktiv einen Treffer oder „Neue Person anlegen“ wählen.",
@@ -280,7 +286,8 @@ export const STR = {
     },
     history: {
       title: "Historie",
-      subtitle: "Übersicht der importierten Dateien. Hier können Sie den Saisonstand auf den Zeitpunkt vor einem Import zurücksetzen.",
+      subtitle:
+        "Übersicht der importierten Dateien. Hier können Sie den Saisonstand auf den Zeitpunkt vor einem Import zurücksetzen.",
       placeholder: "Noch keine Historie vorhanden.",
       importHistoryTitle: "Import-Historie",
       auditTrailTitle: "Audit-Protokoll",
@@ -288,7 +295,8 @@ export const STR = {
       selectedRaceEmpty: "Kein Laufkontext vorhanden.",
       selectedRaceAsOf: (seq: number) => `Historischer Stand (seq ${seq})`,
       selectedRaceLive: "Live-Stand",
-      freezeHint: "Vorschau aktiv: weitere Aenderungen bleiben gesperrt, bis Sie zur Live-Ansicht wechseln.",
+      freezeHint:
+        "Vorschau aktiv: weitere Aenderungen bleiben gesperrt, bis Sie zur Live-Ansicht wechseln.",
       historyTableTitle: "Import-Übersicht",
       eventType: "Ereignis",
       eventSummary: "Beschreibung",
@@ -375,13 +383,15 @@ export const STR = {
       backupNote:
         "Backup-Import und Backup-Export sind in Phase 1 bereits sichtbar, werden aber noch vom Mock-AppApi beantwortet.",
       existingSeasonsTitle: "Bestehende Saisons",
-      existingSeasonsDescription: "Alle vorhandenen Saisons stehen hier direkt zum Oeffnen oder Verwalten bereit.",
+      existingSeasonsDescription:
+        "Alle vorhandenen Saisons stehen hier direkt zum Oeffnen oder Verwalten bereit.",
       loading: "Saisons werden geladen...",
       enterSeasonName: "Bitte einen Saisonnamen eingeben.",
     },
     corrections: {
       title: "Korrekturen",
-      subtitle: "Wählen Sie eine Kategorie aus und korrigieren Sie Teilnehmerdaten oder die Wertungsstellung.",
+      subtitle:
+        "Wählen Sie eine Kategorie aus und korrigieren Sie Teilnehmerdaten oder die Wertungsstellung.",
       guidance:
         "Hinweis: Namen oder Vereine anklicken, um Korrekturen zu starten. Über a.W. setzen oder entfernen Sie Teams als außer Wertung. Weitere Korrektur-Funktionen folgen hier.",
       noSeason: "Bitte zuerst eine Saison auswählen.",
@@ -449,7 +459,8 @@ export const STR = {
     name: "Name",
     yob: "Jahrgang",
     club: "Verein",
-    assignmentHint: "Bei Auswahl werden die eingehenden Ergebnisse dieser Person bzw. diesem Team zugeordnet.",
+    assignmentHint:
+      "Bei Auswahl werden die eingehenden Ergebnisse dieser Person bzw. diesem Team zugeordnet.",
     selectedDisplayName: (name: string, suffix: string) => `${name} - ${suffix}`,
   },
 } as const;

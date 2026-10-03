@@ -481,7 +481,10 @@ describe("validate race.metadata_corrected", () => {
 
     const event = raceMetadataCorrected({
       race_event_id: "r2",
-      updated_fields: { category: defaultCategory({ duration: "hour", division: "men" }), race_no: 1 },
+      updated_fields: {
+        category: defaultCategory({ duration: "hour", division: "men" }),
+        race_no: 1,
+      },
     });
     const result = validateEvent(state, event);
     expect(result.valid).toBe(false);

@@ -2,7 +2,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppApi, AppCommandResult, SeasonListItem, ShellData, StandingsData } from "@/api/contracts/index.ts";
+import type {
+  AppApi,
+  AppCommandResult,
+  SeasonListItem,
+  ShellData,
+  StandingsData,
+} from "@/api/contracts/index.ts";
 import { SeasonPage } from "@/features/season/SeasonPage.tsx";
 
 const setSidebarControls = vi.fn();
@@ -44,7 +50,13 @@ const seasons: SeasonListItem[] = [
 
 const emptyStandings: StandingsData = {
   seasonId: "season-1",
-  summary: { seasonLabel: "Saison 1", totalTeams: 0, totalParticipants: 0, totalRuns: 0, lastUpdatedAt: new Date().toISOString() },
+  summary: {
+    seasonLabel: "Saison 1",
+    totalTeams: 0,
+    totalParticipants: 0,
+    totalRuns: 0,
+    lastUpdatedAt: new Date().toISOString(),
+  },
   categories: [],
   rowsByCategory: {},
   importedRuns: [],
@@ -59,10 +71,16 @@ let apiMock: AppApi;
 
 vi.mock("@/api/provider.tsx", () => ({ useAppApi: () => apiMock }));
 vi.mock("@/app/shell-context.ts", () => ({
-  useAppShellContext: () => ({ shellData, refreshShellData, setSidebarControls, setNavigationGuard }),
+  useAppShellContext: () => ({
+    shellData,
+    refreshShellData,
+    setSidebarControls,
+    setNavigationGuard,
+  }),
 }));
 vi.mock("@/stores/status.ts", () => ({
-  useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) => selector({ setStatus }),
+  useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) =>
+    selector({ setStatus }),
 }));
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -128,7 +146,9 @@ beforeEach(() => {
 describe("SeasonPage", () => {
   it("does not inject season sidebar controls", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
     expect(setSidebarControls).not.toHaveBeenCalled();
   });
 
@@ -138,23 +158,31 @@ describe("SeasonPage", () => {
 
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[1] as HTMLButtonElement);
-    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
+    await waitFor(() => {
+      expect(apiMock.openSeason).toHaveBeenCalledWith("season-2");
+    });
     await waitFor(() => {
       expect(refreshShellData).toHaveBeenCalled();
     });
     await waitFor(() => {
-      expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season", severity: "info" }));
+      expect(setStatus).toHaveBeenCalledWith(
+        expect.objectContaining({ source: "season", severity: "info" }),
+      );
     });
   });
 
   it("opens already active season and still navigates based on imported events", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
 
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[0] as HTMLButtonElement);
 
-    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-1"); });
+    await waitFor(() => {
+      expect(apiMock.openSeason).toHaveBeenCalledWith("season-1");
+    });
     expect(navigateMock).toHaveBeenCalledWith("/standings");
   });
 
@@ -165,7 +193,9 @@ describe("SeasonPage", () => {
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[2] as HTMLButtonElement);
 
-    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-3"); });
+    await waitFor(() => {
+      expect(apiMock.openSeason).toHaveBeenCalledWith("season-3");
+    });
     expect(navigateMock).toHaveBeenCalledWith("/standings");
   });
 
@@ -176,13 +206,17 @@ describe("SeasonPage", () => {
     const openButtons = screen.getAllByRole("button", { name: /Öffnen/i });
     fireEvent.click(openButtons[1] as HTMLButtonElement);
 
-    await waitFor(() => { expect(apiMock.openSeason).toHaveBeenCalledWith("season-2"); });
+    await waitFor(() => {
+      expect(apiMock.openSeason).toHaveBeenCalledWith("season-2");
+    });
     expect(navigateMock).toHaveBeenCalledWith("/import");
   });
 
   it("styles delete action as danger button", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
 
     const deleteButton = screen.getAllByRole("button", { name: "Löschen" })[0] as HTMLButtonElement;
     expect(deleteButton.className).toContain("button--danger");
@@ -207,8 +241,12 @@ describe("SeasonPage", () => {
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Saison 2" } });
     fireEvent.click(confirmButton);
 
-    await waitFor(() => { expect(apiMock.deleteSeason).toHaveBeenCalledWith("season-2"); });
-    expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ severity: "success", source: "season" }));
+    await waitFor(() => {
+      expect(apiMock.deleteSeason).toHaveBeenCalledWith("season-2");
+    });
+    expect(setStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: "success", source: "season" }),
+    );
   });
 
   it("renders create and import actions in the existing seasons header", async () => {
@@ -243,7 +281,9 @@ describe("SeasonPage", () => {
     const input = within(dialog).getByRole("textbox", { name: /Saisonname/i });
     fireEvent.change(input, { target: { value: "Neue Saison" } });
     fireEvent.click(within(dialog).getByRole("button", { name: /Neue Saison erstellen/i }));
-    await waitFor(() => { expect(apiMock.createSeason).toHaveBeenCalledWith({ label: "Neue Saison" }); });
+    await waitFor(() => {
+      expect(apiMock.createSeason).toHaveBeenCalledWith({ label: "Neue Saison" });
+    });
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/import");
     });
@@ -251,10 +291,14 @@ describe("SeasonPage", () => {
 
   it("runs season row exports with compact PDF default", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement);
-    await waitFor(() => { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"); });
+    await waitFor(() => {
+      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel");
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: "Kids Excel" })[0] as HTMLButtonElement);
     await waitFor(() => {
@@ -262,9 +306,11 @@ describe("SeasonPage", () => {
     });
 
     fireEvent.click(screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement);
-    await waitFor(() =>
-      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", { pdfLayoutPreset: "compact" }); },
-    );
+    await waitFor(() => {
+      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
+        pdfLayoutPreset: "compact",
+      });
+    });
     await waitFor(() => {
       expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "season" }));
     });
@@ -272,7 +318,9 @@ describe("SeasonPage", () => {
 
   it("renders an overview meta line with season count and last-modified context", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
 
     const meta = screen.getByTestId("season-meta");
     expect(meta).toHaveClass("season-overview__meta");
@@ -282,7 +330,9 @@ describe("SeasonPage", () => {
 
   it("renders three KPI cards for total seasons, active season and imported runs", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
 
     const totalCard = screen.getByTestId("season-kpi-total");
     expect(totalCard).toHaveClass("summary-card");
@@ -315,7 +365,9 @@ describe("SeasonPage", () => {
 
   it("renders the season overview without an outer surface-card and with the detail table", async () => {
     const { container } = render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
 
     const overview = container.querySelector(".season-overview");
     expect(overview).not.toBeNull();
@@ -333,10 +385,14 @@ describe("SeasonPage", () => {
 
   it("styles Excel, Kids Excel and PDF row exports with distinct accent classes", async () => {
     render(<SeasonPage />);
-    await waitFor(() => { expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText("Saison 1").length).toBeGreaterThan(0);
+    });
 
     const excelButton = screen.getAllByRole("button", { name: "Excel" })[0] as HTMLButtonElement;
-    const kidsExcelButton = screen.getAllByRole("button", { name: "Kids Excel" })[0] as HTMLButtonElement;
+    const kidsExcelButton = screen.getAllByRole("button", {
+      name: "Kids Excel",
+    })[0] as HTMLButtonElement;
     const pdfButton = screen.getAllByRole("button", { name: "PDF" })[0] as HTMLButtonElement;
 
     expect(excelButton.className).toContain("season-row-action--excel");

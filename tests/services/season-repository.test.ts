@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const eventStoreMock = {
-  getWorkspaceSeasons: vi.fn(async () => new Map<string, { season_id: string; label: string; created_at: string }>()),
+  getWorkspaceSeasons: vi.fn(
+    async () => new Map<string, { season_id: string; label: string; created_at: string }>(),
+  ),
   saveWorkspaceSeasons: vi.fn(async () => {}),
   deleteEventLog: vi.fn(async () => {}),
   getEventLog: vi.fn(async () => []),
@@ -23,7 +25,9 @@ vi.mock("@/domain/workspace.ts", () => ({
     return {
       seasonId,
       ws: {
-        seasons: new Map([[seasonId, { season_id: seasonId, label, created_at: "2026-01-01T00:00:00.000Z" }]]),
+        seasons: new Map([
+          [seasonId, { season_id: seasonId, label, created_at: "2026-01-01T00:00:00.000Z" }],
+        ]),
       },
     };
   },
@@ -52,7 +56,9 @@ describe("season repository", () => {
 
   it("deletes season and associated event log", async () => {
     eventStoreMock.getWorkspaceSeasons.mockResolvedValueOnce(
-      new Map([["s-old", { season_id: "s-old", label: "Old", created_at: "2026-01-01T00:00:00.000Z" }]]),
+      new Map([
+        ["s-old", { season_id: "s-old", label: "Old", created_at: "2026-01-01T00:00:00.000Z" }],
+      ]),
     );
     const { getSeasonRepository } = await import("@/services/season-repository.ts");
     const repo = await getSeasonRepository();
@@ -63,8 +69,16 @@ describe("season repository", () => {
   it("saves imported season with events in one call", async () => {
     const { getSeasonRepository } = await import("@/services/season-repository.ts");
     const repo = await getSeasonRepository();
-    const season = { season_id: "s-imported", label: "Imported", created_at: "2026-01-01T00:00:00.000Z" };
+    const season = {
+      season_id: "s-imported",
+      label: "Imported",
+      created_at: "2026-01-01T00:00:00.000Z",
+    };
     await repo.saveImportedSeason(season, []);
-    expect(eventStoreMock.saveWorkspaceSeasonsAndEventLog).toHaveBeenCalledWith(expect.any(Map), "s-imported", []);
+    expect(eventStoreMock.saveWorkspaceSeasonsAndEventLog).toHaveBeenCalledWith(
+      expect.any(Map),
+      "s-imported",
+      [],
+    );
   });
 });

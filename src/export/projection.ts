@@ -24,7 +24,13 @@ import {
   laufuebersichtSectionTitle,
   parseCategoryKey,
 } from "./formatting.ts";
-import { GERMAN_HEADER_BY_COLUMN, resolvedLaufuebersichtNotice, resolveColumns, type ExportColumnId, type ExportSpec } from "./spec.ts";
+import {
+  GERMAN_HEADER_BY_COLUMN,
+  resolvedLaufuebersichtNotice,
+  resolveColumns,
+  type ExportColumnId,
+  type ExportSpec,
+} from "./spec.ts";
 
 export type ExportTextAlign = "left" | "right" | "center";
 export type ExportCellEmphasis = "normal" | "bold";
@@ -245,7 +251,11 @@ function standingsIdentity(teamId: string, state: SeasonState): StandingsIdentit
     entity_kind: "team",
     display_name: members.map((member) => member.name).join(" / "),
     yob: members.map((member) => String(member.yob || "-")).join(" / "),
-    club: members.map((member) => member.club).filter(Boolean).join(" / ") || null,
+    club:
+      members
+        .map((member) => member.club)
+        .filter(Boolean)
+        .join(" / ") || null,
     team_members: members,
   };
 }
@@ -254,7 +264,8 @@ function orderedActiveRacesForCategory(state: SeasonState, categoryKeyValue: str
   return [...state.race_events.values()]
     .filter(
       (race) =>
-        categoryKey(race.category) === categoryKeyValue && isEffectiveRace(state, race.race_event_id),
+        categoryKey(race.category) === categoryKeyValue &&
+        isEffectiveRace(state, race.race_event_id),
     )
     .sort((a, b) => a.race_no - b.race_no || a.race_event_id.localeCompare(b.race_event_id));
 }
@@ -279,7 +290,9 @@ function projectRowsForCategory(
 
   const excluded = exclusionsForCategory(state, categoryKeyValue);
   const visibleTable: CategoryStandingsTable | CategoryStandingsTableWithExclusions =
-    eligibility === "eligible_only" ? applyExclusions(table, excluded) : markExclusions(table, excluded);
+    eligibility === "eligible_only"
+      ? applyExclusions(table, excluded)
+      : markExclusions(table, excluded);
   const races = orderedActiveRacesForCategory(state, categoryKeyValue);
 
   const visibleRows =
@@ -287,7 +300,9 @@ function projectRowsForCategory(
       ? (visibleTable as CategoryStandingsTable).rows
       : (visibleTable as CategoryStandingsTableWithExclusions).rows;
 
-  return visibleRows.map((row) => projectStandingsRow(row, state, races, eligibility === "full_grid"));
+  return visibleRows.map((row) =>
+    projectStandingsRow(row, state, races, eligibility === "full_grid"),
+  );
 }
 
 function projectStandingsRow(
@@ -313,8 +328,12 @@ function projectStandingsRow(
   };
 }
 
-function projectRaceCell(race: RaceEvent, contributions: readonly RaceContribution[]): ProjectedRaceCell {
-  const contribution = contributions.find((candidate) => candidate.race_event_id === race.race_event_id) ?? null;
+function projectRaceCell(
+  race: RaceEvent,
+  contributions: readonly RaceContribution[],
+): ProjectedRaceCell {
+  const contribution =
+    contributions.find((candidate) => candidate.race_event_id === race.race_event_id) ?? null;
   return {
     raceEventId: race.race_event_id,
     raceNo: race.race_no,
@@ -339,7 +358,10 @@ function headerCell(
   };
 }
 
-function buildFlatColumns(resolvedColumns: readonly ExportColumnId[], races: readonly RaceEvent[]): ColumnDef[] {
+function buildFlatColumns(
+  resolvedColumns: readonly ExportColumnId[],
+  races: readonly RaceEvent[],
+): ColumnDef[] {
   const columns: ColumnDef[] = [];
   for (const columnId of resolvedColumns) {
     if (columnId === "points_per_race") {
@@ -396,7 +418,10 @@ function flatColumnRole(columnId: Exclude<ExportColumnId, "points_per_race">): C
   }
 }
 
-function flatBodyRows(columns: readonly ColumnDef[], rows: readonly ProjectedStandingsRow[]): ExportBodyRow[] {
+function flatBodyRows(
+  columns: readonly ColumnDef[],
+  rows: readonly ProjectedStandingsRow[],
+): ExportBodyRow[] {
   return rows.map((row, index) => ({
     kind: "single",
     bandGroup: index,
@@ -428,12 +453,17 @@ function flatCellForColumn(column: ColumnDef, row: ProjectedStandingsRow): Expor
     case "team_members":
       return bodyCell(
         row.team_members
-          ?.map((member) => [member.name, member.yob ? `(${member.yob})` : "", member.club ?? ""].filter(Boolean).join(" "))
+          ?.map((member) =>
+            [member.name, member.yob ? `(${member.yob})` : "", member.club ?? ""]
+              .filter(Boolean)
+              .join(" "),
+          )
           .join("\n") ?? "",
       );
     case "points_per_race": {
       const raceEventId = column.raceEventId;
-      const raceCell = row.race_cells.find((candidate) => candidate.raceEventId === raceEventId) ?? null;
+      const raceCell =
+        row.race_cells.find((candidate) => candidate.raceEventId === raceEventId) ?? null;
       return bodyCell(raceCell?.points == null ? "" : formatPoints(raceCell.points));
     }
     case "race_km":
@@ -469,7 +499,12 @@ function buildLaufuebersichtColumns(races: readonly RaceEvent[]): ColumnDef[] {
     });
   }
   columns.push({ id: "gesamt_km", header: "Laufstr. (km)", align: "center", role: "total_km" });
-  columns.push({ id: "gesamt_pkt", header: "Wertung (Punkte)", align: "center", role: "total_pkt" });
+  columns.push({
+    id: "gesamt_pkt",
+    header: "Wertung (Punkte)",
+    align: "center",
+    role: "total_pkt",
+  });
   return columns;
 }
 
@@ -513,7 +548,10 @@ function buildLaufuebersichtHeaderRows(races: readonly RaceEvent[]): ExportHeade
   ];
 }
 
-function buildLaufuebersichtSpans(races: readonly RaceEvent[], bodyRows: readonly ExportBodyRow[]): CellSpan[] {
+function buildLaufuebersichtSpans(
+  races: readonly RaceEvent[],
+  bodyRows: readonly ExportBodyRow[],
+): CellSpan[] {
   const spans: CellSpan[] = [];
   for (const columnIndex of [0, 1, 2]) {
     spans.push({
@@ -568,7 +606,11 @@ function buildLaufuebersichtSpans(races: readonly RaceEvent[], bodyRows: readonl
 function laufuebersichtNumericCells(row: ProjectedStandingsRow): ExportCell[] {
   const cells: ExportCell[] = [];
   for (const raceCell of row.race_cells) {
-    cells.push(bodyCell(raceCell.distanceKm == null ? EXPORT_EMPTY_CELL : formatDistanceKm(raceCell.distanceKm)));
+    cells.push(
+      bodyCell(
+        raceCell.distanceKm == null ? EXPORT_EMPTY_CELL : formatDistanceKm(raceCell.distanceKm),
+      ),
+    );
     cells.push(
       bodyCell(
         raceCell.points == null ? EXPORT_EMPTY_CELL : formatPoints(raceCell.points),
@@ -654,23 +696,18 @@ function buildLaufuebersichtBodyRows(rows: readonly ProjectedStandingsRow[]): Ex
 }
 
 function buildLaufuebersichtColumnRules(columns: readonly ColumnDef[]): ColumnRule[] {
-  return columns
-    .slice(0, -1)
-    .map((column, columnIndex) => {
-      if (column.role === "identity_club") {
-        return { afterColumn: columnIndex, style: "thick" } as const;
-      }
-      if (column.role === "race_km" || column.role === "total_km") {
-        return { afterColumn: columnIndex, style: "dashed" } as const;
-      }
-      if (
-        column.role === "race_pkt" &&
-        columns[columnIndex + 1]?.role === "total_km"
-      ) {
-        return { afterColumn: columnIndex, style: "double" } as const;
-      }
-      return { afterColumn: columnIndex, style: "normal" } as const;
-    });
+  return columns.slice(0, -1).map((column, columnIndex) => {
+    if (column.role === "identity_club") {
+      return { afterColumn: columnIndex, style: "thick" } as const;
+    }
+    if (column.role === "race_km" || column.role === "total_km") {
+      return { afterColumn: columnIndex, style: "dashed" } as const;
+    }
+    if (column.role === "race_pkt" && columns[columnIndex + 1]?.role === "total_km") {
+      return { afterColumn: columnIndex, style: "double" } as const;
+    }
+    return { afterColumn: columnIndex, style: "normal" } as const;
+  });
 }
 
 function buildLaufuebersichtRowRules(bodyRows: readonly ExportBodyRow[]): RowRule[] {

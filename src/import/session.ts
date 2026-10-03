@@ -14,10 +14,7 @@ export function canStartImport(session: ImportSession | null): boolean {
   return session.phase === "done" || session.phase === "failed";
 }
 
-export function createSession(
-  parsed: ParsedWorkbook,
-  seasonState: SeasonState,
-): ImportSession {
+export function createSession(parsed: ParsedWorkbook, seasonState: SeasonState): ImportSession {
   return {
     session_id: crypto.randomUUID(),
     import_batch_id: crypto.randomUUID(),
@@ -37,9 +34,7 @@ export function createSession(
 
 export function assertPhase(session: ImportSession, expected: ImportPhase): void {
   if (session.phase !== expected) {
-    throw new Error(
-      `Import session is in phase "${session.phase}", expected "${expected}".`,
-    );
+    throw new Error(`Import session is in phase "${session.phase}", expected "${expected}".`);
   }
 }
 

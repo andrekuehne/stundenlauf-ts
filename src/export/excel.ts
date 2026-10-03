@@ -19,8 +19,7 @@ import {
 import { EXPORT_EMPTY_CELL } from "./formatting.ts";
 import type { ExportSpec } from "./spec.ts";
 
-const XLSX_MIME_TYPE =
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const XLSX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 const EXCEL_SHEET_EINZEL = "Gesamtwertung_Einzel";
 const EXCEL_SHEET_PAARE = "Gesamtwertung_Paare";
@@ -152,7 +151,8 @@ function splitNameAndYob(value: string): { name: string; yob: string } {
 
 function couplesTitle(section: ExportSection): string {
   const sectionPrefix = section.title.match(/^\d+\./)?.[0] ?? "";
-  const duration = section.category.duration === "half_hour" ? "Halbstundenpaarlauf" : "Stundenpaarlauf";
+  const duration =
+    section.category.duration === "half_hour" ? "Halbstundenpaarlauf" : "Stundenpaarlauf";
   let division = "Mixed";
   switch (section.category.division) {
     case "couples_women":
@@ -231,10 +231,7 @@ function spanOrigin(
 ) {
   return (
     section.spans.find(
-      (span) =>
-        span.area === area &&
-        span.startRow === rowIndex &&
-        span.startCol === columnIndex,
+      (span) => span.area === area && span.startRow === rowIndex && span.startCol === columnIndex,
     ) ?? null
   );
 }
@@ -391,7 +388,15 @@ function renderHeaderRows(
     row2.height = 18;
     row3.height = 18;
 
-    const identityHeaders = ["Platz", "Vorname/Name", "Jg.", "Verein", "Vorname/Name", "Jg.", "Verein"];
+    const identityHeaders = [
+      "Platz",
+      "Vorname/Name",
+      "Jg.",
+      "Verein",
+      "Vorname/Name",
+      "Jg.",
+      "Verein",
+    ];
     identityHeaders.forEach((header, index) => {
       setHeaderCell(worksheet, startRow, index + 1, header, {
         mergeToRow: startRow + 2,
@@ -730,7 +735,9 @@ function mergeKidsRowsAcrossIdentity(
     }
 
     const identityRows = rowsByIdentity.get(key) ?? [];
-    const mergeTarget = identityRows.find((candidate) => !raceNosOverlap(candidate.raceNos, row.raceNos));
+    const mergeTarget = identityRows.find(
+      (candidate) => !raceNosOverlap(candidate.raceNos, row.raceNos),
+    );
     if (mergeTarget) {
       addRaceNos(mergeTarget.raceNos, row.raceNos);
       continue;
@@ -834,7 +841,13 @@ function renderKidsWorksheet(
   raceNos: readonly number[],
   rows: readonly KidsParticipationRow[],
 ): void {
-  const headers = ["Name", "Vorname", "Jahrg.", "Verein", ...raceNos.map((raceNo) => `Lauf ${raceNo}`)];
+  const headers = [
+    "Name",
+    "Vorname",
+    "Jahrg.",
+    "Verein",
+    ...raceNos.map((raceNo) => `Lauf ${raceNo}`),
+  ];
   const columnCount = headers.length;
   renderKidsTitleRow(worksheet, seasonYear, columnCount);
 

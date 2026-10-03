@@ -111,7 +111,10 @@ export function SeasonPage() {
     async (command: "import_backup" | "export_backup", row?: SeasonListItem) => {
       setActionSeasonId(row?.seasonId ?? "global");
       try {
-        const result = await api.runSeasonCommand(command, row?.seasonId ?? shellData.selectedSeasonId ?? undefined);
+        const result = await api.runSeasonCommand(
+          command,
+          row?.seasonId ?? shellData.selectedSeasonId ?? undefined,
+        );
         setStatus({
           severity: result.severity,
           message: result.message,
@@ -257,12 +260,8 @@ export function SeasonPage() {
             <thead>
               <tr className="ui-table--seasons__header-row">
                 <th>{STR.views.season.nameHeader}</th>
-                <th className="ui-table__cell--right">
-                  {STR.views.season.importedEvents}
-                </th>
-                <th className="ui-table__cell--right">
-                  {STR.views.season.lastModified}
-                </th>
+                <th className="ui-table__cell--right">{STR.views.season.importedEvents}</th>
+                <th className="ui-table__cell--right">{STR.views.season.lastModified}</th>
                 <th>{STR.views.season.actions}</th>
               </tr>
             </thead>
@@ -277,9 +276,7 @@ export function SeasonPage() {
                         <div className="season-table__name">
                           <strong>{row.label}</strong>
                           {row.isActive ? (
-                            <span className="season-pill">
-                              {STR.views.season.activeTag}
-                            </span>
+                            <span className="season-pill">{STR.views.season.activeTag}</span>
                           ) : null}
                         </div>
                       </td>
@@ -458,7 +455,10 @@ export function SeasonPage() {
               <button
                 type="submit"
                 className="button button--danger"
-                disabled={deleteConfirmInput !== seasonPendingDelete.label || actionSeasonId === seasonPendingDelete.seasonId}
+                disabled={
+                  deleteConfirmInput !== seasonPendingDelete.label ||
+                  actionSeasonId === seasonPendingDelete.seasonId
+                }
               >
                 {STR.confirmModal.confirm}
               </button>

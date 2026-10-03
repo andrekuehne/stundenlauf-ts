@@ -21,8 +21,24 @@ function buildTypicalEventLog(): DomainEvent[] {
   const batchId = "batch-round-trip";
   return [
     importBatchRecorded({ import_batch_id: batchId }),
-    personRegistered({ person_id: "p1", given_name: "Max", family_name: "Müller", yob: 1990, gender: "M", club: "LG Test", club_normalized: "lg test" }),
-    personRegistered({ person_id: "p2", given_name: "Anna", family_name: "Schmidt", yob: 1985, gender: "F", club: null, club_normalized: "" }),
+    personRegistered({
+      person_id: "p1",
+      given_name: "Max",
+      family_name: "Müller",
+      yob: 1990,
+      gender: "M",
+      club: "LG Test",
+      club_normalized: "lg test",
+    }),
+    personRegistered({
+      person_id: "p2",
+      given_name: "Anna",
+      family_name: "Schmidt",
+      yob: 1985,
+      gender: "F",
+      club: null,
+      club_normalized: "",
+    }),
     teamRegistered({ team_id: "t1", member_person_ids: ["p1"], team_kind: "solo" }),
     teamRegistered({ team_id: "t2", member_person_ids: ["p2"], team_kind: "solo" }),
     raceRegistered({
@@ -119,7 +135,11 @@ describe("deserializeEventLog", () => {
     ];
     const json = serializeEventLog("s1", "Test", events);
     const archive = deserializeEventLog(json);
-    const person = archive.events[0]!.payload as { given_name: string; family_name: string; club: string };
+    const person = archive.events[0]!.payload as {
+      given_name: string;
+      family_name: string;
+      club: string;
+    };
     expect(person.given_name).toBe("Jürgen");
     expect(person.family_name).toBe("Großmann");
     expect(person.club).toBe("Süddeutsche Läufer");
@@ -166,22 +186,44 @@ describe("deserializeEventLog error cases", () => {
   });
 
   it("rejects wrong format identifier", () => {
-    const json = JSON.stringify({ format: "wrong-format", format_version: 1, season_id: "s1", label: "x", events: [] });
+    const json = JSON.stringify({
+      format: "wrong-format",
+      format_version: 1,
+      season_id: "s1",
+      label: "x",
+      events: [],
+    });
     expect(() => deserializeEventLog(json)).toThrow("Invalid archive format");
   });
 
   it("rejects unsupported format_version", () => {
-    const json = JSON.stringify({ format: "stundenlauf-ts-eventlog", format_version: 99, season_id: "s1", label: "x", events: [] });
+    const json = JSON.stringify({
+      format: "stundenlauf-ts-eventlog",
+      format_version: 99,
+      season_id: "s1",
+      label: "x",
+      events: [],
+    });
     expect(() => deserializeEventLog(json)).toThrow("Unsupported format_version");
   });
 
   it("rejects missing season_id", () => {
-    const json = JSON.stringify({ format: "stundenlauf-ts-eventlog", format_version: 1, label: "x", events: [] });
+    const json = JSON.stringify({
+      format: "stundenlauf-ts-eventlog",
+      format_version: 1,
+      label: "x",
+      events: [],
+    });
     expect(() => deserializeEventLog(json)).toThrow("season_id");
   });
 
   it("rejects missing events array", () => {
-    const json = JSON.stringify({ format: "stundenlauf-ts-eventlog", format_version: 1, season_id: "s1", label: "x" });
+    const json = JSON.stringify({
+      format: "stundenlauf-ts-eventlog",
+      format_version: 1,
+      season_id: "s1",
+      label: "x",
+    });
     expect(() => deserializeEventLog(json)).toThrow("events must be an array");
   });
 });

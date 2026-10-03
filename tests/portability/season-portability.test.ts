@@ -135,8 +135,9 @@ describe("season archive export/import", () => {
       [],
     );
 
-    await expect(importSeason(targetRepo, await buildArchiveFile(sourceRepo, "season-source"))).rejects
-      .toThrow('Season name "Trainingsblock Alpha" already exists');
+    await expect(
+      importSeason(targetRepo, await buildArchiveFile(sourceRepo, "season-source")),
+    ).rejects.toThrow('Season name "Trainingsblock Alpha" already exists');
   });
 
   it("replaces an existing season when the canonical season id is confirmed", async () => {
@@ -188,7 +189,10 @@ describe("season archive export/import", () => {
 
     const archive = await buildSeasonArchive(repo, "season-source");
     const zip = await JSZip.loadAsync(archive.zip_bytes);
-    zip.file("eventlog.json", '{"format":"stundenlauf-ts-eventlog","format_version":1,"season_id":"season-source","label":"Manipuliert","events":[]}');
+    zip.file(
+      "eventlog.json",
+      '{"format":"stundenlauf-ts-eventlog","format_version":1,"season_id":"season-source","label":"Manipuliert","events":[]}',
+    );
     const tamperedBytes = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
     const tamperedBuffer = new Uint8Array(tamperedBytes).buffer;
     const file = new File([tamperedBuffer], "tampered.stundenlauf-season.zip", {

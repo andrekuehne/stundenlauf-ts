@@ -25,13 +25,19 @@ interface CorrectionModalProps {
   onCancel: () => void;
 }
 
-export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }: CorrectionModalProps) {
+export function CorrectionModal({
+  identity,
+  busy,
+  saveError,
+  onSave,
+  onCancel,
+}: CorrectionModalProps) {
   const isCouple = identity.teamKind === "couple";
-  const [memberA, setMemberA] = useState<MemberDraft>(
-    () => memberDraftFromIdentity(identity.members[0] ?? { personId: "", name: "", yob: 0, club: "" }),
+  const [memberA, setMemberA] = useState<MemberDraft>(() =>
+    memberDraftFromIdentity(identity.members[0] ?? { personId: "", name: "", yob: 0, club: "" }),
   );
-  const [memberB, setMemberB] = useState<MemberDraft>(
-    () => memberDraftFromIdentity(identity.members[1] ?? { personId: "", name: "", yob: 0, club: "" }),
+  const [memberB, setMemberB] = useState<MemberDraft>(() =>
+    memberDraftFromIdentity(identity.members[1] ?? { personId: "", name: "", yob: 0, club: "" }),
   );
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -112,7 +118,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldName}</span>
                     <input
                       value={memberA.name}
-                      onChange={(e) => { setMemberA((prev) => ({ ...prev, name: e.target.value })); }}
+                      onChange={(e) => {
+                        setMemberA((prev) => ({ ...prev, name: e.target.value }));
+                      }}
                       disabled={busy}
                     />
                   </label>
@@ -120,7 +128,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldYob}</span>
                     <input
                       value={memberA.yob}
-                      onChange={(e) => { setMemberA((prev) => ({ ...prev, yob: e.target.value })); }}
+                      onChange={(e) => {
+                        setMemberA((prev) => ({ ...prev, yob: e.target.value }));
+                      }}
                       disabled={busy}
                     />
                   </label>
@@ -128,7 +138,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldClub}</span>
                     <input
                       value={memberA.club}
-                      onChange={(e) => { setMemberA((prev) => ({ ...prev, club: e.target.value })); }}
+                      onChange={(e) => {
+                        setMemberA((prev) => ({ ...prev, club: e.target.value }));
+                      }}
                       disabled={busy}
                     />
                   </label>
@@ -139,7 +151,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldName}</span>
                     <input
                       value={memberB.name}
-                      onChange={(e) => { setMemberB((prev) => ({ ...prev, name: e.target.value })); }}
+                      onChange={(e) => {
+                        setMemberB((prev) => ({ ...prev, name: e.target.value }));
+                      }}
                       disabled={busy}
                     />
                   </label>
@@ -147,7 +161,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldYob}</span>
                     <input
                       value={memberB.yob}
-                      onChange={(e) => { setMemberB((prev) => ({ ...prev, yob: e.target.value })); }}
+                      onChange={(e) => {
+                        setMemberB((prev) => ({ ...prev, yob: e.target.value }));
+                      }}
                       disabled={busy}
                     />
                   </label>
@@ -155,7 +171,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                     <span>{STR.views.corrections.fieldClub}</span>
                     <input
                       value={memberB.club}
-                      onChange={(e) => { setMemberB((prev) => ({ ...prev, club: e.target.value })); }}
+                      onChange={(e) => {
+                        setMemberB((prev) => ({ ...prev, club: e.target.value }));
+                      }}
                       disabled={busy}
                     />
                   </label>
@@ -167,7 +185,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                   <span>{STR.views.corrections.fieldName}</span>
                   <input
                     value={memberA.name}
-                    onChange={(e) => { setMemberA((prev) => ({ ...prev, name: e.target.value })); }}
+                    onChange={(e) => {
+                      setMemberA((prev) => ({ ...prev, name: e.target.value }));
+                    }}
                     disabled={busy}
                   />
                 </label>
@@ -175,7 +195,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                   <span>{STR.views.corrections.fieldYob}</span>
                   <input
                     value={memberA.yob}
-                    onChange={(e) => { setMemberA((prev) => ({ ...prev, yob: e.target.value })); }}
+                    onChange={(e) => {
+                      setMemberA((prev) => ({ ...prev, yob: e.target.value }));
+                    }}
                     disabled={busy}
                   />
                 </label>
@@ -183,7 +205,9 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
                   <span>{STR.views.corrections.fieldClub}</span>
                   <input
                     value={memberA.club}
-                    onChange={(e) => { setMemberA((prev) => ({ ...prev, club: e.target.value })); }}
+                    onChange={(e) => {
+                      setMemberA((prev) => ({ ...prev, club: e.target.value }));
+                    }}
                     disabled={busy}
                   />
                 </label>
@@ -193,12 +217,7 @@ export function CorrectionModal({ identity, busy, saveError, onSave, onCancel }:
           {displayError ? <p className="danger-text">{displayError}</p> : null}
         </div>
         <div className="confirm-modal__actions">
-          <button
-            type="button"
-            className="button button--ghost"
-            onClick={onCancel}
-            disabled={busy}
-          >
+          <button type="button" className="button button--ghost" onClick={onCancel} disabled={busy}>
             {STR.views.corrections.cancel}
           </button>
           <button

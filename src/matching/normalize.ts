@@ -9,18 +9,10 @@ import type { ParsedName } from "./types.ts";
 
 export type { ParsedName };
 
-const KNOWN_TITLE_BASES = new Set([
-  "dr",
-  "prof",
-  "dipl",
-  "ing",
-  "med",
-]);
+const KNOWN_TITLE_BASES = new Set(["dr", "prof", "dipl", "ing", "med"]);
 
 function nameKeyFromParsed(parsed: ParsedName): string {
-  return parsed.tokens.length > 0
-    ? [...parsed.tokens].sort().join("|")
-    : parsed.display_compact;
+  return parsed.tokens.length > 0 ? [...parsed.tokens].sort().join("|") : parsed.display_compact;
 }
 
 export function stripDiacritics(value: string): string {
@@ -157,7 +149,9 @@ export function parsePersonName(raw: string): ParsedName {
   const tokenList = [...given.split(/\s+/), family].filter((t) => t !== "");
   const tokens = [...new Set(tokenList)].sort();
   const displayCompact =
-    [given, family].filter((s) => s !== "").join(" ").trim() ||
-    rawClean.toLowerCase();
+    [given, family]
+      .filter((s) => s !== "")
+      .join(" ")
+      .trim() || rawClean.toLowerCase();
   return { given, family, tokens, display_compact: displayCompact };
 }

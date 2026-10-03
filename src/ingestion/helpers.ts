@@ -53,8 +53,6 @@ export async function fileSha256(buffer: ArrayBuffer): Promise<string> {
     .join("");
 }
 
-export function detectSourceType(
-  fileName: string,
-): "singles" | "couples" {
+export function detectSourceType(fileName: string): "singles" | "couples" {
   return fileName.toLowerCase().includes("paare") ? "couples" : "singles";
 }

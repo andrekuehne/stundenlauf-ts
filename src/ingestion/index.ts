@@ -13,12 +13,7 @@ export {
   detectSourceType,
 } from "./helpers";
 export { ExcelParseError, makeIssue } from "./errors";
-export type {
-  ValidationIssue,
-  ValidationIssueCode,
-  IssueLocation,
-  IssueSeverity,
-} from "./errors";
+export type { ValidationIssue, ValidationIssueCode, IssueLocation, IssueSeverity } from "./errors";
 export { PARSER_VERSION } from "./constants";
 export type {
   ImportWorkbookMeta,

@@ -7,10 +7,7 @@
 import type { Division, SeasonState, TeamKind } from "./types.ts";
 import type { DomainEvent, EventEnvelope } from "./events.ts";
 import { categoryKey, isEffectiveRace } from "./projection.ts";
-import {
-  canonicalizePersonNames,
-  validatePersonNameConsistency,
-} from "./person-identity.ts";
+import { canonicalizePersonNames, validatePersonNameConsistency } from "./person-identity.ts";
 import { normalizeClub } from "@/lib/normalization.ts";
 
 // --- Result type ---
@@ -265,9 +262,7 @@ function validateRaceRegistered(
 
   for (const entry of entries) {
     if (!state.teams.has(entry.team_id)) {
-      errors.push(
-        `Entry "${entry.entry_id}" references unregistered team "${entry.team_id}"`,
-      );
+      errors.push(`Entry "${entry.entry_id}" references unregistered team "${entry.team_id}"`);
     }
     if (existingEntryIds.has(entry.entry_id) || batchEntryIds.has(entry.entry_id)) {
       errors.push(`Duplicate entry_id: "${entry.entry_id}"`);
@@ -288,7 +283,9 @@ function validateRaceRolledBack(
     return fail(`Race "${race_event_id}" does not exist`);
   }
   if (!isEffectiveRace(state, race_event_id)) {
-    return fail(`Race "${race_event_id}" is not effective (already rolled back or batch rolled back)`);
+    return fail(
+      `Race "${race_event_id}" is not effective (already rolled back or batch rolled back)`,
+    );
   }
   return ok();
 }
@@ -424,7 +421,5 @@ function validateRankingEligibilitySet(
     }
   }
 
-  return fail(
-    `Team "${team_id}" has no entries in category "${catKey}"`,
-  );
+  return fail(`Team "${team_id}" has no entries in category "${catKey}"`);
 }

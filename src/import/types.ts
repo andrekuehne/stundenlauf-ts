@@ -94,6 +94,4 @@ export interface ImportSession {
 
 // --- Validation ---
 
-export type ValidationResult =
-  | { valid: true }
-  | { valid: false; code: string; message: string };
+export type ValidationResult = { valid: true } | { valid: false; code: string; message: string };

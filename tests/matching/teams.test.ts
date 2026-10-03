@@ -10,9 +10,7 @@ import {
 } from "@/matching/teams.ts";
 import type { PersonIdentity, Team } from "@/domain/types.ts";
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "",
     family_name: "",
@@ -125,10 +123,7 @@ describe("scoreCoupleMatch", () => {
   it("produces high score for identical members", () => {
     const incA = parsePersonName("Max Mustermann");
     const incB = parsePersonName("Eva Beispiel");
-    const [score] = scoreCoupleMatch(
-      incA, 1988, "", incB, 1990, "",
-      [memberA, memberB], config,
-    );
+    const [score] = scoreCoupleMatch(incA, 1988, "", incB, 1990, "", [memberA, memberB], config);
     expect(score).toBeGreaterThan(config.review_min);
   });
 
@@ -157,10 +152,7 @@ describe("scoreCoupleMatch", () => {
   it("returns member feature keys", () => {
     const incA = parsePersonName("Max Mustermann");
     const incB = parsePersonName("Eva Beispiel");
-    const [, feats] = scoreCoupleMatch(
-      incA, 1988, "", incB, 1990, "",
-      [memberA, memberB], config,
-    );
+    const [, feats] = scoreCoupleMatch(incA, 1988, "", incB, 1990, "", [memberA, memberB], config);
     expect(feats).toHaveProperty("m0_yob_agreement");
     expect(feats).toHaveProperty("m1_yob_agreement");
     expect(feats).toHaveProperty("pair_score");
@@ -171,10 +163,7 @@ describe("scoreCoupleMatch", () => {
   it("applies safety cap when one member is weak", () => {
     const incA = parsePersonName("Max Mustermann");
     const incB = parsePersonName("Completely Different");
-    const [score] = scoreCoupleMatch(
-      incA, 1988, "", incB, 1990, "",
-      [memberA, memberB], config,
-    );
+    const [score] = scoreCoupleMatch(incA, 1988, "", incB, 1990, "", [memberA, memberB], config);
     expect(score).toBeLessThanOrEqual(config.pair_unsafe_cap);
   });
 });

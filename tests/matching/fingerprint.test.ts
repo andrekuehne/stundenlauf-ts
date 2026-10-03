@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  identityFingerprint,
-  nameKey,
-  teamFingerprint,
-} from "@/matching/fingerprint.ts";
+import { identityFingerprint, nameKey, teamFingerprint } from "@/matching/fingerprint.ts";
 import { parsePersonName } from "@/matching/normalize.ts";
 
 describe("nameKey", () => {

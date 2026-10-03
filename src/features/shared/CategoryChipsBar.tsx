@@ -53,7 +53,11 @@ interface CategoryChipsBarProps {
   onSelect: (key: string) => void;
 }
 
-export function CategoryChipsBar({ categories, selectedCategoryKey, onSelect }: CategoryChipsBarProps) {
+export function CategoryChipsBar({
+  categories,
+  selectedCategoryKey,
+  onSelect,
+}: CategoryChipsBarProps) {
   return (
     <div
       className="standings-overview__category-rows"

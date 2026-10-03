@@ -44,8 +44,7 @@ function expectedKindLabel(fileName: string): string {
 }
 
 function printSinglesRows(rows: readonly ImportRowSingles[]): void {
-  const header =
-    `${"Nr".padStart(4)}  ${"Start".padEnd(6)}  ${"Name".padEnd(TRUNC)}  ${"Jahrg".padEnd(5)}  ${"Verein".padEnd(TRUNC)}  ${"km".padStart(5)}  ${"Pkt".padStart(5)}`;
+  const header = `${"Nr".padStart(4)}  ${"Start".padEnd(6)}  ${"Name".padEnd(TRUNC)}  ${"Jahrg".padEnd(5)}  ${"Verein".padEnd(TRUNC)}  ${"km".padStart(5)}  ${"Pkt".padStart(5)}`;
   console.log(header);
   console.log("-".repeat(Math.min(120, header.length + 6)));
   const show = rows.slice(0, MAX_ROWS_PER_SECTION);
@@ -69,7 +68,9 @@ function printCouplesRows(rows: readonly ImportRowCouples[]): void {
     i += 1;
     const ca = r.club_a != null ? `  Verein: ${ellipsize(r.club_a, 36)}` : "";
     const cb = r.club_b != null ? `  Verein: ${ellipsize(r.club_b, 36)}` : "";
-    console.log(`   ${String(i).padStart(3)}.  Startnr. ${ellipsize(r.startnr, 10)}   ${r.distance_km} km   ${r.points} Punkte`);
+    console.log(
+      `   ${String(i).padStart(3)}.  Startnr. ${ellipsize(r.startnr, 10)}   ${r.distance_km} km   ${r.points} Punkte`,
+    );
     console.log(`        Läufer A: ${ellipsize(r.name_a, 44)}  (JG ${r.yob_a})${ca}`);
     console.log(`        Läufer B: ${ellipsize(r.name_b, 44)}  (JG ${r.yob_b})${cb}`);
     console.log("");
@@ -123,8 +124,12 @@ async function main(): Promise<void> {
       console.log("  STATUS: OK");
       console.log("");
       console.log("  Zusammenfassung");
-      console.log(`    - Einzel-Sektionen:    ${result.singles_sections.length}  (${singlesRows} Zeilen)`);
-      console.log(`    - Paar-Sektionen:      ${result.couples_sections.length}  (${couplesRows} Zeilen)`);
+      console.log(
+        `    - Einzel-Sektionen:    ${result.singles_sections.length}  (${singlesRows} Zeilen)`,
+      );
+      console.log(
+        `    - Paar-Sektionen:      ${result.couples_sections.length}  (${couplesRows} Zeilen)`,
+      );
       console.log(`    - Parser-Version:      ${meta.parser_version}`);
       console.log(`    - SHA-256:             ${meta.source_sha256.slice(0, 20)}...`);
       console.log(`    - importiert (UTC):    ${meta.imported_at}`);

@@ -12,10 +12,7 @@ import { buildManifest } from "./manifest.ts";
 import { sanitizeFilename } from "./sanitize.ts";
 import type { BuiltSeasonArchive, ExportSeasonOptions, ExportSeasonResult } from "./types.ts";
 
-type ExportSeasonRepository = Pick<
-  SeasonRepository,
-  "getSeason" | "getEventLog"
->;
+type ExportSeasonRepository = Pick<SeasonRepository, "getSeason" | "getEventLog">;
 
 function archiveFilename(label: string, override?: string): string {
   const trimmed = override?.trim();

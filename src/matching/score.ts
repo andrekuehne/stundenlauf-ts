@@ -29,10 +29,7 @@ export function personParsed(person: PersonIdentity): ParsedName {
   return parsePersonName(displayName);
 }
 
-export function nameSimilarity(
-  a: ParsedName,
-  b: ParsedName,
-): [number, MatchingFeatures] {
+export function nameSimilarity(a: ParsedName, b: ParsedName): [number, MatchingFeatures] {
   const forward =
     ratio(a.given, b.given) * 0.45 +
     ratio(a.family, b.family) * 0.45 +
@@ -106,10 +103,7 @@ export function scorePersonMatch(
   return [score, feats];
 }
 
-export function routeFromScore(
-  score: number,
-  config: MatchingConfig,
-): MatchRoute {
+export function routeFromScore(score: number, config: MatchingConfig): MatchRoute {
   if (score >= effectiveAutoMin(config)) return "auto";
   if (score >= config.review_min) return "review";
   return "new_identity";
@@ -127,10 +121,7 @@ export function shouldReviewStrongNameYobMismatch(
   return nameBase >= 0.98 || tokenOverlap >= 1.0;
 }
 
-function strongPersonNameMatch(
-  nameBase: number,
-  tokenOverlap: number,
-): boolean {
+function strongPersonNameMatch(nameBase: number, tokenOverlap: number): boolean {
   return nameBase >= 0.98 || tokenOverlap >= 1.0;
 }
 

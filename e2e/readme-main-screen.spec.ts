@@ -22,8 +22,22 @@ const shotImportSummary = `${readmeDir}/12-import-summary.png`;
 const shotStandingsAuswertung = `${readmeDir}/13-standings-auswertung.png`;
 
 const e2eDir = path.dirname(fileURLToPath(import.meta.url));
-const singlesFixtureMw1 = path.join(e2eDir, "..", "tests", "data", "xlsx", "Ergebnisliste MW_1.xlsx");
-const singlesFixtureMw2 = path.join(e2eDir, "..", "tests", "data", "xlsx", "Ergebnisliste MW_2.xlsx");
+const singlesFixtureMw1 = path.join(
+  e2eDir,
+  "..",
+  "tests",
+  "data",
+  "xlsx",
+  "Ergebnisliste MW_1.xlsx",
+);
+const singlesFixtureMw2 = path.join(
+  e2eDir,
+  "..",
+  "tests",
+  "data",
+  "xlsx",
+  "Ergebnisliste MW_2.xlsx",
+);
 
 /** Extra wait after sidebar active tab changes so CSS highlight animation can finish before screenshots. */
 const SIDEBAR_NAV_SETTLE_MS = 450;
@@ -103,20 +117,26 @@ test("readme workflow: season, create dialog, import", async ({ page }) => {
     page.getByRole("button", { name: FILE_PICK_BUTTON }).click(),
   ]);
   await fileChooser.setFiles(singlesFixtureMw1);
-  await expect(page.getByRole("button", { name: STEP_NEXT_TO_REVIEW })).toBeEnabled({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: STEP_NEXT_TO_REVIEW })).toBeEnabled({
+    timeout: 30_000,
+  });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: shotImportFileChosen, fullPage: true });
 
   await page.getByRole("button", { name: STEP_NEXT_TO_REVIEW }).click();
   await expect(
-    page.getByRole("button", { name: STEP_BACK_TO_SELECTION }).or(page.getByRole("heading", { name: SUMMARY_TITLE })),
+    page
+      .getByRole("button", { name: STEP_BACK_TO_SELECTION })
+      .or(page.getByRole("heading", { name: SUMMARY_TITLE })),
   ).toBeVisible({ timeout: 60_000 });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: shotImportReview, fullPage: true });
 
   await goToImportSummaryFromReviewOrStay(page);
   await page.getByRole("button", { name: FINALIZE_IMPORT }).click();
-  await expect(page.getByRole("heading", { name: SELECT_FILE_TITLE })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: SELECT_FILE_TITLE })).toBeVisible({
+    timeout: 60_000,
+  });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: shotAfterFinalize, fullPage: true });
 
@@ -125,19 +145,27 @@ test("readme workflow: season, create dialog, import", async ({ page }) => {
     page.getByRole("button", { name: FILE_PICK_BUTTON }).click(),
   ]);
   await fileChooser2.setFiles(singlesFixtureMw2);
-  await expect(page.getByRole("button", { name: STEP_NEXT_TO_REVIEW })).toBeEnabled({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: STEP_NEXT_TO_REVIEW })).toBeEnabled({
+    timeout: 30_000,
+  });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: shotMw2Selected, fullPage: true });
 
   await page.getByRole("button", { name: STEP_NEXT_TO_REVIEW }).click();
   await expect(
-    page.getByRole("button", { name: STEP_BACK_TO_SELECTION }).or(page.getByRole("heading", { name: SUMMARY_TITLE })),
+    page
+      .getByRole("button", { name: STEP_BACK_TO_SELECTION })
+      .or(page.getByRole("heading", { name: SUMMARY_TITLE })),
   ).toBeVisible({ timeout: 60_000 });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: shotMw2Review, fullPage: true });
 
-  await expect(page.getByRole("button", { name: STEP_BACK_TO_SELECTION })).toBeVisible({ timeout: 30_000 });
-  const firstMergeCandidate = page.locator("button.import-candidate:not(.import-candidate--new)").first();
+  await expect(page.getByRole("button", { name: STEP_BACK_TO_SELECTION })).toBeVisible({
+    timeout: 30_000,
+  });
+  const firstMergeCandidate = page
+    .locator("button.import-candidate:not(.import-candidate--new)")
+    .first();
   await expect(firstMergeCandidate).toBeVisible({ timeout: 30_000 });
   await firstMergeCandidate.click();
   await expect(firstMergeCandidate).toHaveClass(/is-selected/);
@@ -147,13 +175,17 @@ test("readme workflow: season, create dialog, import", async ({ page }) => {
   const fixData = page.getByRole("button", { name: FIX_DATA_BUTTON });
   await expect(fixData).toBeEnabled({ timeout: 30_000 });
   await fixData.click();
-  await expect(page.getByRole("dialog", { name: CORRECTION_MODAL })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("dialog", { name: CORRECTION_MODAL })).toBeVisible({
+    timeout: 30_000,
+  });
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: shotCorrectionModal, fullPage: true });
 
   const correctionDialog = page.getByRole("dialog", { name: CORRECTION_MODAL });
   await correctionDialog.getByRole("button", { name: CORRECTION_SAVE }).click();
-  await expect(page.getByRole("dialog", { name: CORRECTION_MODAL })).toBeHidden({ timeout: 30_000 });
+  await expect(page.getByRole("dialog", { name: CORRECTION_MODAL })).toBeHidden({
+    timeout: 30_000,
+  });
 
   const reviewForward = page.locator(".import-review__next-button");
   await expect(reviewForward).toBeEnabled({ timeout: 30_000 });
@@ -177,7 +209,9 @@ test("readme workflow: season, create dialog, import", async ({ page }) => {
   await page.screenshot({ path: shotImportSummary, fullPage: true });
 
   await page.getByRole("button", { name: FINALIZE_IMPORT }).click();
-  await expect(page.getByRole("heading", { name: SELECT_FILE_TITLE })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: SELECT_FILE_TITLE })).toBeVisible({
+    timeout: 60_000,
+  });
 
   await page.getByRole("link", { name: NAV_STANDINGS }).click();
   await expect(page).toHaveURL(/#\/standings\b/);

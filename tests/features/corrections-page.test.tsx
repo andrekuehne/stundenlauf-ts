@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppApi, AppCommandResult, ShellData, StandingsData, StandingsRowIdentity } from "@/api/contracts/index.ts";
+import type {
+  AppApi,
+  AppCommandResult,
+  ShellData,
+  StandingsData,
+  StandingsRowIdentity,
+} from "@/api/contracts/index.ts";
 import { CorrectionsPage } from "@/features/corrections/CorrectionsPage.tsx";
 
 const setSidebarControls = vi.fn();
@@ -25,8 +31,22 @@ const standingsData: StandingsData = {
     lastUpdatedAt: "2025-04-08T12:34:00Z",
   },
   categories: [
-    { key: "half_hour:women", label: "Frauen 1/2", description: "desc", participantCount: 2, importedRuns: 2, raceNos: [1, 2] },
-    { key: "hour:couples_mixed", label: "Paare Mix 1h", description: "desc", participantCount: 1, importedRuns: 2, raceNos: [1, 2] },
+    {
+      key: "half_hour:women",
+      label: "Frauen 1/2",
+      description: "desc",
+      participantCount: 2,
+      importedRuns: 2,
+      raceNos: [1, 2],
+    },
+    {
+      key: "hour:couples_mixed",
+      label: "Paare Mix 1h",
+      description: "desc",
+      participantCount: 1,
+      importedRuns: 2,
+      raceNos: [1, 2],
+    },
   ],
   rowsByCategory: {
     "half_hour:women": [
@@ -114,7 +134,10 @@ vi.mock("@/stores/status.ts", () => ({
 }));
 vi.mock("@/stores/standings.ts", () => ({
   useStandingsStore: (
-    selector: (s: { selectedCategoryKey: string | null; selectCategory: typeof selectCategory }) => unknown,
+    selector: (s: {
+      selectedCategoryKey: string | null;
+      selectCategory: typeof selectCategory;
+    }) => unknown,
   ) => selector({ selectedCategoryKey, selectCategory }),
 }));
 
@@ -132,7 +155,9 @@ beforeEach(() => {
   apiMock = {
     getShellData: vi.fn(async () => shellData),
     listSeasons: vi.fn(async () => []),
-    createSeason: vi.fn(async () => { throw new Error("not used"); }),
+    createSeason: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     openSeason: vi.fn(async () => {}),
     deleteSeason: vi.fn(async () => {}),
     runSeasonCommand: vi.fn(async () => buildCommandResult()),
@@ -140,14 +165,28 @@ beforeEach(() => {
     runExportAction: vi.fn(async () => buildCommandResult()),
     setStandingsRowExcluded: vi.fn(async () => {}),
     getStandingsRowIdentity: vi.fn(async () => soloIdentity),
-    correctStandingsRowIdentity: vi.fn(async () => buildCommandResult("Teilnehmerdaten gespeichert.")),
-    createImportDraft: vi.fn(async () => { throw new Error("not used"); }),
-    getImportDraft: vi.fn(async () => { throw new Error("not used"); }),
-    setImportReviewDecision: vi.fn(async () => { throw new Error("not used"); }),
-    applyImportReviewCorrection: vi.fn(async () => { throw new Error("not used"); }),
+    correctStandingsRowIdentity: vi.fn(async () =>
+      buildCommandResult("Teilnehmerdaten gespeichert."),
+    ),
+    createImportDraft: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    getImportDraft: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    setImportReviewDecision: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    applyImportReviewCorrection: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     finalizeImportDraft: vi.fn(async () => buildCommandResult()),
-    getHistory: vi.fn(async () => { throw new Error("not used"); }),
-    previewHistoryState: vi.fn(async () => { throw new Error("not used"); }),
+    getHistory: vi.fn(async () => {
+      throw new Error("not used");
+    }),
+    previewHistoryState: vi.fn(async () => {
+      throw new Error("not used");
+    }),
     rollbackHistory: vi.fn(async () => buildCommandResult()),
     hardResetHistoryToSeq: vi.fn(async () => buildCommandResult()),
   };
@@ -165,19 +204,26 @@ describe("CorrectionsPage", () => {
     apiMock = {
       ...apiMock,
       getStandings: vi.fn(
-        () => new Promise<StandingsData>((resolve) => { resolveStandings = resolve; }),
+        () =>
+          new Promise<StandingsData>((resolve) => {
+            resolveStandings = resolve;
+          }),
       ),
     };
     render(<CorrectionsPage />);
     expect(screen.getByText(/Korrekturen werden geladen/i)).toBeInTheDocument();
     resolveStandings(standingsData);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
   });
 
   it("renders the corrections overview without an outer surface-card panel", async () => {
     selectedCategoryKey = "half_hour:women";
     const { container } = render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
     const overview = container.querySelector(".standings-overview");
     expect(overview).not.toBeNull();
     expect(overview!.classList.contains("surface-card")).toBe(false);
@@ -186,7 +232,9 @@ describe("CorrectionsPage", () => {
   it("renders guidance and KPI badges on corrections page without meta row or export buttons", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     expect(screen.getByText(/Namen oder Vereine anklicken/i)).toBeInTheDocument();
     expect(screen.getByText(/Über a\.W\./i)).toBeInTheDocument();
@@ -203,7 +251,9 @@ describe("CorrectionsPage", () => {
   it("renders an a.W. column header in the detail table", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     expect(screen.getByRole("columnheader", { name: "a.W." })).toBeInTheDocument();
   });
@@ -212,14 +262,18 @@ describe("CorrectionsPage", () => {
     const { StandingsPage } = await import("@/features/standings/StandingsPage.tsx");
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
     expect(screen.queryByRole("columnheader", { name: "a.W." })).not.toBeInTheDocument();
   });
 
   it("renders a checkbox per row in the a.W. column matching the excluded state", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const beaCheckbox = screen.getByRole("checkbox", { name: /a\.W\. Bea Team/i });
     const annaCheckbox = screen.getByRole("checkbox", { name: /a\.W\. Anna Team/i });
@@ -230,7 +284,9 @@ describe("CorrectionsPage", () => {
   it("calls setStandingsRowExcluded with excluded=true when unchecked row is checked", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const beaCheckbox = screen.getByRole("checkbox", { name: /a\.W\. Bea Team/i });
     fireEvent.click(beaCheckbox);
@@ -247,7 +303,9 @@ describe("CorrectionsPage", () => {
   it("calls setStandingsRowExcluded with excluded=false when checked row is unchecked", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const annaCheckbox = screen.getByRole("checkbox", { name: /a\.W\. Anna Team/i });
     fireEvent.click(annaCheckbox);
@@ -264,7 +322,9 @@ describe("CorrectionsPage", () => {
   it("reloads standings and posts a status toast after successful a.W. toggle", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole("checkbox", { name: /a\.W\. Bea Team/i }));
 
@@ -277,7 +337,9 @@ describe("CorrectionsPage", () => {
   it("opens the correction modal when the team name button is clicked (solo)", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const teamButton = screen.getAllByRole("button", { name: /Bea Team/i })[0]!;
     fireEvent.click(teamButton);
@@ -296,10 +358,14 @@ describe("CorrectionsPage", () => {
   it("shows a solo form (name, Jahrgang, Verein) in the correction modal for solo rows", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: /Bea Team/i })[0]!);
-    await waitFor(() => { expect(screen.getByRole("dialog")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
 
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getAllByRole("textbox")).toHaveLength(3);
@@ -310,10 +376,14 @@ describe("CorrectionsPage", () => {
     selectedCategoryKey = "hour:couples_mixed";
     apiMock = { ...apiMock, getStandingsRowIdentity: vi.fn(async () => coupleIdentity) };
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: /Maria/i })[0]!);
-    await waitFor(() => { expect(screen.getByRole("dialog")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
 
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Teilnehmende A")).toBeInTheDocument();
@@ -324,10 +394,14 @@ describe("CorrectionsPage", () => {
   it("submits the corrected solo data and closes the modal on success", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: /Bea Team/i })[0]!);
-    await waitFor(() => { expect(screen.getByRole("dialog")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
 
     const inputs = screen.getAllByRole("textbox");
     fireEvent.change(inputs[0]!, { target: { value: "Bea Korrigiert" } });
@@ -357,10 +431,14 @@ describe("CorrectionsPage", () => {
       getStandingsRowIdentity: vi.fn(async () => coupleIdentity),
     };
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: /Maria/i })[0]!);
-    await waitFor(() => { expect(screen.getByRole("dialog")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
 
     const inputs = screen.getAllByRole("textbox");
     fireEvent.change(inputs[0]!, { target: { value: "Maria K." } });
@@ -384,26 +462,36 @@ describe("CorrectionsPage", () => {
   it("shows a validation error inside the modal when name is empty", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: /Bea Team/i })[0]!);
-    await waitFor(() => { expect(screen.getByRole("dialog")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
 
     const nameInput = screen.getAllByRole("textbox")[0]!;
     fireEvent.change(nameInput, { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
 
-    expect(screen.getByText(/Name und Jahrgang sind für die Korrektur erforderlich/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Name und Jahrgang sind für die Korrektur erforderlich/i),
+    ).toBeInTheDocument();
     expect(apiMock.correctStandingsRowIdentity).not.toHaveBeenCalled();
   });
 
   it("closes the modal and discards changes when Abbrechen is clicked", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: /Bea Team/i })[0]!);
-    await waitFor(() => { expect(screen.getByRole("dialog")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -413,10 +501,14 @@ describe("CorrectionsPage", () => {
   it("reloads standings and posts a status toast after a successful correction", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<CorrectionsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getAllByRole("button", { name: /Bea Team/i })[0]!);
-    await waitFor(() => { expect(screen.getByRole("dialog")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
 

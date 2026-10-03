@@ -74,7 +74,9 @@ function parseYobToken(token: string, fallback: number): number {
 }
 
 function pairYobsFromReview(incomingYob: number, review: ImportReviewItem): [number, number] {
-  const yobComp = review.candidates[0]?.fieldComparisons.find((comparison) => comparison.fieldKey === "yob");
+  const yobComp = review.candidates[0]?.fieldComparisons.find(
+    (comparison) => comparison.fieldKey === "yob",
+  );
   const raw = yobComp?.incomingValue.trim();
   if (!raw) {
     const shared = Number.isFinite(incomingYob) && incomingYob > 0 ? incomingYob : 0;
@@ -83,7 +85,11 @@ function pairYobsFromReview(incomingYob: number, review: ImportReviewItem): [num
   const [leftToken, rightToken] = splitPairToken(raw);
   const leftYob = parseYobToken(leftToken, incomingYob);
   const rightYob =
-    rightToken === "—" ? (Number.isFinite(incomingYob) && incomingYob > 0 ? incomingYob : leftYob) : parseYobToken(rightToken, incomingYob);
+    rightToken === "—"
+      ? Number.isFinite(incomingYob) && incomingYob > 0
+        ? incomingYob
+        : leftYob
+      : parseYobToken(rightToken, incomingYob);
   return [leftYob, rightYob];
 }
 
@@ -126,7 +132,8 @@ function effectiveAutoThresholdFromConfig(config: {
 
 export function ImportPage() {
   const api = useAppApi();
-  const { shellData, refreshShellData, setSidebarControls, setNavigationGuard } = useAppShellContext();
+  const { shellData, refreshShellData, setSidebarControls, setNavigationGuard } =
+    useAppShellContext();
   const setStatus = useStatusStore((state) => state.setStatus);
   const [importedRuns, setImportedRuns] = useState<ImportedRunRow[]>([]);
   const [step, setStep] = useState<StepKey>("select_file");
@@ -202,18 +209,22 @@ export function ImportPage() {
   }, [draft, setNavigationGuard]);
 
   const canStartImport =
-    Boolean(shellData.selectedSeasonId) && fileName.trim().length > 0 && Number.parseInt(raceNumber, 10) > 0;
+    Boolean(shellData.selectedSeasonId) &&
+    fileName.trim().length > 0 &&
+    Number.parseInt(raceNumber, 10) > 0;
   const activeReview = draft?.reviewItems[reviewIndex] ?? null;
   const totalReviews = draft?.reviewItems.length ?? 0;
   const currentDecision =
     activeReview && draft
       ? stagedDecisions[activeReview.reviewId]
         ? { reviewId: activeReview.reviewId, ...stagedDecisions[activeReview.reviewId] }
-        : draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId) ?? null
+        : (draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId) ?? null)
       : null;
   const selectedCorrectionCandidate =
     activeReview && currentDecision?.candidateId
-      ? activeReview.candidates.find((candidate) => candidate.candidateId === currentDecision.candidateId) ?? null
+      ? (activeReview.candidates.find(
+          (candidate) => candidate.candidateId === currentDecision.candidateId,
+        ) ?? null)
       : null;
   const orderedCandidates = useMemo(() => {
     if (!activeReview) {
@@ -254,9 +265,17 @@ export function ImportPage() {
       perfectMatchAutoMerge: true,
       strictNormalizedAutoOnly: false,
     };
-  }, [activeMatchingSettings.autoThreshold, activeMatchingSettings.reviewThreshold, fuzzySubMode, matchingMode]);
+  }, [
+    activeMatchingSettings.autoThreshold,
+    activeMatchingSettings.reviewThreshold,
+    fuzzySubMode,
+    matchingMode,
+  ]);
   const effectiveAutoThreshold = effectiveAutoThresholdFromConfig(matchingConfigInput);
-  const cappedReviewThreshold = Math.min(activeMatchingSettings.reviewThreshold, effectiveAutoThreshold);
+  const cappedReviewThreshold = Math.min(
+    activeMatchingSettings.reviewThreshold,
+    effectiveAutoThreshold,
+  );
   const visibleCandidates = useMemo(() => {
     if (matchingMode === "strict") {
       return orderedCandidates.filter(
@@ -266,9 +285,7 @@ export function ImportPage() {
       );
     }
     if (matchingMode === "fuzzy_automatik") {
-      return orderedCandidates.filter(
-        (candidate) => candidate.confidence >= cappedReviewThreshold,
-      );
+      return orderedCandidates.filter((candidate) => candidate.confidence >= cappedReviewThreshold);
     }
     return orderedCandidates;
   }, [cappedReviewThreshold, matchingMode, orderedCandidates]);
@@ -283,7 +300,9 @@ export function ImportPage() {
       return true;
     }
     const staged = stagedDecisions[activeReview.reviewId];
-    const fromDraft = draft.decisions.find((decision) => decision.reviewId === activeReview.reviewId);
+    const fromDraft = draft.decisions.find(
+      (decision) => decision.reviewId === activeReview.reviewId,
+    );
     const decision = staged ?? fromDraft ?? null;
     if (!decision) {
       return false;
@@ -306,7 +325,8 @@ export function ImportPage() {
       return;
     }
 
-    const selectedCandidateId = currentDecision?.action === "merge" ? currentDecision.candidateId : null;
+    const selectedCandidateId =
+      currentDecision?.action === "merge" ? currentDecision.candidateId : null;
     const selectedCandidateVisible =
       selectedCandidateId != null &&
       visibleCandidates.some((candidate) => candidate.candidateId === selectedCandidateId);
@@ -381,9 +401,16 @@ export function ImportPage() {
     const selectedCandidate = activeReview.candidates.find(
       (candidate) => candidate.candidateId === currentDecision.candidateId,
     );
-    const nameIncoming = selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "name")?.incomingValue ?? activeReview.incoming.displayName;
-    const yobIncoming = selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "yob")?.incomingValue ?? String(activeReview.incoming.yob);
-    const clubIncoming = selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "club")?.incomingValue ?? (activeReview.incoming.club ?? "");
+    const nameIncoming =
+      selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "name")?.incomingValue ??
+      activeReview.incoming.displayName;
+    const yobIncoming =
+      selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "yob")?.incomingValue ??
+      String(activeReview.incoming.yob);
+    const clubIncoming =
+      selectedCandidate?.fieldComparisons.find((item) => item.fieldKey === "club")?.incomingValue ??
+      activeReview.incoming.club ??
+      "";
     const [nameA, nameB] = splitPairToken(nameIncoming);
     const [yobA, yobB] = splitPairToken(yobIncoming);
     const [clubA, clubB] = splitPairToken(clubIncoming);
@@ -393,8 +420,16 @@ export function ImportPage() {
       club: clubIncoming === "—" ? "" : clubIncoming,
     });
     setTeamCorrection({
-      memberA: { name: nameA === "—" ? "" : nameA, yob: String(parseYobToken(yobA, activeReview.incoming.yob)), club: clubA === "—" ? "" : clubA },
-      memberB: { name: nameB === "—" ? "" : nameB, yob: String(parseYobToken(yobB, activeReview.incoming.yob)), club: clubB === "—" ? "" : clubB },
+      memberA: {
+        name: nameA === "—" ? "" : nameA,
+        yob: String(parseYobToken(yobA, activeReview.incoming.yob)),
+        club: clubA === "—" ? "" : clubA,
+      },
+      memberB: {
+        name: nameB === "—" ? "" : nameB,
+        yob: String(parseYobToken(yobB, activeReview.incoming.yob)),
+        club: clubB === "—" ? "" : clubB,
+      },
     });
     setCorrectionError(null);
     setIsCorrectionModalOpen(true);
@@ -561,7 +596,9 @@ export function ImportPage() {
 
   return (
     <div className={`page-stack ${step === "review_matches" ? "page-stack--fill" : ""}`.trim()}>
-      <section className={`import-workflow ${step === "review_matches" ? "import-workflow--fill" : ""}`.trim()}>
+      <section
+        className={`import-workflow ${step === "review_matches" ? "import-workflow--fill" : ""}`.trim()}
+      >
         {step === "select_file" ? (
           <ContentSplitLayout
             main={
@@ -585,7 +622,11 @@ export function ImportPage() {
                       setRaceNumber(String(nextRace));
                     }}
                   />
-                  <div className="import-select-grid__divider" role="presentation" aria-hidden="true" />
+                  <div
+                    className="import-select-grid__divider"
+                    role="presentation"
+                    aria-hidden="true"
+                  />
                   <section className="import-select-form">
                     <div className="import-select-section__header">
                       <h2>{STR.views.import.selectFileTitle}</h2>
@@ -640,7 +681,9 @@ export function ImportPage() {
                         const detectedRace = Number.parseInt(raceNumber, 10);
                         const hasRace = Number.isFinite(detectedRace) && detectedRace > 0;
                         const categoryLabel =
-                          category === "singles" ? STR.views.import.singles : STR.views.import.couples;
+                          category === "singles"
+                            ? STR.views.import.singles
+                            : STR.views.import.couples;
                         let statusClass = "import-select-status is-empty";
                         let statusContent: ReactNode = (
                           <span className="import-select-status__line">
@@ -655,7 +698,10 @@ export function ImportPage() {
                                 <span className="import-select-status__icon" aria-hidden="true">
                                   ✅
                                 </span>
-                                {STR.views.import.selectionStatusDetected(categoryLabel, detectedRace)}
+                                {STR.views.import.selectionStatusDetected(
+                                  categoryLabel,
+                                  detectedRace,
+                                )}
                               </span>
                               <small className="import-select-status__sub">
                                 {STR.views.import.selectionStatusDetectedSub}
@@ -721,7 +767,9 @@ export function ImportPage() {
                       }}
                       disabled={busy}
                     >
-                      <span className="import-review__action-icon" aria-hidden="true">↩️</span>
+                      <span className="import-review__action-icon" aria-hidden="true">
+                        ↩️
+                      </span>
                       {STR.views.import.stepBackToSelection}
                     </button>
                     <button
@@ -732,7 +780,9 @@ export function ImportPage() {
                       }}
                       disabled={busy}
                     >
-                      <span className="import-review__action-icon" aria-hidden="true">⚙️</span>
+                      <span className="import-review__action-icon" aria-hidden="true">
+                        ⚙️
+                      </span>
                       {STR.views.import.matchingSettings}
                     </button>
                   </div>
@@ -745,7 +795,9 @@ export function ImportPage() {
                       }}
                       disabled={reviewIndex === 0 || busy}
                     >
-                      <span className="import-review__action-icon" aria-hidden="true">⬅️</span>
+                      <span className="import-review__action-icon" aria-hidden="true">
+                        ⬅️
+                      </span>
                       {STR.views.import.reviewBackEntry}
                     </button>
                     <button
@@ -770,10 +822,14 @@ export function ImportPage() {
                       }}
                       disabled={busy || totalReviews === 0 || !canAdvanceFromCurrentReview}
                       title={
-                        !canAdvanceFromCurrentReview ? STR.views.import.reviewAdvanceRequiresDecisionTitle : undefined
+                        !canAdvanceFromCurrentReview
+                          ? STR.views.import.reviewAdvanceRequiresDecisionTitle
+                          : undefined
                       }
                     >
-                      {reviewIndex >= totalReviews - 1 ? STR.views.import.summaryNext : `${STR.views.import.reviewNextEntry} ➡️`}
+                      {reviewIndex >= totalReviews - 1
+                        ? STR.views.import.summaryNext
+                        : `${STR.views.import.reviewNextEntry} ➡️`}
                     </button>
                   </div>
                 </div>
@@ -787,7 +843,9 @@ export function ImportPage() {
                         <span className="import-review__incoming-eyebrow">
                           {STR.views.import.reviewIncomingEyebrow}
                         </span>
-                        <h2>{STR.views.import.reviewEntryProgress(reviewIndex + 1, totalReviews)}</h2>
+                        <h2>
+                          {STR.views.import.reviewEntryProgress(reviewIndex + 1, totalReviews)}
+                        </h2>
                       </header>
                       <div className="import-review__incoming-lines">
                         {(() => {
@@ -812,7 +870,12 @@ export function ImportPage() {
                           }
                           return (
                             <p className="import-review__incoming-line">
-                              {formatSoloIncomingSummaryLine(inc.displayName, inc.yob, inc.startNumber, inc.resultLabel)}
+                              {formatSoloIncomingSummaryLine(
+                                inc.displayName,
+                                inc.yob,
+                                inc.startNumber,
+                                inc.resultLabel,
+                              )}
                             </p>
                           );
                         })()}
@@ -835,7 +898,8 @@ export function ImportPage() {
                             </div>
                           );
                         }
-                        const isPrimarySelected = currentDecision?.candidateId === primary.candidateId;
+                        const isPrimarySelected =
+                          currentDecision?.candidateId === primary.candidateId;
                         return (
                           <>
                             <ImportCandidateCard
@@ -852,7 +916,8 @@ export function ImportPage() {
                             {visibleCandidates.length > 1 ? (
                               <div className="import-review__extra-candidates">
                                 {visibleCandidates.slice(1).map((candidate) => {
-                                  const isSelected = currentDecision?.candidateId === candidate.candidateId;
+                                  const isSelected =
+                                    currentDecision?.candidateId === candidate.candidateId;
                                   return (
                                     <ImportCandidateCard
                                       key={candidate.candidateId}
@@ -897,7 +962,6 @@ export function ImportPage() {
                         <small>{STR.views.import.reviewCreateNewDescription}</small>
                       </button>
                     </div>
-
                   </div>
                 ) : (
                   <p>{STR.views.import.noOpenReviews}</p>
@@ -932,9 +996,21 @@ export function ImportPage() {
                           candidateId: staged.candidateId,
                         };
                       }
-                      return draft.decisions.find((decision) => decision.reviewId === reviewItem.reviewId) ?? null;
+                      return (
+                        draft.decisions.find(
+                          (decision) => decision.reviewId === reviewItem.reviewId,
+                        ) ?? null
+                      );
                     })
-                    .filter((decision): decision is { reviewId: string; action: ImportReviewAction; candidateId: string | null } => decision != null)}
+                    .filter(
+                      (
+                        decision,
+                      ): decision is {
+                        reviewId: string;
+                        action: ImportReviewAction;
+                        candidateId: string | null;
+                      } => decision != null,
+                    )}
                 />
                 <div className="import-step__actions">
                   <button
@@ -966,13 +1042,22 @@ export function ImportPage() {
 
       {step === "review_matches" && draft && isMatchingSettingsOpen ? (
         <div className="confirm-modal__backdrop" role="presentation">
-          <div className="confirm-modal" role="dialog" aria-modal="true" aria-label={STR.views.import.matchingOptionsTitle}>
+          <div
+            className="confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={STR.views.import.matchingOptionsTitle}
+          >
             <div className="confirm-modal__header">
               <h2>{STR.views.import.matchingOptionsTitle}</h2>
             </div>
             <div className="confirm-modal__body">
               <div className="matching-options">
-                <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeAria}>
+                <div
+                  className="matching-options__modes"
+                  role="tablist"
+                  aria-label={STR.views.import.matchingModeAria}
+                >
                   <button
                     type="button"
                     className={`button button--tab ${matchingMode === "strict" ? "is-active" : ""}`}
@@ -1006,11 +1091,16 @@ export function ImportPage() {
                 </div>
                 <div className="matching-options__summary">
                   <span>
-                    Effektive Auto-Schwelle: <strong>{thresholdLabel(effectiveAutoThreshold)}</strong>
+                    Effektive Auto-Schwelle:{" "}
+                    <strong>{thresholdLabel(effectiveAutoThreshold)}</strong>
                   </span>
                 </div>
                 {matchingMode === "fuzzy_automatik" ? (
-                  <div className="matching-options__modes" role="tablist" aria-label={STR.views.import.matchingModeFuzzy}>
+                  <div
+                    className="matching-options__modes"
+                    role="tablist"
+                    aria-label={STR.views.import.matchingModeFuzzy}
+                  >
                     <button
                       type="button"
                       className={`button button--tab ${fuzzySubMode === "perfect" ? "is-active" : ""}`}
@@ -1034,14 +1124,20 @@ export function ImportPage() {
                   </div>
                 ) : null}
                 <label className="matching-options__slider">
-                  <span>{STR.views.import.autoThresholdLabel(thresholdLabel(activeMatchingSettings.autoThreshold))}</span>
+                  <span>
+                    {STR.views.import.autoThresholdLabel(
+                      thresholdLabel(activeMatchingSettings.autoThreshold),
+                    )}
+                  </span>
                   <input
                     type="range"
                     min={MATCHING_THRESHOLD_MIN}
                     max={MATCHING_THRESHOLD_MAX}
                     step={MATCHING_THRESHOLD_STEP}
                     value={activeMatchingSettings.autoThreshold}
-                    disabled={busy || matchingMode !== "fuzzy_automatik" || fuzzySubMode === "perfect"}
+                    disabled={
+                      busy || matchingMode !== "fuzzy_automatik" || fuzzySubMode === "perfect"
+                    }
                     onChange={(event) => {
                       const nextValue = clampThreshold(Number(event.target.value));
                       setMatchingModeSettings((current) => ({
@@ -1055,7 +1151,9 @@ export function ImportPage() {
                   />
                 </label>
                 <label className="matching-options__slider">
-                  <span>{STR.views.import.reviewThresholdLabel(thresholdLabel(cappedReviewThreshold))}</span>
+                  <span>
+                    {STR.views.import.reviewThresholdLabel(thresholdLabel(cappedReviewThreshold))}
+                  </span>
                   <input
                     type="range"
                     min={MATCHING_THRESHOLD_MIN}
@@ -1066,7 +1164,8 @@ export function ImportPage() {
                     onChange={(event) => {
                       const nextValue = clampThreshold(Number(event.target.value));
                       const maxReview = effectiveAutoThresholdFromConfig({
-                        autoMergeEnabled: matchingMode === "fuzzy_automatik" && fuzzySubMode === "threshold",
+                        autoMergeEnabled:
+                          matchingMode === "fuzzy_automatik" && fuzzySubMode === "threshold",
                         perfectMatchAutoMerge: matchingMode === "fuzzy_automatik",
                         autoMin: activeMatchingSettings.autoThreshold,
                       });
@@ -1090,7 +1189,10 @@ export function ImportPage() {
                         : STR.views.import.matchingModeHintReviewList}
                 </p>
                 <p className="matching-options__hint">
-                  {STR.views.import.visibleCandidatesCount(visibleCandidates.length, orderedCandidates.length)}
+                  {STR.views.import.visibleCandidatesCount(
+                    visibleCandidates.length,
+                    orderedCandidates.length,
+                  )}
                 </p>
                 <label className="matching-options__toggle">
                   <input
@@ -1103,7 +1205,9 @@ export function ImportPage() {
                   />
                   <span>
                     <strong>{STR.views.import.autoSelectTopCandidateLabel}</strong>
-                    <small className="matching-options__toggle-hint">{STR.views.import.autoSelectTopCandidateHint}</small>
+                    <small className="matching-options__toggle-hint">
+                      {STR.views.import.autoSelectTopCandidateHint}
+                    </small>
                   </span>
                 </label>
               </div>
@@ -1124,7 +1228,12 @@ export function ImportPage() {
       ) : null}
       {step === "review_matches" && draft && isCorrectionModalOpen ? (
         <div className="confirm-modal__backdrop" role="presentation">
-          <div className="confirm-modal confirm-modal--wide import-correction-modal" role="dialog" aria-modal="true" aria-label="Daten korrigieren">
+          <div
+            className="confirm-modal confirm-modal--wide import-correction-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Daten korrigieren"
+          >
             <div className="confirm-modal__header">
               <h2>Daten korrigieren</h2>
             </div>
@@ -1134,8 +1243,13 @@ export function ImportPage() {
                   <h3>Vergleich</h3>
                   <div className="import-correction-modal__comparison-grid">
                     {selectedCorrectionCandidate.fieldComparisons.map((comparison) => (
-                      <div key={comparison.fieldKey} className="import-correction-modal__comparison-row">
-                        <span className="import-correction-modal__comparison-label">{comparison.label}</span>
+                      <div
+                        key={comparison.fieldKey}
+                        className="import-correction-modal__comparison-row"
+                      >
+                        <span className="import-correction-modal__comparison-label">
+                          {comparison.label}
+                        </span>
                         <div>
                           <small>Eingehend</small>
                           <p>{comparison.incomingValue || "—"}</p>
@@ -1244,7 +1358,10 @@ export function ImportPage() {
                       <input
                         value={singleCorrection.name}
                         onChange={(event) => {
-                          setSingleCorrection((current) => ({ ...current, name: event.target.value }));
+                          setSingleCorrection((current) => ({
+                            ...current,
+                            name: event.target.value,
+                          }));
                         }}
                         disabled={busy}
                       />
@@ -1254,7 +1371,10 @@ export function ImportPage() {
                       <input
                         value={singleCorrection.yob}
                         onChange={(event) => {
-                          setSingleCorrection((current) => ({ ...current, yob: event.target.value }));
+                          setSingleCorrection((current) => ({
+                            ...current,
+                            yob: event.target.value,
+                          }));
                         }}
                         disabled={busy}
                       />
@@ -1264,7 +1384,10 @@ export function ImportPage() {
                       <input
                         value={singleCorrection.club}
                         onChange={(event) => {
-                          setSingleCorrection((current) => ({ ...current, club: event.target.value }));
+                          setSingleCorrection((current) => ({
+                            ...current,
+                            club: event.target.value,
+                          }));
                         }}
                         disabled={busy}
                       />

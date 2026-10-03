@@ -71,9 +71,7 @@ async function loadSnapshot(
 async function reloadWorkspaceAndSeason(
   get: () => SeasonStoreState,
   set: (
-    partial:
-      | Partial<SeasonStoreState>
-      | ((state: SeasonStoreState) => Partial<SeasonStoreState>),
+    partial: Partial<SeasonStoreState> | ((state: SeasonStoreState) => Partial<SeasonStoreState>),
   ) => void,
   preferredSeasonId?: string | null,
 ): Promise<void> {
@@ -82,7 +80,7 @@ async function reloadWorkspaceAndSeason(
   const desired =
     preferredSeasonId ??
     get().activeSeasonId ??
-    (seasons.length > 0 ? seasons[0]?.season_id ?? null : null);
+    (seasons.length > 0 ? (seasons[0]?.season_id ?? null) : null);
 
   if (!desired || !seasons.some((entry) => entry.season_id === desired)) {
     set({

@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { defaultMatchingConfig } from "@/matching/config.ts";
 import { processCouplesSection, processSinglesSection } from "@/matching/workflow.ts";
-import type { ImportBatch, PersonIdentity, RaceCategory, RaceEntry, RaceEvent, SeasonState, Team } from "@/domain/types.ts";
+import type {
+  ImportBatch,
+  PersonIdentity,
+  RaceCategory,
+  RaceEntry,
+  RaceEvent,
+  SeasonState,
+  Team,
+} from "@/domain/types.ts";
 import type { ParsedSectionCouples, ParsedSectionSingles } from "@/ingestion/types.ts";
 
 function emptyState(overrides?: Partial<SeasonState>): SeasonState {
@@ -16,9 +24,7 @@ function emptyState(overrides?: Partial<SeasonState>): SeasonState {
   };
 }
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "",
     family_name: "",
@@ -59,10 +65,11 @@ function stateWithHistoricalRace(
       .filter((person): person is PersonIdentity => person != null);
     const displayName = members.map((person) => person.display_name).join(" / ");
     const yobText = members.map((person) => String(person.yob)).join(" / ");
-    const club = members
-      .map((person) => person.club)
-      .filter(Boolean)
-      .join(" / ") || null;
+    const club =
+      members
+        .map((person) => person.club)
+        .filter(Boolean)
+        .join(" / ") || null;
 
     return {
       entry_id: `entry-hist-${i}`,
@@ -72,7 +79,7 @@ function stateWithHistoricalRace(
       points: 10,
       incoming: {
         display_name: displayName,
-        yob: t.team_kind === "solo" ? members[0]?.yob ?? 0 : null,
+        yob: t.team_kind === "solo" ? (members[0]?.yob ?? 0) : null,
         yob_text: t.team_kind === "couple" ? yobText : null,
         club,
         row_kind: t.team_kind === "solo" ? "solo" : "team",
@@ -364,7 +371,10 @@ describe("processCouplesSection", () => {
       team_kind: "couple",
     };
     const state = stateWithHistoricalRace(
-      new Map([["pa", ma], ["pb", mb]]),
+      new Map([
+        ["pa", ma],
+        ["pb", mb],
+      ]),
       new Map([["t-couple", coupleTeam]]),
       { duration: "hour", division: "couples_mixed" },
     );
@@ -414,7 +424,10 @@ describe("processCouplesSection", () => {
       team_kind: "couple",
     };
     const state = stateWithHistoricalRace(
-      new Map([["pa", ma], ["pb", mb]]),
+      new Map([
+        ["pa", ma],
+        ["pb", mb],
+      ]),
       new Map([["t-rolled-back-couple", staleTeam]]),
       { duration: "hour", division: "couples_mixed" },
     );
@@ -468,7 +481,10 @@ describe("processCouplesSection", () => {
       team_kind: "couple",
     };
     const state = stateWithHistoricalRace(
-      new Map([["pa", ma], ["pb", mb]]),
+      new Map([
+        ["pa", ma],
+        ["pb", mb],
+      ]),
       new Map([["t-other-category-couple", otherCategoryTeam]]),
       { duration: "half_hour", division: "couples_mixed" },
     );

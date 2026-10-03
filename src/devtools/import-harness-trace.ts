@@ -1,9 +1,4 @@
-import type {
-  Division,
-  PersonIdentity,
-  RaceDuration,
-  SeasonState,
-} from "@/domain/types.ts";
+import type { Division, PersonIdentity, RaceDuration, SeasonState } from "@/domain/types.ts";
 import { canonicalizePersonNames } from "@/domain/person-identity.ts";
 import type {
   ParsedSectionCouples,
@@ -99,7 +94,6 @@ function summarizePool(state: SeasonState): PoolSnapshot {
     teams,
   };
 }
-
 
 function mapSinglesRow(
   row: ParsedSectionSingles["rows"][number],
@@ -274,9 +268,13 @@ export function autoResolveReviewQueue(session: ImportSession): ImportSession {
     const next = pending[0];
     if (next === undefined) return current;
     const topCandidate = next.review_item.candidates[0];
-    current = resolveReviewEntry(current, next.entry_id, topCandidate
-      ? { type: "link_existing", team_id: topCandidate.team_id }
-      : { type: "create_new_identity" });
+    current = resolveReviewEntry(
+      current,
+      next.entry_id,
+      topCandidate
+        ? { type: "link_existing", team_id: topCandidate.team_id }
+        : { type: "create_new_identity" },
+    );
   }
   return current;
 }

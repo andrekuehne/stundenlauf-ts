@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  aggregateMatchingReports,
-  emptyMatchingReport,
-} from "@/matching/report.ts";
+import { aggregateMatchingReports, emptyMatchingReport } from "@/matching/report.ts";
 import type { MatchingReport } from "@/matching/types.ts";
 
 describe("emptyMatchingReport", () => {

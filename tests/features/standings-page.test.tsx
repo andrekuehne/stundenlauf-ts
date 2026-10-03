@@ -129,7 +129,9 @@ const standingsData: StandingsData = {
     ],
   },
   importedRuns: [],
-  exportActions: [{ id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" }],
+  exportActions: [
+    { id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" },
+  ],
 };
 
 function buildCommandResult(message: string): AppCommandResult {
@@ -142,11 +144,16 @@ vi.mock("@/app/shell-context.ts", () => ({
   useAppShellContext: () => ({ shellData, setSidebarControls, setNavigationGuard }),
 }));
 vi.mock("@/stores/status.ts", () => ({
-  useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) => selector({ setStatus }),
+  useStatusStore: (selector: (s: { setStatus: typeof setStatus }) => unknown) =>
+    selector({ setStatus }),
 }));
 vi.mock("@/stores/standings.ts", () => ({
-  useStandingsStore: (selector: (s: { selectedCategoryKey: string | null; selectCategory: typeof selectCategory }) => unknown) =>
-    selector({ selectedCategoryKey, selectCategory }),
+  useStandingsStore: (
+    selector: (s: {
+      selectedCategoryKey: string | null;
+      selectCategory: typeof selectCategory;
+    }) => unknown,
+  ) => selector({ selectedCategoryKey, selectCategory }),
 }));
 
 beforeEach(() => {
@@ -210,14 +217,20 @@ describe("StandingsPage", () => {
 
   it("selects first category when current selection is missing", async () => {
     render(<StandingsPage />);
-    await waitFor(() => { expect(apiMock.getStandings).toHaveBeenCalledWith("season-1"); });
-    await waitFor(() => { expect(selectCategory).toHaveBeenCalledWith("half_hour:women"); });
+    await waitFor(() => {
+      expect(apiMock.getStandings).toHaveBeenCalledWith("season-1");
+    });
+    await waitFor(() => {
+      expect(selectCategory).toHaveBeenCalledWith("half_hour:women");
+    });
   });
 
   it("renders the standings overview without an outer surface-card panel", async () => {
     selectedCategoryKey = "half_hour:women";
     const { container } = render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
     const overview = container.querySelector(".standings-overview");
     expect(overview).not.toBeNull();
     expect(overview!.classList.contains("surface-card")).toBe(false);
@@ -226,7 +239,9 @@ describe("StandingsPage", () => {
   it("renders only a quiet meta line (season + last-updated), without an Auswertung eyebrow or category headline", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     expect(screen.queryByText(/^Auswertung$/)).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "1/2 h - Frauen" })).not.toBeInTheDocument();
@@ -239,7 +254,9 @@ describe("StandingsPage", () => {
   it("renders three KPI cards with team count, races progress and excluded count", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const teamsCard = screen.getByTestId("standings-kpi-teams");
     expect(within(teamsCard).getByText("Teams in Wertung")).toBeInTheDocument();
@@ -257,15 +274,17 @@ describe("StandingsPage", () => {
   it("renders export buttons in main content and uses compact PDF preset", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0);
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "PDF exportieren" }));
 
-    await waitFor(() =>
-      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
+    await waitFor(() => {
+      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_pdf", {
         pdfLayoutPreset: "compact",
-      }); },
-    );
+      });
+    });
     await waitFor(() => {
       expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
     });
@@ -285,12 +304,14 @@ describe("StandingsPage", () => {
       })),
     };
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0); });
+    await waitFor(() => {
+      expect(screen.getAllByText(/Anna Team/).length).toBeGreaterThan(0);
+    });
     fireEvent.click(screen.getByRole("button", { name: "Excel exportieren" }));
 
-    await waitFor(() =>
-      { expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel"); },
-    );
+    await waitFor(() => {
+      expect(apiMock.runExportAction).toHaveBeenCalledWith("season-1", "export_excel");
+    });
     await waitFor(() => {
       expect(setStatus).toHaveBeenCalledWith(expect.objectContaining({ source: "standings" }));
     });
@@ -299,7 +320,9 @@ describe("StandingsPage", () => {
   it("does not render the exclusion checkbox column anymore", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     expect(screen.queryByRole("checkbox", { name: /Anna Team/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "a.W." })).not.toBeInTheDocument();
@@ -308,12 +331,16 @@ describe("StandingsPage", () => {
   it("uses the same column count for every category in the season (season-max race columns)", async () => {
     selectedCategoryKey = "half_hour:women";
     const { rerender } = render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const halfHourCols = Array.from(screen.getByRole("table").querySelectorAll("col"));
     selectedCategoryKey = "hour:women";
     rerender(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByText(/Doro Team/)).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByText(/Doro Team/)).toBeInTheDocument();
+    });
     const hourCols = Array.from(screen.getByRole("table").querySelectorAll("col"));
 
     expect(halfHourCols.length).toBe(hourCols.length);
@@ -340,7 +367,9 @@ describe("StandingsPage", () => {
     };
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const cols = Array.from(screen.getByRole("table").querySelectorAll("col"));
     expect(cols.length).toBe(3 + 2 * 5 + 2);
@@ -349,7 +378,9 @@ describe("StandingsPage", () => {
   it("renders the standings detail table with two header rows and stacked team name + YOB", async () => {
     selectedCategoryKey = "hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByText(/Doro Team/)).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByText(/Doro Team/)).toBeInTheDocument();
+    });
 
     const table = screen.getByRole("table");
     const thead = table.querySelector("thead");
@@ -359,8 +390,14 @@ describe("StandingsPage", () => {
     expect(headerRows[1]).toHaveClass("ui-table--standings-detail__header-row--units");
     expect(table.querySelector(".ui-table--standings-detail__header-row--secondary")).toBeNull();
 
-    expect(within(table).getByRole("columnheader", { name: "1. Lauf" })).toHaveAttribute("colspan", "2");
-    expect(within(table).getByRole("columnheader", { name: "Gesamt" })).toHaveAttribute("colspan", "2");
+    expect(within(table).getByRole("columnheader", { name: "1. Lauf" })).toHaveAttribute(
+      "colspan",
+      "2",
+    );
+    expect(within(table).getByRole("columnheader", { name: "Gesamt" })).toHaveAttribute(
+      "colspan",
+      "2",
+    );
     expect(within(table).getAllByRole("columnheader", { name: "km" })).toHaveLength(5);
     expect(within(table).getAllByRole("columnheader", { name: "Pkt" })).toHaveLength(5);
 
@@ -410,7 +447,9 @@ describe("StandingsPage", () => {
       })),
     };
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("columnheader", { name: "5. Lauf" })).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("columnheader", { name: "5. Lauf" })).toBeInTheDocument();
+    });
     const table = screen.getByRole("table");
     expect(within(table).getByRole("columnheader", { name: "4. Lauf" })).toBeInTheDocument();
     expect(within(table).queryByRole("columnheader", { name: "3. Lauf" })).not.toBeInTheDocument();
@@ -419,12 +458,16 @@ describe("StandingsPage", () => {
   it("places excluded rows at the bottom of the list with rank dash and muted styling", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByText(/Anna Team/)).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByText(/Anna Team/)).toBeInTheDocument();
+    });
 
     const table = screen.getByRole("table");
     const tbody = table.querySelector("tbody");
     const bodyRows = tbody instanceof HTMLTableSectionElement ? Array.from(tbody.rows) : [];
-    const teamOrder = bodyRows.map((row) => within(row).getByTestId("standings-team-name").textContent?.trim());
+    const teamOrder = bodyRows.map((row) =>
+      within(row).getByTestId("standings-team-name").textContent?.trim(),
+    );
     expect(teamOrder).toEqual(["Bea Team", "Clara Team", "Anna Team"]);
 
     const annaRow = bodyRows[2]!;
@@ -435,7 +478,9 @@ describe("StandingsPage", () => {
   it("renders category buttons in two rows with row labels, plus an export cluster on the right", async () => {
     selectedCategoryKey = "half_hour:women";
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     expect(screen.getByText("Halbstunde")).toBeInTheDocument();
     expect(screen.getByText("Stunde")).toBeInTheDocument();
@@ -460,12 +505,19 @@ describe("StandingsPage", () => {
         ...standingsData,
         exportActions: [
           { id: "export_pdf", label: "PDF", description: "PDF export", availability: "ready" },
-          { id: "export_excel", label: "Excel", description: "Excel export", availability: "ready" },
+          {
+            id: "export_excel",
+            label: "Excel",
+            description: "Excel export",
+            availability: "ready",
+          },
         ] as StandingsData["exportActions"],
       })),
     };
     render(<StandingsPage />);
-    await waitFor(() => { expect(screen.getByRole("table")).toBeInTheDocument(); });
+    await waitFor(() => {
+      expect(screen.getByRole("table")).toBeInTheDocument();
+    });
 
     const pdfButton = screen.getByRole("button", { name: "PDF exportieren" });
     const excelButton = screen.getByRole("button", { name: "Excel exportieren" });

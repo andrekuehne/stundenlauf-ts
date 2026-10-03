@@ -1,18 +1,12 @@
 import JSZip from "jszip";
 import type { SeasonRepository } from "@/services/season-repository.ts";
 import { deserializeEventLog } from "@/storage/serialization.ts";
-import {
-  SEASON_ARCHIVE_EVENTLOG_FILE,
-  SEASON_ARCHIVE_MANIFEST_FILE,
-} from "./constants.ts";
+import { SEASON_ARCHIVE_EVENTLOG_FILE, SEASON_ARCHIVE_MANIFEST_FILE } from "./constants.ts";
 import { checksumMatches } from "./integrity.ts";
 import { validateManifest } from "./manifest.ts";
 import type { ImportSeasonOptions, ImportSeasonResult, ParsedSeasonArchive } from "./types.ts";
 
-type ImportSeasonRepository = Pick<
-  SeasonRepository,
-  "listSeasons" | "saveImportedSeason"
->;
+type ImportSeasonRepository = Pick<SeasonRepository, "listSeasons" | "saveImportedSeason">;
 
 function normalizeLabel(label: string): string {
   return label.trim().toLocaleLowerCase("de");
@@ -39,7 +33,9 @@ export async function readSeasonArchive(file: File): Promise<ParsedSeasonArchive
   const isValidStructure =
     entryNames.length === expected.length &&
     entryNames.every((name, index) => name === expected[index]) &&
-    entryNames.every((name) => !name.includes("/") && !name.includes("\\") && !zip.files[name]?.dir);
+    entryNames.every(
+      (name) => !name.includes("/") && !name.includes("\\") && !zip.files[name]?.dir,
+    );
 
   if (!isValidStructure) {
     throw new Error(
@@ -64,7 +60,9 @@ export async function readSeasonArchive(file: File): Promise<ParsedSeasonArchive
 
   const eventlog = deserializeEventLog(eventlogJson);
   if (eventlog.season_id !== manifest.season_id) {
-    throw new Error("manifest.json und eventlog.json referenzieren unterschiedliche season_id-Werte.");
+    throw new Error(
+      "manifest.json und eventlog.json referenzieren unterschiedliche season_id-Werte.",
+    );
   }
   if (eventlog.label.trim().length === 0) {
     throw new Error("eventlog.json enthält keinen gültigen Saisonnamen.");

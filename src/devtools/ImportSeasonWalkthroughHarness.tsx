@@ -144,31 +144,27 @@ function buildCategoryRankingTables(state: SeasonState): CategoryRankingTable[] 
     byCategory.set(catKey, byTeam);
   }
 
-  const tables: CategoryRankingTable[] = [...byCategory.entries()].map(
-    ([category_key, byTeam]) => {
-      const rows: RankedRow[] = [...byTeam.entries()].map(([teamId, value]) => ({
-        team_id: teamId,
-        team_label: teamDisplayLabel(state, teamId),
-        total_points: value.total_points,
-        total_distance_m: value.total_distance_m,
-        races_count: value.races.size,
-      }));
+  const tables: CategoryRankingTable[] = [...byCategory.entries()].map(([category_key, byTeam]) => {
+    const rows: RankedRow[] = [...byTeam.entries()].map(([teamId, value]) => ({
+      team_id: teamId,
+      team_label: teamDisplayLabel(state, teamId),
+      total_points: value.total_points,
+      total_distance_m: value.total_distance_m,
+      races_count: value.races.size,
+    }));
 
-      rows.sort((a, b) => {
-        if (a.total_points !== b.total_points) return b.total_points - a.total_points;
-        if (a.total_distance_m !== b.total_distance_m) return b.total_distance_m - a.total_distance_m;
-        return a.team_id.localeCompare(b.team_id);
-      });
-      return { category_key, rows };
-    },
-  );
+    rows.sort((a, b) => {
+      if (a.total_points !== b.total_points) return b.total_points - a.total_points;
+      if (a.total_distance_m !== b.total_distance_m) return b.total_distance_m - a.total_distance_m;
+      return a.team_id.localeCompare(b.team_id);
+    });
+    return { category_key, rows };
+  });
 
   return tables;
 }
 
-function buildImportedRaces(
-  state: SeasonState,
-): Array<{
+function buildImportedRaces(state: SeasonState): Array<{
   race_event_id: string;
   category_key: string;
   race_no: number;
@@ -215,10 +211,7 @@ export function ImportSeasonWalkthroughHarness() {
     () => buildMatchingConfig(matchingMode, autoThreshold, reviewThreshold),
     [matchingMode, autoThreshold, reviewThreshold],
   );
-  const effectiveAutoThreshold = useMemo(
-    () => effectiveAutoMin(matchingConfig),
-    [matchingConfig],
-  );
+  const effectiveAutoThreshold = useMemo(() => effectiveAutoMin(matchingConfig), [matchingConfig]);
   const pendingReviews = useMemo<PendingReviewItem[]>(() => {
     if (!activeSession) return [];
     return getReviewQueue(activeSession)
@@ -232,10 +225,7 @@ export function ImportSeasonWalkthroughHarness() {
       .sort((a, b) => b.confidence - a.confidence);
   }, [activeSession]);
   const currentReview = pendingReviews[0] ?? null;
-  const rankingTables = useMemo(
-    () => buildCategoryRankingTables(seasonState),
-    [seasonState],
-  );
+  const rankingTables = useMemo(() => buildCategoryRankingTables(seasonState), [seasonState]);
   const importedRaces = useMemo(() => buildImportedRaces(seasonState), [seasonState]);
 
   function resetAll(): void {
@@ -334,11 +324,13 @@ export function ImportSeasonWalkthroughHarness() {
     <main id="app" style={{ padding: "16px" }}>
       <h1>Import Season Walkthrough Harness</h1>
       <p>
-        Praktischer Dev-Harness für komplette Saison-Imports: Datei für Datei laden, Reviews
-        manuell per Radio-Auswahl entscheiden und laufend akkumulierte Ergebnisse ansehen.
+        Praktischer Dev-Harness für komplette Saison-Imports: Datei für Datei laden, Reviews manuell
+        per Radio-Auswahl entscheiden und laufend akkumulierte Ergebnisse ansehen.
       </p>
 
-      <section style={{ marginBottom: "16px", border: "1px solid var(--color-border)", padding: "12px" }}>
+      <section
+        style={{ marginBottom: "16px", border: "1px solid var(--color-border)", padding: "12px" }}
+      >
         <h2>Matching-Strategie</h2>
         <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
           <label>
@@ -368,9 +360,7 @@ export function ImportSeasonWalkthroughHarness() {
               max={1}
               step={0.01}
               disabled={
-                busy ||
-                activeSession?.phase === "reviewing" ||
-                matchingMode !== "fuzzy_automatik"
+                busy || activeSession?.phase === "reviewing" || matchingMode !== "fuzzy_automatik"
               }
               value={autoThreshold}
               onChange={(event) => {
@@ -429,7 +419,9 @@ export function ImportSeasonWalkthroughHarness() {
       ) : null}
 
       {currentReview ? (
-        <section style={{ marginBottom: "16px", border: "1px solid var(--color-border)", padding: "12px" }}>
+        <section
+          style={{ marginBottom: "16px", border: "1px solid var(--color-border)", padding: "12px" }}
+        >
           <h2>Review ({pendingReviews.length} offen, sortiert nach Confidence)</h2>
           <table style={{ marginBottom: "12px" }}>
             <tbody>
@@ -472,7 +464,8 @@ export function ImportSeasonWalkthroughHarness() {
                       setSelectedReviewDecision(event.target.value);
                     }}
                   />{" "}
-                  {candidate.display_name} ({candidate.team_id}) - Score {candidate.score.toFixed(3)}
+                  {candidate.display_name} ({candidate.team_id}) - Score{" "}
+                  {candidate.score.toFixed(3)}
                 </label>
               ))}
               <label>
@@ -524,8 +517,7 @@ export function ImportSeasonWalkthroughHarness() {
                   <td>{entry.file_name}</td>
                   <td>{modeLabel(entry.mode)}</td>
                   <td>
-                    {thresholdLabel(entry.effective_auto_min)} /{" "}
-                    {thresholdLabel(entry.review_min)}
+                    {thresholdLabel(entry.effective_auto_min)} / {thresholdLabel(entry.review_min)}
                   </td>
                   <td>{entry.rows_imported}</td>
                   <td>{entry.review_items}</td>

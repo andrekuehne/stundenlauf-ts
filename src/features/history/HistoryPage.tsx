@@ -126,14 +126,21 @@ export function HistoryPage() {
 
       {confirmDialog ? (
         <div className="confirm-modal__backdrop" role="presentation">
-          <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="reset-confirm-title">
+          <div
+            className="confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-confirm-title"
+          >
             <div className="confirm-modal__header">
               <h2 id="reset-confirm-title">{STR.views.history.importRollbackConfirmTitle}</h2>
             </div>
             <div className="confirm-modal__body">
               <p>{STR.views.history.importRollbackConfirmBody}</p>
               <p>
-                <strong>{STR.views.history.hardResetConfirmFile(confirmDialog.batch.sourceFile)}</strong>
+                <strong>
+                  {STR.views.history.hardResetConfirmFile(confirmDialog.batch.sourceFile)}
+                </strong>
               </p>
               <p className="surface-card__note">
                 {STR.views.history.importedAt}: {formatDateTime(confirmDialog.batch.recordedAt)}

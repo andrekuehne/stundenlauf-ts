@@ -20,7 +20,12 @@ import type {
   EntryCorrectedPayload,
   RankingEligibilitySetPayload,
 } from "@/domain/events.ts";
-import type { RaceCategory, RaceEntryInput, IncomingRowData, ResolutionInfo } from "@/domain/types.ts";
+import type {
+  RaceCategory,
+  RaceEntryInput,
+  IncomingRowData,
+  ResolutionInfo,
+} from "@/domain/types.ts";
 import { canonicalPersonIdentityFromIncoming } from "@/matching/normalize.ts";
 
 let seqCounter = 0;

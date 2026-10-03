@@ -11,9 +11,7 @@ import {
 } from "@/matching/score.ts";
 import type { PersonIdentity } from "@/domain/types.ts";
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "",
     family_name: "",
@@ -186,11 +184,11 @@ describe("routeFromScore", () => {
   });
 
   it("routes review between thresholds", () => {
-    expect(routeFromScore(0.80, manualConfig)).toBe("review");
+    expect(routeFromScore(0.8, manualConfig)).toBe("review");
   });
 
   it("routes new_identity below review_min", () => {
-    expect(routeFromScore(0.50, manualConfig)).toBe("new_identity");
+    expect(routeFromScore(0.5, manualConfig)).toBe("new_identity");
   });
 
   it("routes auto at exact auto_min boundary when auto merge is enabled", () => {
@@ -212,7 +210,7 @@ describe("shouldReviewStrongNameYobMismatch", () => {
 
   it("does not trigger when score above review_min", () => {
     const feats = { name_base: 1.0, token_overlap: 1.0, yob_agreement: 0.0 };
-    expect(shouldReviewStrongNameYobMismatch(0.80, feats, config)).toBe(false);
+    expect(shouldReviewStrongNameYobMismatch(0.8, feats, config)).toBe(false);
   });
 
   it("does not trigger when yob agrees", () => {
@@ -222,7 +220,7 @@ describe("shouldReviewStrongNameYobMismatch", () => {
 
   it("does not trigger when name is weak", () => {
     const feats = { name_base: 0.5, token_overlap: 0.3, yob_agreement: 0.0 };
-    expect(shouldReviewStrongNameYobMismatch(0.30, feats, config)).toBe(false);
+    expect(shouldReviewStrongNameYobMismatch(0.3, feats, config)).toBe(false);
   });
 });
 
@@ -250,6 +248,6 @@ describe("shouldReviewStrongCoupleYobMismatch", () => {
       m1_token_overlap: 1.0,
       m1_yob_agreement: 0.0,
     };
-    expect(shouldReviewStrongCoupleYobMismatch(0.80, feats, config)).toBe(false);
+    expect(shouldReviewStrongCoupleYobMismatch(0.8, feats, config)).toBe(false);
   });
 });

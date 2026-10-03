@@ -15,10 +15,7 @@ function readGitValue(command: string, fallback: string): string {
 }
 
 const appCommit = readGitValue("git rev-parse --short HEAD", "unknown");
-const appVersion = readGitValue(
-  "git describe --tags --always --dirty",
-  appCommit,
-);
+const appVersion = readGitValue("git describe --tags --always --dirty", appCommit);
 const basePath = process.env.VITE_BASE_PATH ?? "/stundenlauf-ts/";
 
 export default defineConfig({

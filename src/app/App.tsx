@@ -24,7 +24,8 @@ const ImportOrchestrationHarness = lazy(async () => ({
   default: (await import("@/devtools/ImportOrchestrationHarness.tsx")).ImportOrchestrationHarness,
 }));
 const ImportSeasonWalkthroughHarness = lazy(async () => ({
-  default: (await import("@/devtools/ImportSeasonWalkthroughHarness.tsx")).ImportSeasonWalkthroughHarness,
+  default: (await import("@/devtools/ImportSeasonWalkthroughHarness.tsx"))
+    .ImportSeasonWalkthroughHarness,
 }));
 const LegacyLayoutParityPage = lazy(async () => ({
   default: (await import("@/devtools/LegacyLayoutParityPage.tsx")).LegacyLayoutParityPage,
@@ -102,7 +103,10 @@ function Phase1App() {
   const currentStatus = useStatusStore((state) => state.current);
   const [shellData, setShellData] = useState<ShellData>(EMPTY_SHELL_DATA);
   const [navigationGuard, setNavigationGuard] = useState<NavigationGuardConfig | null>(null);
-  const [pendingNavigation, setPendingNavigation] = useState<{ type: "route"; route: AppRoute } | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<{
+    type: "route";
+    route: AppRoute;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarControls, setSidebarControls] = useState<ReactNode | null>(null);
@@ -159,7 +163,9 @@ function Phase1App() {
     () => (
       <>
         <span className="status-bar__prefix">{STR.status.prefix}</span>
-        <span>{currentStatus?.message ?? (loading ? STR.status.appLoading : STR.status.defaultReady)}</span>
+        <span>
+          {currentStatus?.message ?? (loading ? STR.status.appLoading : STR.status.defaultReady)}
+        </span>
       </>
     ),
     [currentStatus?.message, loading],
@@ -179,7 +185,9 @@ function Phase1App() {
             <EmptyState title={STR.app.errorTitle} message={error} />
           </div>
         ) : (
-          <Outlet context={{ shellData, refreshShellData, setSidebarControls, setNavigationGuard }} />
+          <Outlet
+            context={{ shellData, refreshShellData, setSidebarControls, setNavigationGuard }}
+          />
         )}
       </AppShell>
       <div className="version-badge" title={`Version ${APP_VERSION}`}>

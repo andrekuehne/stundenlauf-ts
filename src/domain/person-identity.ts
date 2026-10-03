@@ -16,7 +16,10 @@ function nameKeyFromParsed(parsed: ReturnType<typeof parsePersonName>): string {
 export function formatPersonDisplayName(givenName: string, familyName: string): string {
   const given = normalizeWhitespace(givenName);
   const family = normalizeWhitespace(familyName);
-  return [given, family].filter((part) => part !== "").join(" ").trim();
+  return [given, family]
+    .filter((part) => part !== "")
+    .join(" ")
+    .trim();
 }
 
 export function normalizedNameKeyFromDisplay(displayName: string): string {
@@ -73,10 +76,7 @@ export function validatePersonNameConsistency(input: {
   return errors;
 }
 
-export function canonicalizeClub(input: {
-  club: string | null;
-  club_normalized?: string;
-}): {
+export function canonicalizeClub(input: { club: string | null; club_normalized?: string }): {
   club: string | null;
   club_normalized: string;
 } {

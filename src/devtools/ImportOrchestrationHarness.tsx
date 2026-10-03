@@ -178,10 +178,7 @@ function getPoolMatchContext(
   };
 }
 
-function getCandidateDisplayName(
-  section: HarnessSectionTrace,
-  candidateUid: string,
-): string {
+function getCandidateDisplayName(section: HarnessSectionTrace, candidateUid: string): string {
   const person = section.pool_before.people.find((entry) => entry.person_id === candidateUid);
   if (person) return person.display_name;
 
@@ -214,9 +211,7 @@ export function ImportOrchestrationHarness() {
   const [mw1, setMw1] = useState<CycleResult | null>(null);
   const [mw2, setMw2] = useState<CycleResult | null>(null);
   const [mw1Events, setMw1Events] = useState<ReturnType<typeof finalizeImport>>([]);
-  const [stateAfterMw1, setStateAfterMw1] = useState(
-    emptySeasonState(HARNESS_SEASON_ID),
-  );
+  const [stateAfterMw1, setStateAfterMw1] = useState(emptySeasonState(HARNESS_SEASON_ID));
   const [matchingMode, setMatchingMode] = useState<HarnessMatchingMode>("fuzzy_automatik");
   const [autoThreshold, setAutoThreshold] = useState(DEFAULT_AUTO_MIN);
   const [reviewThreshold, setReviewThreshold] = useState(DEFAULT_REVIEW_MIN);
@@ -224,10 +219,7 @@ export function ImportOrchestrationHarness() {
     () => buildHarnessMatchingConfig(matchingMode, autoThreshold, reviewThreshold),
     [matchingMode, autoThreshold, reviewThreshold],
   );
-  const effectiveAutoThreshold = useMemo(
-    () => effectiveAutoMin(matchingConfig),
-    [matchingConfig],
-  );
+  const effectiveAutoThreshold = useMemo(() => effectiveAutoMin(matchingConfig), [matchingConfig]);
 
   const activeResult = useMemo(
     () => (activeCycle === "mw2" && mw2 ? mw2 : mw1),
@@ -322,13 +314,14 @@ export function ImportOrchestrationHarness() {
     <main id="app" style={{ padding: "16px" }}>
       <h1>F-TS05 Import Harness</h1>
       <p>
-        Dev-only manual cycle for MW1 → MW2. Matching can be run in Strikt /
-        Fuzzy-Automatik / Manuell mode with thresholds from this harness. Pending
-        review entries are auto-resolved by taking the top candidate (or creating a new
-        identity if no candidate exists).
+        Dev-only manual cycle for MW1 → MW2. Matching can be run in Strikt / Fuzzy-Automatik /
+        Manuell mode with thresholds from this harness. Pending review entries are auto-resolved by
+        taking the top candidate (or creating a new identity if no candidate exists).
       </p>
 
-      <section style={{ marginBottom: "16px", border: "1px solid var(--color-border)", padding: "12px" }}>
+      <section
+        style={{ marginBottom: "16px", border: "1px solid var(--color-border)", padding: "12px" }}
+      >
         <h2>Matching-Einstellungen (Harness)</h2>
         <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
           <label>
@@ -449,25 +442,33 @@ export function ImportOrchestrationHarness() {
               </tr>
             </thead>
             <tbody>
-              {[mw1, mw2].filter((item): item is CycleResult => item !== null).map((item) => (
-                <tr key={item.label}>
-                  <td>{item.label}</td>
-                  <td>{item.source_file}</td>
-                  <td>{matchingModeLabel(item.matching.mode)}</td>
-                  <td>
-                    {sliderLabel(item.matching.effective_auto_min)} /{" "}
-                    {sliderLabel(item.matching.review_min)}
-                  </td>
-                  <td>{fmt(item.report.sections_imported)}</td>
-                  <td>{fmt(item.report.rows_imported)}</td>
-                  <td>{fmt(item.review_count_before_auto_resolve)}</td>
-                  <td>{fmt(item.events_emitted)}</td>
-                </tr>
-              ))}
+              {[mw1, mw2]
+                .filter((item): item is CycleResult => item !== null)
+                .map((item) => (
+                  <tr key={item.label}>
+                    <td>{item.label}</td>
+                    <td>{item.source_file}</td>
+                    <td>{matchingModeLabel(item.matching.mode)}</td>
+                    <td>
+                      {sliderLabel(item.matching.effective_auto_min)} /{" "}
+                      {sliderLabel(item.matching.review_min)}
+                    </td>
+                    <td>{fmt(item.report.sections_imported)}</td>
+                    <td>{fmt(item.report.rows_imported)}</td>
+                    <td>{fmt(item.review_count_before_auto_resolve)}</td>
+                    <td>{fmt(item.events_emitted)}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
           <div style={{ marginTop: "8px", display: "flex", gap: "8px" }}>
-            <button type="button" onClick={() => { setActiveCycle("mw1"); resetNavigation(); }}>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveCycle("mw1");
+                resetNavigation();
+              }}
+            >
               MW1 anzeigen
             </button>
             <button
@@ -664,12 +665,19 @@ export function ImportOrchestrationHarness() {
           <section style={{ marginBottom: "16px" }}>
             <details>
               <summary>
-                Teilnehmerpool vor Abschnitt (Personen: {fmt(activeSection.pool_before.person_count)} | Teams:{" "}
+                Teilnehmerpool vor Abschnitt (Personen:{" "}
+                {fmt(activeSection.pool_before.person_count)} | Teams:{" "}
                 {fmt(activeSection.pool_before.team_count)})
               </summary>
               <div style={{ marginTop: "12px" }}>
                 <h3>Pool Personen (scrollbar)</h3>
-                <div style={{ maxHeight: "260px", overflow: "auto", border: "1px solid var(--color-border)" }}>
+                <div
+                  style={{
+                    maxHeight: "260px",
+                    overflow: "auto",
+                    border: "1px solid var(--color-border)",
+                  }}
+                >
                   <table>
                     <thead>
                       <tr>

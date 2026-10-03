@@ -64,9 +64,7 @@ describe("tooling type checks", () => {
       const config = readProjectConfig(name);
       const source = projectPath("scripts/dump-local-excel-fixtures.ts");
       const module = ts.resolveModuleName("@/ingestion/errors", source, config.options, ts.sys);
-      expect(module.resolvedModule?.resolvedFileName).toBe(
-        projectPath("src/ingestion/errors.ts"),
-      );
+      expect(module.resolvedModule?.resolvedFileName).toBe(projectPath("src/ingestion/errors.ts"));
     }
   });
 });

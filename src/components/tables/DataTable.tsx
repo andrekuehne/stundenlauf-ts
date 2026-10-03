@@ -24,7 +24,13 @@ function alignmentClass(align: DataTableColumn<unknown>["align"]): string {
   return `ui-table__cell--${align}`;
 }
 
-export function DataTable<Row>({ columns, rows, emptyMessage, rowKey, className }: DataTableProps<Row>) {
+export function DataTable<Row>({
+  columns,
+  rows,
+  emptyMessage,
+  rowKey,
+  className,
+}: DataTableProps<Row>) {
   const tableClassName = className ? `ui-table ${className}` : "ui-table";
 
   return (
@@ -35,7 +41,9 @@ export function DataTable<Row>({ columns, rows, emptyMessage, rowKey, className 
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={[alignmentClass(column.align), column.headerClassName].filter(Boolean).join(" ")}
+                className={[alignmentClass(column.align), column.headerClassName]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {column.header}
               </th>
@@ -49,7 +57,9 @@ export function DataTable<Row>({ columns, rows, emptyMessage, rowKey, className 
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={[alignmentClass(column.align), column.cellClassName].filter(Boolean).join(" ")}
+                    className={[alignmentClass(column.align), column.cellClassName]
+                      .filter(Boolean)
+                      .join(" ")}
                     data-label={column.header}
                   >
                     {column.cell(row)}

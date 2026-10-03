@@ -26,9 +26,19 @@ describe("router config", () => {
     const mod = await import("@/app/router.tsx");
     expect(createHashRouterMock).toHaveBeenCalledTimes(1);
     const firstCall = createHashRouterMock.mock.calls[0];
-    const routes = (firstCall?.[0] ?? []) as Array<{ path?: string; children?: Array<{ path?: string }> }>;
+    const routes = (firstCall?.[0] ?? []) as Array<{
+      path?: string;
+      children?: Array<{ path?: string }>;
+    }>;
     expect(routes[0]?.path).toBe("/");
-    expect(routes[0]?.children?.map((r) => r.path)).toEqual([undefined, "season", "standings", "import", "corrections", "history"]);
+    expect(routes[0]?.children?.map((r) => r.path)).toEqual([
+      undefined,
+      "season",
+      "standings",
+      "import",
+      "corrections",
+      "history",
+    ]);
     expect(routes[1]?.path).toBe("*");
     expect(typeof mod.AppRouter).toBe("function");
   });

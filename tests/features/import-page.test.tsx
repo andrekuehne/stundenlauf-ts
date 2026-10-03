@@ -342,7 +342,11 @@ function buildDraftWithUnresolvedReview(input: ImportDraftInput): ImportDraftSta
 function clickFirstImportCandidateMatching(text: RegExp): void {
   const match = screen
     .getAllByRole("button", { name: text })
-    .find((el) => el.classList.contains("import-candidate") && !el.classList.contains("import-candidate--new"));
+    .find(
+      (el) =>
+        el.classList.contains("import-candidate") &&
+        !el.classList.contains("import-candidate--new"),
+    );
   if (!match) {
     throw new Error(`No import candidate button matched ${text}`);
   }
@@ -432,16 +436,32 @@ describe("ImportPage", () => {
     expect(singlesRow).toBeTruthy();
     expect(doublesRow).toBeTruthy();
 
-    expect(singlesRow!.querySelectorAll(".import-season-overview__chip").length).toBeGreaterThanOrEqual(5);
-    expect(doublesRow!.querySelectorAll(".import-season-overview__chip").length).toBeGreaterThanOrEqual(5);
+    expect(
+      singlesRow!.querySelectorAll(".import-season-overview__chip").length,
+    ).toBeGreaterThanOrEqual(5);
+    expect(
+      doublesRow!.querySelectorAll(".import-season-overview__chip").length,
+    ).toBeGreaterThanOrEqual(5);
   });
 
   it("marks already-imported races as imported in the season overview panel", async () => {
     apiMock.getStandings = vi.fn(async () => ({
       ...emptyStandings,
       importedRuns: [
-        { raceLabel: "Lauf 2", categoryLabel: "60 Minuten Herren/Damen", dateLabel: "—", sourceLabel: "f.xlsx", entries: 12 },
-        { raceLabel: "Lauf 3", categoryLabel: "30 Minuten Paare", dateLabel: "—", sourceLabel: "p.xlsx", entries: 8 },
+        {
+          raceLabel: "Lauf 2",
+          categoryLabel: "60 Minuten Herren/Damen",
+          dateLabel: "—",
+          sourceLabel: "f.xlsx",
+          entries: 12,
+        },
+        {
+          raceLabel: "Lauf 3",
+          categoryLabel: "30 Minuten Paare",
+          dateLabel: "—",
+          sourceLabel: "p.xlsx",
+          entries: 8,
+        },
       ],
     }));
 
@@ -450,7 +470,9 @@ describe("ImportPage", () => {
     await waitFor(() => {
       const overview = container.querySelector(".import-season-overview");
       expect(overview).toBeTruthy();
-      expect(overview!.querySelectorAll(".import-season-overview__chip.is-imported").length).toBe(2);
+      expect(overview!.querySelectorAll(".import-season-overview__chip.is-imported").length).toBe(
+        2,
+      );
     });
 
     const singlesImported = container.querySelectorAll(
@@ -514,7 +536,9 @@ describe("ImportPage", () => {
     });
     fireEvent.change(fileInput!, { target: { files: [file] } });
 
-    expect(screen.getByPlaceholderText("lauf4-mw.xlsx")).toHaveValue("Ergebnisliste MW Lauf 5.xlsx");
+    expect(screen.getByPlaceholderText("lauf4-mw.xlsx")).toHaveValue(
+      "Ergebnisliste MW Lauf 5.xlsx",
+    );
     const singlesChip5 = container.querySelector(
       ".import-season-overview__row--singles .import-season-overview__chip[data-race='5']",
     );
@@ -759,10 +783,12 @@ describe("ImportPage", () => {
       category: "singles",
       raceNumber: 1,
     });
-    const setImportReviewDecisionSpy = vi.fn(async (_draftId: string, decision: ImportReviewDecision) => ({
-      ...draftWithReview,
-      decisions: [decision],
-    }));
+    const setImportReviewDecisionSpy = vi.fn(
+      async (_draftId: string, decision: ImportReviewDecision) => ({
+        ...draftWithReview,
+        decisions: [decision],
+      }),
+    );
     apiMock.createImportDraft = vi.fn(async () => draftWithReview);
     apiMock.setImportReviewDecision = setImportReviewDecisionSpy;
 
@@ -844,7 +870,9 @@ describe("ImportPage", () => {
 
     const line = container.querySelector(".import-review__incoming-line");
     expect(line?.textContent).toBe("Lea (1992) / Tom (1990) | Startnr. 7 | 12,2 km / 14 P");
-    expect(container.querySelector(".import-review__incoming")?.textContent).not.toMatch(/Greifswald|Verein/i);
+    expect(container.querySelector(".import-review__incoming")?.textContent).not.toMatch(
+      /Greifswald|Verein/i,
+    );
   });
 
   it("uses a three-part fill layout on merge review so the toolbar is separate from the scroll region", async () => {
@@ -895,12 +923,16 @@ describe("ImportPage", () => {
 
     const extra = container.querySelector(".import-review__extra-candidates");
     expect(extra).toBeTruthy();
-    const mergeCardsInExtra = extra?.querySelectorAll("button.import-candidate:not(.import-candidate--new)");
+    const mergeCardsInExtra = extra?.querySelectorAll(
+      "button.import-candidate:not(.import-candidate--new)",
+    );
     expect(mergeCardsInExtra?.length).toBe(1);
 
     const cardsRoot = container.querySelector(".import-review__cards");
     expect(cardsRoot).toBeTruthy();
-    const mergeCardsTotal = cardsRoot?.querySelectorAll("button.import-candidate:not(.import-candidate--new)");
+    const mergeCardsTotal = cardsRoot?.querySelectorAll(
+      "button.import-candidate:not(.import-candidate--new)",
+    );
     expect(mergeCardsTotal?.length).toBe(2);
     expect(cardsRoot?.querySelector("button.import-candidate--new")).toBeTruthy();
   });
@@ -924,7 +956,9 @@ describe("ImportPage", () => {
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
 
     expect(container.querySelector(".import-review__extra-candidates")).toBeNull();
-    expect(container.querySelector(".import-review__cards button.import-candidate--new")).toBeTruthy();
+    expect(
+      container.querySelector(".import-review__cards button.import-candidate--new"),
+    ).toBeTruthy();
   });
 
   it("does not auto-select a candidate by default so the user must choose explicitly", async () => {
@@ -944,7 +978,9 @@ describe("ImportPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Weiter zu Zuordnungen" }));
 
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
-    expect(screen.queryByRole("button", { name: /Kathi Moller - ausgewählt/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Kathi Moller - ausgewählt/i }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Zusammenfassung/i })).toBeDisabled();
   });
 
@@ -966,7 +1002,9 @@ describe("ImportPage", () => {
 
     await screen.findByRole("heading", { name: /Eintrag 1\/1/i });
     fireEvent.click(screen.getByRole("button", { name: "Einstellungen" }));
-    const autoCheckbox = screen.getByRole("checkbox", { name: /Ersten Treffer automatisch auswählen/i });
+    const autoCheckbox = screen.getByRole("checkbox", {
+      name: /Ersten Treffer automatisch auswählen/i,
+    });
     expect(autoCheckbox).not.toBeChecked();
     fireEvent.click(autoCheckbox);
     expect(autoCheckbox).toBeChecked();
@@ -1212,7 +1250,9 @@ describe("ImportPage", () => {
     await waitFor(() => {
       expect(apiMock.createImportDraft).toHaveBeenCalled();
     });
-    expect(screen.queryByRole("heading", { name: "Import-Zusammenfassung" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Import-Zusammenfassung" }),
+    ).not.toBeInTheDocument();
   });
 
   it("allows advancing to the summary once the user has explicitly chosen a candidate", async () => {
@@ -1440,7 +1480,9 @@ describe("ImportPage", () => {
 
     const children = Array.from(grid!.children);
     const overviewIdx = children.findIndex((el) => el.classList.contains("import-season-overview"));
-    const dividerIdx = children.findIndex((el) => el.classList.contains("import-select-grid__divider"));
+    const dividerIdx = children.findIndex((el) =>
+      el.classList.contains("import-select-grid__divider"),
+    );
     const formIdx = children.findIndex((el) => el.classList.contains("import-select-form"));
     expect(overviewIdx).toBeGreaterThanOrEqual(0);
     expect(dividerIdx).toBeGreaterThan(overviewIdx);
@@ -1474,7 +1516,8 @@ describe("ImportPage", () => {
     );
     const candidateIdx = cardChildren.findIndex(
       (el) =>
-        el.classList.contains("import-candidate") && !el.classList.contains("import-candidate--new"),
+        el.classList.contains("import-candidate") &&
+        !el.classList.contains("import-candidate--new"),
     );
     const dividerIdx = cardChildren.findIndex((el) =>
       el.classList.contains("import-review__fallback-divider"),

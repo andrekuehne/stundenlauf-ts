@@ -17,7 +17,10 @@ export function LegacyLayoutParityPage() {
       </header>
 
       <main className="legacy-parity__app-main">
-        <section id="legacySeasonEntryView" className="legacy-parity__card legacy-parity__season-entry">
+        <section
+          id="legacySeasonEntryView"
+          className="legacy-parity__card legacy-parity__season-entry"
+        >
           <h2>Saison öffnen oder neu anlegen</h2>
           <p>
             Dieser Bereich dient als statischer Layout-Referenzblock für die Legacy-Parität und
@@ -41,7 +44,10 @@ export function LegacyLayoutParityPage() {
                   <td>—</td>
                   <td>Einzel/Paare</td>
                   <td>
-                    <button type="button" className="legacy-parity__button legacy-parity__button-secondary">
+                    <button
+                      type="button"
+                      className="legacy-parity__button legacy-parity__button-secondary"
+                    >
                       Öffnen
                     </button>
                   </td>
@@ -142,21 +148,32 @@ export function LegacyLayoutParityPage() {
                 <div className="legacy-parity__form-row">
                   <label>Lauftyp</label>
                   <div className="legacy-parity__toggle-grid">
-                    <button type="button" className="legacy-parity__button legacy-parity__button-secondary">
+                    <button
+                      type="button"
+                      className="legacy-parity__button legacy-parity__button-secondary"
+                    >
                       Einzel
                     </button>
-                    <button type="button" className="legacy-parity__button legacy-parity__button-secondary">
+                    <button
+                      type="button"
+                      className="legacy-parity__button legacy-parity__button-secondary"
+                    >
                       Paare
                     </button>
                   </div>
                 </div>
-                <button type="button" className="legacy-parity__button legacy-parity__button-primary">
+                <button
+                  type="button"
+                  className="legacy-parity__button legacy-parity__button-primary"
+                >
                   Lauf importieren
                 </button>
               </div>
               <div className="legacy-parity__import-review-column">
                 <h2>Eintrag 1/1</h2>
-                <p>Statischer Platzhalter für Prüflistenbereich und differenzierte Tabellenbreiten.</p>
+                <p>
+                  Statischer Platzhalter für Prüflistenbereich und differenzierte Tabellenbreiten.
+                </p>
                 <div className="legacy-parity__table-wrap">
                   <table className="legacy-parity__table">
                     <thead>
@@ -196,7 +213,9 @@ export function LegacyLayoutParityPage() {
           >
             <div className="legacy-parity__card">
               <h2>Historie & Korrektur</h2>
-              <p>Statischer Platzhalter für Import-Historie und Audit-Protokoll mit Scrollcontainern.</p>
+              <p>
+                Statischer Platzhalter für Import-Historie und Audit-Protokoll mit Scrollcontainern.
+              </p>
               <div className="legacy-parity__table-wrap">
                 <table className="legacy-parity__table">
                   <thead>
@@ -215,7 +234,10 @@ export function LegacyLayoutParityPage() {
                       <td>Ergebnisliste MW_2.xlsx</td>
                       <td>2</td>
                       <td>
-                        <button type="button" className="legacy-parity__button legacy-parity__button-secondary">
+                        <button
+                          type="button"
+                          className="legacy-parity__button legacy-parity__button-secondary"
+                        >
                           Datei zurücknehmen
                         </button>
                       </td>
