@@ -1,0 +1,57 @@
+version: 2
+updates:
+  # Dependabot uses the npm ecosystem for pnpm manifests and lockfiles.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+      vitest:
+        patterns:
+          - vitest
+          - "@vitest/*"
+      build-tooling:
+        patterns:
+          - vite
+          - "@vitejs/plugin-react"
+          - vite-plugin-pwa
+          - "workbox-*"
+        update-types:
+          - major
+      lint-tooling:
+        patterns:
+          - eslint
+          - "@eslint/*"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
+          - globals
+        update-types:
+          - major
+      routine:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns:
+          - "*"

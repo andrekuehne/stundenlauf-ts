@@ -429,7 +429,7 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-03 | Planned | TBD | — | — | Pending | Align runtime, types, and pnpm. |
 | WP-04 | Planned | TBD | — | — | Pending | Establish formatting baseline. |
 | WP-05 | Planned | TBD | — | — | Pending | Verify both OSes and deployment workflow. |
-| WP-06 | Planned | TBD | — | — | Pending | Configure and activate Dependabot. |
+| WP-06 | Ready for Review | /root | Candidate below | Version2 YAML parsed; upstream npm/pnpm10 options verified | independent_reviewer pending | Settings and real update/PR await external activation. |
 | WP-07 | Planned | TBD | — | — | Pending | Refresh compatible dependencies and audit. |
 | WP-08 | Planned | TBD | — | — | Pending | Update SheetJS distribution. |
 | WP-09 | Planned | TBD | — | — | Pending for each subpackage | Migrate tooling families serially. |
@@ -442,6 +442,11 @@ For each independent review, record: package/subpackage; reviewer; exact reviewe
 For each advisory disposition, record: package/version; advisory URL; dependency path; execution context and reachability; chosen action; supporting verification; owner; next review trigger.
 
 For each version decision, record: family; selected versions; Node/peer constraints; reason for any holdback; primary-source links; affected work package; verification evidence.
+
+### WP-06 configuration and activation evidence
+
+- Added `.github/dependabot.yml`: npm ecosystem at root for pnpm, github-actions at root; weekly Monday06:00 Europe/Berlin; PR limits5/3; coupled React/Vitest groups, major build/lint groups, routine minor/patch group. No automatic merge configuration. YAML parses and options match current [official reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
+- Preparation can proceed after accepted WP-00; activation verification depends on WP-05. Configuration on this unmerged branch is **not** proof of a Dependabot job, graph/alerts/security activation, or a generated PR. Settings route verification and actual update job/representative PR remain pending; repository administrator owns default-branch activation after PR approval. SheetJS CDN manual procedure belongs to WP-08.
 
 ### Review acceptance log
 
