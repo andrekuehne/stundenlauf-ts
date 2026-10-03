@@ -428,7 +428,7 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-02 | Done | target_research + /root coordinator | f116db4 | Expanded lint/types; 677tests; two builds; clean CLI | independent_reviewer acceptedf116db4, reran16 focused tests/types/lint/CLI | Browser additions reviewed again WP-10. |
 | WP-03 | Reviewed / Pending External Verification | /root dependency coordinator | 44c7438 | Clean frozen Linux install, unchanged lock, real hooks; 677tests/types/lint/build/CLI pass | independent_reviewer accepted44c7438, reproduced version/types/hook | Windows native install verification in WP-05. |
 | WP-04 | Done | /root exclusive formatter | 6f43378 | format/lint/types pass;104files pure Prettier3.8.2 output | independent_reviewer accepted6f43378, allfiles compared to formatted baseline | CI owner receives passing baseline. |
-| WP-05 | Planned | TBD | — | — | Pending | Verify both OSes and deployment workflow. |
+| WP-05 | Ready for Review | target_research | Candidate below | YAML/action manifest semantics and formatter/diff checks pass | independent_reviewer pending | Push baseline; real Linux/Windows runs; required settings. |
 | WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f | Version2 YAML parsed; upstream npm/pnpm10 options verified | independent_reviewer acceptedbd7bc4f, no findings | Settings, actual update job and representative PR pending. |
 | WP-07 | Planned | TBD | — | — | Pending | Refresh compatible dependencies and audit. |
 | WP-08 | Planned | TBD | — | — | Pending | Update SheetJS distribution. |
@@ -469,6 +469,13 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Explicit build policy allows esbuild, disables core-js and dependency-level simple-git-hooks; root `prepare` remains enabled. Normal install10.34.6 passed. Removed only generated node_modules and ran fresh frozen install: passed in2.1s, no ignored-script warning, identical lock SHA256 before/after. Real `.git/hooks/pre-push` inspected and contains `pnpm run ci:local`; setup is proven in actual Git checkout, unlike clean copies without .git. Vite build and TSX CLI prove native tool binaries execute on Linux; Windows proof assigned WP-05.
 - `.gitattributes`: textLF; .shLF; .cmd/.batCRLF; workbook/archive/PDF/image assets binary. `git check-attr` verified representative paths. No tracked executable scripts currently require mode changes.
 - Node24.21.0/pnpm10.34.6 Linux:677tests/66files; coverage74.69% lines/statements,78.28% branches,82.12% functions, thresholds unchanged. Both type projects, expanded lint, production build, post-build lint, empty-fixture CLI pass. Raw wp03 logs/hash files retained in session evidence directory. Windows native install is explicitly delayed to WP-05 as specified by WP-03 DoD.
+
+### WP-05 CI preparation evidence
+
+- `.github/workflows/ts-deploy.yml` now runs allbranch pushes and main-target PRs on ubuntu-latest/windows-latest. Each OS performs frozen install, format, lint, types, coverage, production build, post-build lint, fixture CLI and tracked diff check with logged exact Node/pnpm versions. Uses shared runtimefile and packageManager; fullSHA action pins with versioncomments.
+- Current Actions verified via official release/tag/action.yml/README: checkout7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1`; setup-node7.0.0 `820762786026740c76f36085b0efc47a31fe5020`; pnpm/action-setup6.1.0 `ea17c68df8912ef543352723c149a84f56e3d413`; upload-pages-artifact5.0.0 `fc324d3547104276b827a68afc52ff2a11cc49c9`; deploy-pages5.0.1 `368f82528645a54fb793d4d04e342629a3f51346`. Node24 actions require runner>=2.327.1; hosted run evidence remains required. pnpm/action-setup6 supports10; pnpm/setup1 requires11 and is not selected.
+- Quality concurrency contains branch/PR plus OS; Pages concurrency is isolated and queues deployments. Only validated Linux mainpush output uploads a Pages artifact; deploy depends on bothOS quality and mainpush, with write permissions only in deploy. PR jobs cannot deploy. Existing Pages environment/subpath preserved.
+- Agent actual YAML parse and official action input/SHA/permission/concurrency/conditions checks passed; Prettier workflow check and git diff --check passed. actionlint unavailable, not claimed executed. Raw wp05 validation/handoff logs retained. Actual remote OS/runner/native install evidence and repository required-check settings remain unverified until observed.
 
 ### Review acceptance log
 
