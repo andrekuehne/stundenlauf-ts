@@ -127,12 +127,12 @@ The dated starting strategy is Node 24 LTS, pnpm 10.34.6, Node 24 types, and sup
 
 **Definition of Done:**
 
-- [ ] Starting commit, user changes, environment, and installation method are recorded.
-- [ ] Relevant failures are reproduced or differences are explained without conflating them with upgrade regressions.
-- [ ] Target matrix records exact versions, Node floors, important peers, and upstream references.
-- [ ] Fresh full and production-only audit results are recorded, with distinct findings rather than a vulnerability count alone.
-- [ ] Each remaining environment or account-access limitation has a precise verification action and owner.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] Starting commit, user changes, environment, and installation method are recorded.
+- [x] Relevant failures are reproduced or differences are explained without conflating them with upgrade regressions.
+- [x] Target matrix records exact versions, Node floors, important peers, and upstream references.
+- [x] Fresh full and production-only audit results are recorded, with distinct findings rather than a vulnerability count alone.
+- [x] Each remaining environment or account-access limitation has a precise verification action and owner.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-01 — Repair synthetic workbook byte handling
 
@@ -144,12 +144,12 @@ The dated starting strategy is Node 24 LTS, pnpm 10.34.6, Node 24 types, and sup
 
 **Definition of Done:**
 
-- [ ] A deterministic regression fails before the fix and passes afterward; it does not rely on a particular Node buffer-pool size.
-- [ ] The helper returns the correct byte length and workbook content without surrounding allocation bytes.
-- [ ] Singles, couples, workbook parsing, and API import tests pass with synthetic fixtures.
-- [ ] The full current suite and coverage gate pass on the selected Linux runtime; Windows verification is recorded in WP-05.
-- [ ] Production parsing behavior and ranking/matching rules are unaffected.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] A deterministic regression fails before the fix and passes afterward; it does not rely on a particular Node buffer-pool size.
+- [x] The helper returns the correct byte length and workbook content without surrounding allocation bytes.
+- [x] Singles, couples, workbook parsing, and API import tests pass with synthetic fixtures.
+- [x] The full current suite and coverage gate pass on the selected Linux runtime; Windows verification is recorded in WP-05.
+- [x] Production parsing behavior and ranking/matching rules are unaffected.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-02 — Canonical configs and fixture CLI
 
@@ -161,13 +161,13 @@ The dated starting strategy is Node 24 LTS, pnpm 10.34.6, Node 24 types, and sup
 
 **Definition of Done:**
 
-- [ ] Vite, Vitest, and ESLint each use an authoritative source configuration with no stale generated duplicates.
-- [ ] Type checking covers application, tests, scripts, and build/test/lint tooling; browser-test configs/sources are included before final delivery.
-- [ ] Lint succeeds before and after a production build with identical intended rules.
-- [ ] Two successive builds do not modify tracked files or recreate removed configuration artifacts.
-- [ ] inspect:excel-fixtures exits successfully and reports no fixtures when the local directory is empty.
-- [ ] The fixture CLI works from a clean install through a directly declared runner; it has no accidental transitive-tool dependency.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] Vite, Vitest, and ESLint each use an authoritative source configuration with no stale generated duplicates.
+- [x] Type checking covers application, tests, scripts, and build/test/lint tooling; browser-test configs/sources are included before final delivery.
+- [x] Lint succeeds before and after a production build with identical intended rules.
+- [x] Two successive builds do not modify tracked files or recreate removed configuration artifacts.
+- [x] inspect:excel-fixtures exits successfully and reports no fixtures when the local directory is empty.
+- [x] The fixture CLI works from a clean install through a directly declared runner; it has no accidental transitive-tool dependency.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-03 — Reproducible Linux/Windows toolchain
 
@@ -179,13 +179,13 @@ The dated starting strategy is Node 24 LTS, pnpm 10.34.6, Node 24 types, and sup
 
 **Definition of Done:**
 
-- [ ] Runtime pin, Node engines, Node types, package-manager pin, and documentation agree.
-- [ ] Clean frozen installation succeeds without rewriting the lockfile; approved build scripts and Git hook setup behave as intended.
-- [ ] Native build-tool binaries install correctly on Linux and Windows; Windows installation is verified in WP-05.
-- [ ] Git attributes define consistent text line endings and executable-script handling where applicable.
-- [ ] Existing development, quality, build, and preview commands remain portable.
-- [ ] Runtime and package-manager major upgrades beyond the chosen lines are deferred with a compatibility reason, if applicable.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] Runtime pin, Node engines, Node types, package-manager pin, and documentation agree.
+- [x] Clean frozen installation succeeds without rewriting the lockfile; approved build scripts and Git hook setup behave as intended.
+- [x] Native build-tool binaries install correctly on Linux and Windows; Windows installation is verified in WP-05.
+- [x] Git attributes define consistent text line endings and executable-script handling where applicable.
+- [x] Existing development, quality, build, and preview commands remain portable.
+- [x] Runtime and package-manager major upgrades beyond the chosen lines are deferred with a compatibility reason, if applicable.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-04 — Formatting baseline
 
@@ -197,11 +197,11 @@ The dated starting strategy is Node 24 LTS, pnpm 10.34.6, Node 24 types, and sup
 
 **Definition of Done:**
 
-- [ ] format:check passes across its intended scope.
-- [ ] The formatting commit contains no behavior or dependency changes.
-- [ ] Lint and type checking still pass after the sweep.
-- [ ] The CI owner receives a passing formatting baseline before making this check required.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] format:check passes across its intended scope.
+- [x] The formatting commit contains no behavior or dependency changes.
+- [x] Lint and type checking still pass after the sweep.
+- [x] The CI owner receives a passing formatting baseline before making this check required.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-05 — Linux/Windows CI and GitHub Actions refresh
 
@@ -213,13 +213,13 @@ The dated starting strategy is Node 24 LTS, pnpm 10.34.6, Node 24 types, and sup
 
 **Definition of Done:**
 
-- [ ] Both OS jobs pass remotely for the integrated baseline, with exact runtime/package-manager versions visible.
-- [ ] Lint, formatting, type checking, coverage, and build failures fail the corresponding checks.
-- [ ] Unrelated PR and branch quality runs cannot cancel each other through a shared Pages concurrency group.
-- [ ] Pages deployment depends on successful required checks and a validated artifact; PR jobs do not deploy.
-- [ ] Action updates preserve installation, caching, artifacts, and deployment semantics.
-- [ ] Required-check configuration is verified when repository access permits it; unavailable configuration is recorded as a pending external gate.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] Both OS jobs pass remotely for the integrated baseline, with exact runtime/package-manager versions visible.
+- [x] Lint, formatting, type checking, coverage, and build failures fail the corresponding checks.
+- [x] Unrelated PR and branch quality runs cannot cancel each other through a shared Pages concurrency group.
+- [x] Pages deployment depends on successful required checks and a validated artifact; PR jobs do not deploy.
+- [x] Action updates preserve installation, caching, artifacts, and deployment semantics.
+- [x] Required-check configuration is verified when repository access permits it; unavailable configuration is recorded as a pending external gate.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 ## WP-06 — Dependabot configuration and activation
 
@@ -231,14 +231,14 @@ The dated starting strategy is Node 24 LTS, pnpm 10.34.6, Node 24 types, and sup
 
 **Definition of Done:**
 
-- [ ] Valid version-2 configuration covers the root manifest/lockfile and Actions workflows.
-- [ ] Weekly schedule, PR limits, and grouping are explicit; no unsupported pnpm ecosystem identifier is used.
+- [x] Valid version-2 configuration covers the root manifest/lockfile and Actions workflows.
+- [x] Weekly schedule, PR limits, and grouping are explicit; no unsupported pnpm ecosystem identifier is used.
 - [ ] Dependabot successfully generates or checks an update using the actual repository configuration.
 - [ ] A representative generated PR has a consistent manifest/lockfile and passes frozen installation and the quality checks.
-- [ ] Dependency graph, alerts, and security-update activation are verified; inaccessible settings remain explicitly pending, not marked activated.
+- [x] Dependency graph, alerts, and security-update activation are verified; inaccessible settings remain explicitly pending, not marked activated.
 - [ ] Dependency PRs are reviewed with required checks; automatic merging is not introduced by this workplan.
-- [ ] SheetJS's separate distribution/update procedure is documented in WP-08; Dependabot is not claimed to cover its pinned CDN releases automatically.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] SheetJS's separate distribution/update procedure is documented in WP-08; Dependabot is not claimed to cover its pinned CDN releases automatically.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 Configuration semantics are documented in the [GitHub options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 
@@ -252,14 +252,14 @@ Configuration semantics are documented in the [GitHub options reference](https:/
 
 **Definition of Done:**
 
-- [ ] Routine changes are separate from major-family migrations and recorded with resolved versions.
-- [ ] Unused dependency removal is supported by source/config/script inspection and passing relevant checks.
-- [ ] Direct/transitive advisories are fixed where compatible updates are available.
-- [ ] Each residual finding records package/version, advisory, dependency path, execution context, applicability, remediation or deferral reason, owner, and review trigger.
-- [ ] No high/critical finding is left unreviewed; findings requiring major migrations are assigned to WP-08 or WP-09.
-- [ ] Any override is narrowly scoped, tested, and has a documented removal condition.
-- [ ] Frozen installation and full quality/build gates pass; full and production audit results are recorded again.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] Routine changes are separate from major-family migrations and recorded with resolved versions.
+- [x] Unused dependency removal is supported by source/config/script inspection and passing relevant checks.
+- [x] Direct/transitive advisories are fixed where compatible updates are available.
+- [x] Each residual finding records package/version, advisory, dependency path, execution context, applicability, remediation or deferral reason, owner, and review trigger.
+- [x] No high/critical finding is left unreviewed; findings requiring major migrations are assigned to WP-08 or WP-09.
+- [x] Any override is narrowly scoped, tested, and has a documented removal condition.
+- [x] Frozen installation and full quality/build gates pass; full and production audit results are recorded again.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 The baseline included Windows development-server advisories for Vite, a Vitest UI-server advisory, vulnerable SheetJS imports, and ExcelJS transitives. Severity labels alone do not establish reachability in this static application.
 
@@ -421,6 +421,10 @@ WP-12 is complete. This is a separate acceptance gate and remains pending until 
 
 Update this section during implementation. Keep planned work separate from completed evidence.
 
+Current delivery state: WP-00–05 and WP-07–10 are Done with accepted independent reviews. WP-11 final documentation/gates/review/PR are in progress. WP-06 configuration and repository graph/alerts/security activation are reviewed and verified; the actual new default-branch update job and representative generated PR remain unverified, so the delivery PR stays draft. WP-12 remains Awaiting Fixtures. Earlier audit/test counts below are dated package snapshots; latest full/prod audit each retains only reviewed UUID8.3.2 moderate, zero high/critical.
+
+During WP-11, individual WP-00–07 checkboxes were reconciled against their recorded exact accepted revisions/checks and later OS evidence, rather than marked wholesale. WP-06 actual job/generated-PR/dependency-PR check items and all WP-12 acceptance items stay unchecked. Final non-author review must verify this evidence mapping.
+
 | Package | Status | Owner | Commit/PR | Validation evidence | Independent reviewer / outcome | Remaining action |
 |---|---|---|---|---|---|---|
 | WP-00 | Done | /root + target_research | 091e08c | Baseline, exact targets, full/prod inventory verified | independent_reviewer accepted 091e08c after correction/re-review | Future external checks assigned below. |
@@ -558,6 +562,12 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Scoped follow-up logs `browser.version()` once per actual smoke worker; strict lint/types/format rechecked. Linux signal cleanup was verified in09C. Playwright's gracefulShutdown is ignored on Windows, where runner-owned process termination does not prove the helper's signal-based temporary-directory cleanup; no Windows temporary-cleanup claim is made. CI runners are disposable, and outputs are outside tracked files. Browser/config/assertion behavior remains unchanged.
 - Independent combined_reviewer reran real production smoke successfully (2tests/13.2s, actual Chromium153.0.8010.12), strict e2e/config lint/format and both no-emit projects. A reviewer list-command mistake forwarded a literal separator and accidentally ran the optional README flow; absent organizer fixtures caused its expected failure after three generated PNG writes. Reviewer restored only those previously clean images from exactd9ce3ff; root verified clean tracked state. Correct list-only commands independently confirm smoke2tests/1spec and optionalREADME1test/1spec. This incident is not an optional-fixture acceptance claim or a production smoke regression.
 - Actual [browser CI run37138602220](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37138602220), exactd9ce3ff6b1b10f43c4d5454ba1f85fa676fb16a5: Linux111248164007 and Windows111248164158 both success with all frozen quality/build/postlint/CLI/gitdiff gates,695tests/68files/118-source scope plus2production smoke tests (Linux20.2s, Windows19.1s). Both install matching Chromium1243 and actual launched version log153.0.8010.12; Linux installs system libraries via--with-deps, Windows uses bundled win64 Chrome without system channel/default. Same Node24.21.0/pnpm10.34.6/runner2.337.0 and OS images as09D. Linux coverage statements72.67/lines74.15/branches61.50/functions72.88%, Windows72.65/74.13/61.47/72.88%; unchanged thresholds/source scope, small render/instrumentation variation recorded. Real production imports/exports/archive/offline/update pass, feature Pages deploy skips. Logs wp10-{linux,windows}-ci.log; final independent actual remote/doc review remains before10 Done and11 release.
+
+### WP-11 documentation and final integration
+
+- docs_preparation authored only a scoped scratch draft after reading full plan/instructions and actual archive UI/API. Root integrated README/ACCOMPLISHMENTS/PROJECT_PLAN documentation after4961319 recorded accepted WP-10. README now matches actual pins/scripts/configs, separate fixture-free smoke/bundledbothOS installation, Linux libraries, coverage inventory/thresholds, maintained SheetJS/manual cadence and current source boundaries. Archive migration explicitly exports from original profile/origin, selects an empty target season and replaces only its event log through `.stundenlauf-season.zip`; checkout contains no IndexedDB data, no historical archive acceptance claimed. Existing feature/milestone/screenshot history preserved; only a maintenance entry/reference added.
+- Fresh final quality gates, full/prod audits, independent WP-11 and separate combined review, final PR/head/remote checks remain pending until recorded. WP-06 actual job/generated PR and WP-12 inputs remain external. Fresh combined reviewer read-only settings snapshot: alerts204, security enabled/notpaused, dependency graph SBOM757packages (initial401 snapshot remains historical); main ruleset15073731 still only deletion/non_fast_forward, no required-status-check rule. No policy mutation; maintainers must review bothOS job results before merging.
+- Root final normal frozen `ci:local` exit0:695tests/68files,118-source coverage inventory and2production smoke tests12.4s with actual bundled Chromium153.0.8010.12; format/full strict lint/both no-emit projects/build/postlint/emptyfixtureCLI all pass on Ubuntu26.04/Node24.21.0/pnpm10.34.6. Binary expected-diff comparison proves checks made no unexpected tracked changes; only the4intended documentation files differ, README screenshots clean. Fresh full/prod audits each1moderateUUID, zero high/critical; no override/check relaxation. README/ACCOMPLISHMENTS/PROJECT_PLAN local Markdown links resolve. Evidence wp11-ci-local.log/wp11-audit{,-prod}.json/wp11-expected-documentation.diff. Independent11/combined review and final PR/head CI still pending.
 
 ### Review acceptance log
 

@@ -17,6 +17,14 @@ Copy this block for each notable accomplishment:
 
 ## Entries
 
+### 2026-10-03 - Dependency and Linux/Windows platform refresh
+
+- Requirement/Milestone: [R7], [R8], [M-TS7]; [maintenance workplan](workplans/2026-10-dependency-and-platform-refresh.md)
+- What changed: Established shared Node 24.21.0/pnpm 10.34.6 pins, authoritative no-emit TypeScript configs, a directly declared fixture runner, strict Linux/Windows quality gates and grouped dependency automation; refreshed compatible dependencies and migrated TypeScript, Vitest/jsdom, Vite/Rolldown/PWA and ESLint as separately reviewed changes. SheetJS imports now use the official 0.20.3 artifact.
+- Evidence: [Linux/Windows production CI](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37138602220) at `d9ce3ff`; review-ready branch `codex/dependency-and-platform-refresh` targeting `main`; the workplan records each accepted implementation revision, independent reviewer, required correction and re-review, exact tool/OS/browser versions, final gates and full/production audit dispositions.
+- Impact: Synthetic imports return exactly their workbook byte views; quality checks no longer regenerate conflicting configs; coverage verifies its full application source scope. Fixture-independent production browser checks exercise import review, standings, persisted state, archive restore, XLSX/PDF result content and real offline/update behavior without rewriting README screenshots.
+- Follow-up: Dependabot graph/alerts/security updates are verified active, while the new version-update job and a representative generated PR still need default-branch activation and validation. WP-12 remains Awaiting Fixtures for organizer workbooks/reference results, an existing season archive, Windows Excel and Linux LibreOffice acceptance. The reviewed ExcelJS → UUID residual and unsupported compiler/package-manager major holdbacks retain owners and review triggers in the workplan.
+
 ### 2026-04-14 - F-TS09 GitHub Pages deployment and PWA implemented
 - Requirement/Milestone: [R7], [R8], [M-TS7], [F-TS09]
 - What shipped: Added a deploy-ready GitHub Pages pipeline and PWA runtime with Vite base-path targeting, Workbox-powered service worker precaching, prompt-based update UI, hash-routing compatibility, manifest/meta wiring, and production icon assets.
