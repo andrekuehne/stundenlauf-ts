@@ -430,8 +430,8 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-04 | Done | /root exclusive formatter | 6f43378 | format/lint/types pass;104files pure Prettier3.8.2 output | independent_reviewer accepted6f43378, allfiles compared to formatted baseline | CI owner receives passing baseline. |
 | WP-05 | Done | target_research | 9c2fda4; run37130657137 | BothOS677tests, frozen install, format/lint/types/coverage/build/postlint/CLI/gitdiff pass; branch rules inspected | independent_reviewer accepted9c2fda4 incl independent remote fetch/log review | Final OS rerun after09/10; required CI enforcement absent. |
 | WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f; 63f8f30 | YAML/options and actual graph/alerts/security activation verified | independent_reviewer acceptedbd7bc4f and63f8f30 after ruleset correction | Actual new configuration update job and representative PR pending. |
-| WP-07 | In Progress | /root dependency coordinator + target_research audit preparation | — | Current metadata revalidated; routine update next | independent_reviewer pending | Refresh within ranges, full/prod audit and dispositions. |
-| WP-08 | Planned | TBD | — | — | Pending | Update SheetJS distribution. |
+| WP-07 | Done | /root coordinator + target_research | 597cc8f; implementation16ff2ae | Frozen full gates677tests; full5/prod3 reviewed findings | independent_reviewer accepted597cc8f;216 independently reproduced tests; no findings | SheetJS→08, Vitest→09B, reviewed UUID residual. |
+| WP-08 | In Progress | /root coordinator | — | Official source0.20.3 revalidated | Pending | Install distribution and validate bothOS. |
 | WP-09 | Planned | TBD | — | — | Pending for each subpackage | Migrate tooling families serially. |
 | WP-10 | Planned | TBD | — | — | Pending | Add production browser/PWA checks. |
 | WP-11 | Planned | TBD | — | — | Pending | Document and verify final integration. |
@@ -506,6 +506,8 @@ For each version decision, record: family; selected versions; Node/peer constrai
 | @vitest/mocker3.2.7; [same advisory](https://github.com/advisories/GHSA-82fw-gwwq-j7x9), moderate | `.>vitest>@vitest/mocker`; same development/test context | Upgrade parent in WP-09B rather than incompatible transitive override. Trigger: WP-09B/final audit or public mocker exposure. |
 
 ### Review acceptance log
+
+- WP-07: independent_reviewer accepted `597cc8f6ca2c9267313dd28b2947fae0a6ee0bbe`, implementation through16ff2ae, no findings. Independently216focused tests, installed engines/peers, lock scope, removal inspection, two-file pure formatter comparison and UUID advisory/source/map inspection; successful full frozen677-test gates and clean tracked state reviewed. Root recorded acceptance before releasing WP-08; remaining findings assigned concrete subsequent packages.
 
 - WP-06 supplemental: independent_reviewer accepted `63f8f3097c99b2937eefc238d0599c536f22321d` after requiring and re-reviewing the classic-protection/ruleset distinction. Independently verified alerts/security enabled and dependency graph SBOM401packages. Actual new configuration update job/representative PR remain pending; no default-branch merge performed.
 
