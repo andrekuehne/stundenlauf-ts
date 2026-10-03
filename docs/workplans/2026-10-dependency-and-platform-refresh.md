@@ -425,8 +425,8 @@ Update this section during implementation. Keep planned work separate from compl
 |---|---|---|---|---|---|---|
 | WP-00 | Done | /root + target_research | 091e08c | Baseline, exact targets, full/prod inventory verified | independent_reviewer accepted 091e08c after correction/re-review | Future external checks assigned below. |
 | WP-01 | Done | browser_prep | 400aa93 | Deterministic red; 130 ingestion/API + 674 full coverage pass on Linux Node24.21.0 | independent_reviewer accepted400aa93; independently reran130 tests | Windows verification assigned WP-05. |
-| WP-02 | Ready for Review | target_research + /root coordinator | Candidate below | Expanded lint/types; config regressions red/green; two builds; clean CLI | independent_reviewer pending | Accept candidate. |
-| WP-03 | Planned | TBD | — | — | Pending | Align runtime, types, and pnpm. |
+| WP-02 | Done | target_research + /root coordinator | f116db4 | Expanded lint/types; 677tests; two builds; clean CLI | independent_reviewer acceptedf116db4, reran16 focused tests/types/lint/CLI | Browser additions reviewed again WP-10. |
+| WP-03 | Ready for Review | /root dependency coordinator | Candidate below | Clean frozen Linux install, unchanged lock, real hooks; 677tests/types/lint/build/CLI pass | independent_reviewer pending | Windows native install verification in WP-05. |
 | WP-04 | Planned | TBD | — | — | Pending | Establish formatting baseline. |
 | WP-05 | Planned | TBD | — | — | Pending | Verify both OSes and deployment workflow. |
 | WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f | Version2 YAML parsed; upstream npm/pnpm10 options verified | independent_reviewer acceptedbd7bc4f, no findings | Settings, actual update job and representative PR pending. |
@@ -462,7 +462,17 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Linux Node24.21.0/pnpm10.33.0: full coverage plus expanded types/lint pass; two successive builds and post-build lint pass without changing tracked state or recreating config artifacts. Root isolated clean frozen install `/tmp/stundenlauf-clean-wp02` passed; directly declared CLI exits0 and reports no fixtures. TSX IPC needs unsandboxed execution in this agent container; normal CI/developer environments are checked separately. Raw evidence wp02-*.log/status in session evidence directory.
 - GitHub settings browser recovery found no available connected browser (`agent.browsers.list()` empty); API protection403 / settings endpoint unavailable remain external administrator actions. No setting activation asserted.
 
+### WP-03 toolchain decisions and evidence
+
+- Selected exact Node24.21.0 LTS, pnpm10.34.6, resolved Node types24.19.1. `.node-version`/`.nvmrc`, manifest engine `>=24.21.0 <25`, packageManager and README agree. Engine floor deliberately uses the installed patch, exceeding jsdom30's24.15 floor. Node26 Current deferred until next LTS/support review; pnpm11/12 deferred because Dependabot currently supports7–10. Coordinator checked current registry/official support metadata retained in WP-00.
+- `.npmrc` enforces engines/package manager identity/version and enables repository-version management; scripts are portable pnpm commands with no inline shell env assignments. Format scope now includes src/tests/scripts/e2e/root TS configs; the existing failing style baseline is repaired exclusively in WP-04 before `ci:local` pre-push is expected to pass. Local gate includes frozen install, format, lint, types, coverage, build, post-build lint and CLI.
+- Explicit build policy allows esbuild, disables core-js and dependency-level simple-git-hooks; root `prepare` remains enabled. Normal install10.34.6 passed. Removed only generated node_modules and ran fresh frozen install: passed in2.1s, no ignored-script warning, identical lock SHA256 before/after. Real `.git/hooks/pre-push` inspected and contains `pnpm run ci:local`; setup is proven in actual Git checkout, unlike clean copies without .git. Vite build and TSX CLI prove native tool binaries execute on Linux; Windows proof assigned WP-05.
+- `.gitattributes`: textLF; .shLF; .cmd/.batCRLF; workbook/archive/PDF/image assets binary. `git check-attr` verified representative paths. No tracked executable scripts currently require mode changes.
+- Node24.21.0/pnpm10.34.6 Linux:677tests/66files; coverage74.69% lines/statements,78.28% branches,82.12% functions, thresholds unchanged. Both type projects, expanded lint, production build, post-build lint, empty-fixture CLI pass. Raw wp03 logs/hash files retained in session evidence directory. Windows native install is explicitly delayed to WP-05 as specified by WP-03 DoD.
+
 ### Review acceptance log
+
+- WP-02: independent_reviewer accepted `f116db4`; reran16 tooling/export/archive tests, expanded lint, both type projects and CLI; inspected677coverage/two-build/no-recreated-artifact evidence and exact lock scope. No findings. Clean-copy hook messages do not prove actual hook setup; actual root Git hook verification assigned WP-03. Root recorded acceptance before WP-03 dependency changes.
 
 - WP-06 preparation: independent_reviewer accepted `bd7bc4fa6dd96264aebf1410cb6459e635f8a7e0`; independently parsed YAML/inspected grouping and current options; no findings. Full package remains Reviewed / Pending External Verification for settings, real job, representative PR and WP-08 procedure.
 - WP-01: independent_reviewer accepted `400aa9313cfb4ce5ae3c4a5ace56f4ee88fc23d4`; independently reran130 ingestion/API tests, inspected deterministic red and674-test coverage pass; no actionable findings. Windows assigned to WP-05 per WP-01 DoD. Acceptance recorded before WP-03 release.

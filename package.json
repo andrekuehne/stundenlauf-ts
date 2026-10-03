@@ -2,21 +2,21 @@
   "name": "stundenlauf-ts",
   "private": true,
   "version": "0.0.0",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.34.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "pnpm run typecheck && vite build",
     "preview": "vite preview",
-    "ci:local": "pnpm install --frozen-lockfile && pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build",
+    "ci:local": "pnpm install --frozen-lockfile && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run lint && pnpm run inspect:excel-fixtures",
     "prepare": "simple-git-hooks",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src/ tests/ scripts/ e2e/ \"*.config.ts\"",
     "lint:fix": "eslint src/ tests/ scripts/ e2e/ \"*.config.ts\" --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"e2e/**/*.ts\" \"*.config.ts\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"e2e/**/*.ts\" \"*.config.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "inspect:excel-fixtures": "tsx scripts/dump-local-excel-fixtures.ts",
     "playwright:install": "playwright install chromium",
@@ -41,7 +41,7 @@
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6",
     "@testing-library/react": "^16",
-    "@types/node": "^25.6.0",
+    "@types/node": "^24.19.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4",
@@ -62,5 +62,8 @@
   },
   "simple-git-hooks": {
     "pre-push": "pnpm run ci:local"
+  },
+  "engines": {
+    "node": ">=24.21.0 <25"
   }
 }

@@ -66,16 +66,22 @@ Die folgenden Screenshots entstehen automatisch mit dem Playwright-Test `e2e/rea
 
 | Tool | Version | Notes |
 |---|---|---|
-| Node.js | LTS (v22+) | Only runtime dependency |
-| pnpm | via Corepack | Package manager |
+| Node.js | 24.21.0 LTS | Pinned in `.node-version` and `.nvmrc`; engines require 24.21+ on the 24.x line |
+| pnpm | 10.34.6 via Corepack | Exact `packageManager` pin; pnpm 11/12 await Dependabot support |
 
 No other global tools required. All dev dependencies (TypeScript, Vite, ESLint, Vitest, Prettier) are project-local in `node_modules/`.
 
 ## Environment Setup
 
+Install Node 24.21.0 with your platform's Node version manager (`nvm use` on Linux reads `.nvmrc`; on Windows select 24.21.0 explicitly). Enable Corepack once for that Node installation, then use the repository pin:
+
 ```bash
-pnpm install
+corepack enable
+corepack pnpm --version  # 10.34.6
+pnpm install --frozen-lockfile
 ```
+
+The same commands work in Bash and PowerShell. Normal installation permits esbuild native setup and runs the root `prepare` script to install the pre-push quality hook. Dependency-level core-js and simple-git-hooks scripts are explicitly disabled; the root hook setup remains enabled. Text files use LF; `.cmd`/`.bat` use CRLF when present.
 
 Verify everything works:
 
@@ -101,10 +107,10 @@ pnpm run dev         # Vite dev server with HMR (http://localhost:5173)
 | `pnpm test` | Run Vitest test suite (single run) |
 | `pnpm run test:watch` | Run Vitest in watch mode |
 | `pnpm run test:coverage` | Run tests with coverage report |
-| `pnpm run typecheck` | TypeScript type checking (`tsc --noEmit`) |
-| `pnpm run lint` | ESLint check on `src/` and `tests/` |
+| `pnpm run typecheck` | Strict no-emit checks for app/tests and scripts/e2e/tooling |
+| `pnpm run lint` | Typed ESLint for src/tests/scripts/e2e and root configs |
 | `pnpm run lint:fix` | ESLint auto-fix |
-| `pnpm run format` | Prettier format all source files |
+| `pnpm run format` | Prettier for src/tests/scripts/e2e and root TS configs |
 | `pnpm run format:check` | Prettier check (CI-friendly, no writes) |
 | `pnpm run inspect:excel-fixtures` | Plain-text parse report for local `.xlsx` under `tests/data/xlsx/` (see below) |
 
