@@ -15,6 +15,7 @@ function includedSource(filename: string): boolean {
   return (
     filename.startsWith("src/") &&
     /\.tsx?$/.test(filename) &&
+    !/\.test\.tsx?$/.test(filename) &&
     !filename.endsWith(".d.ts") &&
     filename !== "src/main.tsx"
   );

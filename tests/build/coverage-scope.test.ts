@@ -23,6 +23,12 @@ async function createProject(lcov?: string): Promise<string> {
   temporaryDirectories.push(directory);
   await mkdir(join(directory, "src"));
   await writeFile(join(directory, "src", "covered.ts"), "export const covered = true;\n");
+  await writeFile(join(directory, "src", "covered.test.ts"), "export const coveredTest = true;\n");
+  await mkdir(join(directory, "src", "components"));
+  await writeFile(
+    join(directory, "src", "components", "covered.test.tsx"),
+    "export const coveredTest = true;\n",
+  );
   if (lcov !== undefined) {
     await mkdir(join(directory, "coverage"));
     await writeFile(join(directory, "coverage", "lcov.info"), lcov);
@@ -46,6 +52,27 @@ describe("coverage source scope", () => {
         "/project",
       ),
     ).toEqual(["src/components/UpdatePrompt.tsx"]);
+  });
+
+  it("ignores co-located test modules while still reporting absent application sources", () => {
+    expect(
+      missingCoverageSources(
+        [
+          "src/covered.ts",
+          "src/covered.test.ts",
+          "src/components/UpdatePrompt.test.tsx",
+          "src/components/Unexecuted.tsx",
+          "src/components/application.spec.tsx",
+          "src/tests/application.ts",
+        ],
+        "SF:src/covered.ts\nend_of_record\n",
+        "/project",
+      ),
+    ).toEqual([
+      "src/components/Unexecuted.tsx",
+      "src/components/application.spec.tsx",
+      "src/tests/application.ts",
+    ]);
   });
 
   it("excludes the application entry, declarations and other file types", () => {
@@ -75,12 +102,12 @@ describe("coverage source scope", () => {
     ).toEqual([]);
   });
 
-  it("exits successfully when all filesystem sources are represented", async () => {
+  it("exits successfully when application sources are represented and test modules are absent", async () => {
     const directory = await createProject("SF:src/covered.ts\n");
     const result = spawnSync(process.execPath, [scriptPath], { cwd: directory, encoding: "utf8" });
     expect(result.error).toBeUndefined();
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("Coverage scope verified");
+    expect(result.stdout).toContain("Coverage scope verified (1 source files).");
   });
 
   it("fails and lists every missing filesystem source", async () => {
@@ -92,6 +119,8 @@ describe("coverage source scope", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("src/missing.ts");
     expect(result.stderr).toContain("src/unexecuted.tsx");
+    expect(result.stderr).not.toContain("covered.test.ts");
+    expect(result.stderr).not.toContain("covered.test.tsx");
   });
 
   it("fails when the LCOV report cannot be read", async () => {
