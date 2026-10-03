@@ -424,12 +424,12 @@ Update this section during implementation. Keep planned work separate from compl
 | Package | Status | Owner | Commit/PR | Validation evidence | Independent reviewer / outcome | Remaining action |
 |---|---|---|---|---|---|---|
 | WP-00 | Done | /root + target_research | 091e08c | Baseline, exact targets, full/prod inventory verified | independent_reviewer accepted 091e08c after correction/re-review | Future external checks assigned below. |
-| WP-01 | Ready for Review | browser_prep | Candidate below | Deterministic red; 130 ingestion/API + 674 full coverage pass on Linux Node24.21.0 | independent_reviewer pending | Windows final CI WP-05. |
+| WP-01 | Done | browser_prep | 400aa93 | Deterministic red; 130 ingestion/API + 674 full coverage pass on Linux Node24.21.0 | independent_reviewer accepted400aa93; independently reran130 tests | Windows verification assigned WP-05. |
 | WP-02 | Planned | TBD | — | — | Pending | Reconcile configs and repair CLI dependencies. |
 | WP-03 | Planned | TBD | — | — | Pending | Align runtime, types, and pnpm. |
 | WP-04 | Planned | TBD | — | — | Pending | Establish formatting baseline. |
 | WP-05 | Planned | TBD | — | — | Pending | Verify both OSes and deployment workflow. |
-| WP-06 | Ready for Review | /root | Candidate below | Version2 YAML parsed; upstream npm/pnpm10 options verified | independent_reviewer pending | Settings and real update/PR await external activation. |
+| WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f | Version2 YAML parsed; upstream npm/pnpm10 options verified | independent_reviewer acceptedbd7bc4f, no findings | Settings, actual update job and representative PR pending. |
 | WP-07 | Planned | TBD | — | — | Pending | Refresh compatible dependencies and audit. |
 | WP-08 | Planned | TBD | — | — | Pending | Update SheetJS distribution. |
 | WP-09 | Planned | TBD | — | — | Pending for each subpackage | Migrate tooling families serially. |
@@ -454,6 +454,9 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Linux Node24.21.0/pnpm10.33.0: focused regressions2/2; ingestion/API130/130 across10files; full coverage674/674 across65files; lines/statements74.69%, branches78.29%, functions82.12%. Thresholds unchanged. Focused lint/format and typecheck pass. Evidence `/tmp/stundenlauf-refresh-evidence/wp01-*.log`. Windows verification remains WP-05.
 
 ### Review acceptance log
+
+- WP-06 preparation: independent_reviewer accepted `bd7bc4fa6dd96264aebf1410cb6459e635f8a7e0`; independently parsed YAML/inspected grouping and current options; no findings. Full package remains Reviewed / Pending External Verification for settings, real job, representative PR and WP-08 procedure.
+- WP-01: independent_reviewer accepted `400aa9313cfb4ce5ae3c4a5ace56f4ee88fc23d4`; independently reran130 ingestion/API tests, inspected deterministic red and674-test coverage pass; no actionable findings. Windows assigned to WP-05 per WP-01 DoD. Acceptance recorded before WP-03 release.
 
 - WP-00: independent_reviewer accepted exact revision `091e08cfcd59de300fd9f801ed9aa23efcaa2397`; baseline install/check logs and current engine/peer guidance inspected, typecheck/lint/CLI independently reproduced, tarball integrity verified. Required finding on advisory path-context conflation fixed in 091e08c; re-review checked all78 exact labels against production audit. No actionable findings remain. Root recorded acceptance before releasing WP-01/WP-02. External Windows/settings/Dependabot/organizer gates remain assigned, not verified.
 
