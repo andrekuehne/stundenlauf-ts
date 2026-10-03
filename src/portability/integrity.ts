@@ -1,8 +1,8 @@
-function toUint8Array(data: ArrayBuffer | ArrayBufferView): Uint8Array {
+function toUint8Array(data: ArrayBuffer | ArrayBufferView): Uint8Array<ArrayBuffer> {
   if (data instanceof ArrayBuffer) {
     return new Uint8Array(data);
   }
-  return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  return new Uint8Array(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
 }
 
 export async function sha256Hex(data: ArrayBuffer | ArrayBufferView): Promise<string> {

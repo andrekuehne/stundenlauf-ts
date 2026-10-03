@@ -55,7 +55,7 @@ export async function buildSeasonArchive(
   zip.file(SEASON_ARCHIVE_EVENTLOG_FILE, eventlogJson);
 
   const zipBytes = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
-  const blob = new Blob([zipBytes], { type: "application/zip" });
+  const blob = new Blob([new Uint8Array(zipBytes)], { type: "application/zip" });
   return {
     blob,
     zip_bytes: zipBytes,

@@ -613,7 +613,7 @@ function buildWorkbookSheet(
 }
 
 function writeBufferToBlob(buffer: ArrayBuffer | Uint8Array): Blob {
-  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  const bytes = new Uint8Array(buffer);
   return new Blob([bytes], { type: XLSX_MIME_TYPE });
 }
 
