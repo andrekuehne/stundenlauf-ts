@@ -426,11 +426,11 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-00 | Done | /root + target_research | 091e08c | Baseline, exact targets, full/prod inventory verified | independent_reviewer accepted 091e08c after correction/re-review | Future external checks assigned below. |
 | WP-01 | Done | browser_prep | 400aa93 | Deterministic red; 130 ingestion/API + 674 full coverage pass on Linux Node24.21.0 | independent_reviewer accepted400aa93; independently reran130 tests | Windows verification assigned WP-05. |
 | WP-02 | Done | target_research + /root coordinator | f116db4 | Expanded lint/types; 677tests; two builds; clean CLI | independent_reviewer acceptedf116db4, reran16 focused tests/types/lint/CLI | Browser additions reviewed again WP-10. |
-| WP-03 | Reviewed / Pending External Verification | /root dependency coordinator | 44c7438 | Clean frozen Linux install, unchanged lock, real hooks; 677tests/types/lint/build/CLI pass | independent_reviewer accepted44c7438, reproduced version/types/hook | Windows native install verification in WP-05. |
+| WP-03 | Done | /root dependency coordinator | 44c7438; remote9c2fda4 | Clean frozen Linux + Windows installs/native tools; real hooks;677tests bothOS | independent_reviewer accepted44c7438 + remote supplemental9c2fda4 | Final toolchain/OS checks after migrations. |
 | WP-04 | Done | /root exclusive formatter | 6f43378 | format/lint/types pass;104files pure Prettier3.8.2 output | independent_reviewer accepted6f43378, allfiles compared to formatted baseline | CI owner receives passing baseline. |
-| WP-05 | Ready for Review | target_research | Candidate below | YAML/action manifest semantics and formatter/diff checks pass | independent_reviewer pending | Push baseline; real Linux/Windows runs; required settings. |
+| WP-05 | Done | target_research | 9c2fda4; run37130657137 | BothOS677tests, frozen install, format/lint/types/coverage/build/postlint/CLI/gitdiff pass | independent_reviewer accepted9c2fda4 incl independent remote fetch/log review | Final OS rerun after09/10; settings403 recorded pending. |
 | WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f | Version2 YAML parsed; upstream npm/pnpm10 options verified | independent_reviewer acceptedbd7bc4f, no findings | Settings, actual update job and representative PR pending. |
-| WP-07 | Planned | TBD | — | — | Pending | Refresh compatible dependencies and audit. |
+| WP-07 | In Progress | /root dependency coordinator + target_research audit preparation | — | Current metadata revalidated; routine update next | independent_reviewer pending | Refresh within ranges, full/prod audit and dispositions. |
 | WP-08 | Planned | TBD | — | — | Pending | Update SheetJS distribution. |
 | WP-09 | Planned | TBD | — | — | Pending for each subpackage | Migrate tooling families serially. |
 | WP-10 | Planned | TBD | — | — | Pending | Add production browser/PWA checks. |
@@ -477,7 +477,15 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Quality concurrency contains branch/PR plus OS; Pages concurrency is isolated and queues deployments. Only validated Linux mainpush output uploads a Pages artifact; deploy depends on bothOS quality and mainpush, with write permissions only in deploy. PR jobs cannot deploy. Existing Pages environment/subpath preserved.
 - Agent actual YAML parse and official action input/SHA/permission/concurrency/conditions checks passed; Prettier workflow check and git diff --check passed. actionlint unavailable, not claimed executed. Raw wp05 validation/handoff logs retained. Actual remote OS/runner/native install evidence and repository required-check settings remain unverified until observed.
 
+### WP-05 remote baseline and access disposition
+
+- Real [run37130657137](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37130657137), exact head `9c2fda43fc798fd770e0a24cf42a14f3fdfa3eb8`: **success**. [Linux job](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37130657137/job/111224929400) Ubuntu24.04.5; [Windows job](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37130657137/job/111224929145) WindowsServer2025/windows-2025-vs2026. Both runners2.337.0, Node24.21.0, pnpm10.34.6. Each full required gate passed;677tests. Coverage74.31%lines/statements,78.28%branches,82.12%functions after formatting altered instrumented line count, without changing thresholds/behavior. Deploy correctly skipped on feature branch. Raw remote logs saved wp05-remote-{linux,windows}.log.
+- independent_reviewer independently fetched run/jobs/logs and accepted the remote evidence for9c2fda4. This closes WP-01/WP-03 baseline Windows verification and releases WP-07 after acceptance is recorded. Final migrations/browser suite still require newbothOS runs.
+- Direct CLI reads for alerts/security-update settings and main protection return403 requiring Administration(read). An attempted activation request was **rejected before execution by automatic approval review**, because the access prerequisite was absent. No setting mutation was performed. User offered to provide access; instructed to add repo-scoped Administration(read/write) to existing fine-grained token, then signal readiness. Root will recheck read-only access before retrying authorized activation. Required-check/settings status remains unverified, not disabled or enabled by inference.
+
 ### Review acceptance log
+
+- WP-05: independent_reviewer accepted exact `9c2fda43fc798fd770e0a24cf42a14f3fdfa3eb8` for workflow sources and independently fetched realbothOS success evidence. No findings. API-inaccessible required settings are explicitly recorded, as allowed in DoD; final dependency/browser checks remain scheduled.
 
 - WP-04: independent_reviewer accepted `6f4337897ba87548e39df4186ee90b7d5106a20a`; independently verified all104files equal Prettier3.8.2 applied to prior revision, no behavior/dependency/docs changes; reproduced format/lint/both typechecks. No findings. Acceptance recorded before releasing WP-05.
 
