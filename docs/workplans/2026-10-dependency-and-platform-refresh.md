@@ -280,7 +280,7 @@ The baseline included Windows development-server advisories for Vite, a Vitest U
 - [x] No change to matching, ranking, event formats, or IndexedDB schema is introduced incidentally.
 - [x] A manual upstream release-check procedure, source, owner, and review cadence are documented; no recurring automation is created by this package.
 - [x] ExcelJS remains under review for advisories/maintenance without claiming a nonexistent newer official release.
-- [ ] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
+- [x] Independent review by a non-author is accepted and recorded; required fixes are resolved and re-reviewed.
 
 The npm registry's xlsx release remained 0.18.5 at investigation time. See [official SheetJS installation](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/), [prototype-pollution advisory](https://github.com/advisories/GHSA-4r6h-8v6p-xvw6), [ReDoS advisory](https://github.com/advisories/GHSA-5pgg-2g8v-p4x9), and [ExcelJS releases](https://github.com/exceljs/exceljs/releases).
 
@@ -432,8 +432,9 @@ Update this section during implementation. Keep planned work separate from compl
 | WP-06 | Reviewed / Pending External Verification | /root | bd7bc4f; 63f8f30 | YAML/options and actual graph/alerts/security activation verified | independent_reviewer acceptedbd7bc4f and63f8f30 after ruleset correction | Actual new configuration update job and representative PR pending. |
 | WP-07 | Done | /root coordinator + target_research | 597cc8f; implementation16ff2ae | Frozen full gates677tests; full5/prod3 reviewed findings | independent_reviewer accepted597cc8f;216 independently reproduced tests; no findings | SheetJS→08, Vitest→09B, reviewed UUID residual. |
 | WP-08 | Done | /root coordinator | ee7b423; implementation8a445a8; run37132912040 | Official0.20.3/integrity; full677tests; fresh bothOS retrieval/gates | independent_reviewer acceptedee7b423 local155tests and independent bothOS logs; no findings | Organizer/desktop acceptance remains12. |
-| WP-09 | In Progress | /root coordinator + scoped implementation agents | — | Serial orderA→B→C→D from verified peer ranges | Independent review required per subpackage | Final dependency set bothOS checks after10. |
-| WP-09A | In Progress | /root coordinator + target_research | — | Compiler5.9/6.0 preflight identified3typed-array errors | Pending | Apply scoped compatibility repair, strict gates. |
+| WP-09 | In Progress | /root coordinator + scoped implementation agents | — | Serial orderA→B→C→D from verified peer ranges | Independent review required per subpackage | Final dependency set bothOS checks in09D before10 release, browser rerun in10. |
+| WP-09A | Reviewed / Pending External Verification | /root coordinator + target_research | 0b08413; compiler5f977c7 | Actual5.9+6 full679-test gates; independent116tests/lint/types | independent_reviewer accepted0b08413; no findings | Final dependency set bothOS proof in09D. |
+| WP-09B | In Progress | /root coordinator + browser_prep | — | Metadata/migration guidance revalidated | Pending | Restore existing act guard separately; migrate test family. |
 | WP-10 | Planned | TBD | — | — | Pending | Add production browser/PWA checks. |
 | WP-11 | Planned | TBD | — | — | Pending | Document and verify final integration. |
 | WP-12 | Awaiting fixtures | TBD | — | — | Pending | Receive fixtures and perform desktop acceptance. |
@@ -521,6 +522,8 @@ For each version decision, record: family; selected versions; Node/peer constrai
 - Full/prod advisory results remain3moderate/1moderate, zero high/critical; unchanged residual assignments to09B and reviewed UUID. Final dependency set bothOS evidence is assigned to WP-09D integration before browser release; this compiler package's implementation review does not assert that future remote run.
 
 ### Review acceptance log
+
+- WP-09A: independent_reviewer accepted `0b08413b62d07be8a3212b95a481335b3d2b946e`, compiler5f977c7/sourceb305e28/test repair719ec15. No required findings. Independently both no-emit projects/full lint/116tests on installed6.0.3; reviewed both compiler full frozen679-test gates, strict config preservation, migration/engine/peer/holdback decisions and refreshed3full/1prod moderate audits. Root recorded acceptance before WP-09B release; final bothOS dependency set verification remains09D.
 
 - WP-08: independent_reviewer accepted `ee7b423497aaf9a2c1205d418061e9824062f68c`, implementation8a445a8, no findings. Independently155import/export/archive tests and synthetic semantics/source/integrity/manual-procedure inspection; successful677-test full frozen gates. Supplemental independent fetch of real run37132912040 and bothOS logs proves fresh CDN artifact retrieval/native setup/allquality gates. Root recorded full acceptance before releasing WP-09A. No organizer/desktop evidence claimed.
 
