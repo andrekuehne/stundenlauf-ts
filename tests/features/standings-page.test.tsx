@@ -466,13 +466,13 @@ describe("StandingsPage", () => {
     const tbody = table.querySelector("tbody");
     const bodyRows = tbody instanceof HTMLTableSectionElement ? Array.from(tbody.rows) : [];
     const teamOrder = bodyRows.map((row) =>
-      within(row).getByTestId("standings-team-name").textContent?.trim(),
+      within(row).getByTestId("standings-team-name").textContent.trim(),
     );
     expect(teamOrder).toEqual(["Bea Team", "Clara Team", "Anna Team"]);
 
     const annaRow = bodyRows[2]!;
     expect(annaRow).toHaveClass("is-excluded");
-    expect(within(annaRow).getAllByRole("cell")[0]?.textContent?.trim()).toBe("—");
+    expect(within(annaRow).getAllByRole("cell")[0]?.textContent.trim()).toBe("—");
   });
 
   it("renders category buttons in two rows with row labels, plus an export cluster on the right", async () => {

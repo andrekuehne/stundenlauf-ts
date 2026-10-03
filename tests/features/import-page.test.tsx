@@ -704,7 +704,7 @@ describe("ImportPage", () => {
     const rows = table!.querySelectorAll("tbody tr");
     expect(rows.length).toBe(3);
 
-    const allText = table!.textContent ?? "";
+    const allText = table!.textContent;
     expect(allText).toMatch(/Anna Schmidt/);
     expect(allText).toMatch(/Anne Schmidt/);
     expect(allText).toMatch(/Bernd Klar/);
