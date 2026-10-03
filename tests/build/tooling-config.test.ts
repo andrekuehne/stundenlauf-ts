@@ -78,7 +78,14 @@ describe("tooling type checks", () => {
         '/** @type {number} */\nconst value = "wrong";\nmodule.exports = { value };\n',
       );
       const config = readProjectConfig("tsconfig.node.json");
-      const program = ts.createProgram([source], config.options);
+      const program = ts.createProgram([source], {
+        ...config.options,
+        // This self-contained fixture needs no standard libraries or ambient packages.
+        noLib: true,
+        lib: undefined,
+        types: [],
+      });
+      expect(program.getSourceFiles()).toHaveLength(1);
       expect(ts.getPreEmitDiagnostics(program).some((diagnostic) => diagnostic.code === 2322)).toBe(
         true,
       );
