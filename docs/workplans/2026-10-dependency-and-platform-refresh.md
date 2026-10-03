@@ -424,7 +424,7 @@ Update this section during implementation. Keep planned work separate from compl
 | Package | Status | Owner | Commit/PR | Validation evidence | Independent reviewer / outcome | Remaining action |
 |---|---|---|---|---|---|---|
 | WP-00 | Done | /root + target_research | 091e08c | Baseline, exact targets, full/prod inventory verified | independent_reviewer accepted 091e08c after correction/re-review | Future external checks assigned below. |
-| WP-01 | Planned | TBD | — | — | Pending | Apply and regression-test the diagnostic fix. |
+| WP-01 | Ready for Review | browser_prep | Candidate below | Deterministic red; 130 ingestion/API + 674 full coverage pass on Linux Node24.21.0 | independent_reviewer pending | Windows final CI WP-05. |
 | WP-02 | Planned | TBD | — | — | Pending | Reconcile configs and repair CLI dependencies. |
 | WP-03 | Planned | TBD | — | — | Pending | Align runtime, types, and pnpm. |
 | WP-04 | Planned | TBD | — | — | Pending | Establish formatting baseline. |
@@ -447,6 +447,11 @@ For each version decision, record: family; selected versions; Node/peer constrai
 
 - Added `.github/dependabot.yml`: npm ecosystem at root for pnpm, github-actions at root; weekly Monday06:00 Europe/Berlin; PR limits5/3; coupled React/Vitest groups, major build/lint groups, routine minor/patch group. No automatic merge configuration. YAML parses and options match current [official reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 - Preparation can proceed after accepted WP-00; activation verification depends on WP-05. Configuration on this unmerged branch is **not** proof of a Dependabot job, graph/alerts/security activation, or a generated PR. Settings route verification and actual update job/representative PR remain pending; repository administrator owns default-branch activation after PR approval. SheetJS CDN manual procedure belongs to WP-08.
+
+### WP-01 implementation evidence
+
+- Changed only synthetic helper and new regression: `new Uint8Array(buf).buffer` copies exactly the returned view; production parsers/ranking/matching untouched. Actual workbook bytes are embedded in an explicitly allocated Buffer view with37-byte prefix and53-byte suffix. Red returned16132 bytes versus16042 expected; green asserts length, byte content and parsed Unicode/custom-sheet values, independent of pool size. Second normal-workbook round-trip passes.
+- Linux Node24.21.0/pnpm10.33.0: focused regressions2/2; ingestion/API130/130 across10files; full coverage674/674 across65files; lines/statements74.69%, branches78.29%, functions82.12%. Thresholds unchanged. Focused lint/format and typecheck pass. Evidence `/tmp/stundenlauf-refresh-evidence/wp01-*.log`. Windows verification remains WP-05.
 
 ### Review acceptance log
 
