@@ -138,6 +138,14 @@ pnpm run inspect:excel-fixtures | Out-File -Encoding utf8 excel-dump.txt
 
 Optional Vitest integration tests for the same tree are in `tests/ingestion/local-excel-examples.test.ts` (skipped when no matching files are present).
 
+### Spreadsheet dependency maintenance
+
+Imports use SheetJS CE 0.20.3 from its [official versioned tarball](https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz), with integrity in `pnpm-lock.yaml`. The npm registry's `xlsx` release is outdated. The repository maintainer checks the [official installation page](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/) and [upstream releases](https://git.sheetjs.com/sheetjs/sheetjs/tags) quarterly and whenever an import advisory appears. This is a manual procedure; no recurring job is configured.
+
+Before updating, verify the source, package version/license, archive integrity, Node requirements and migration guidance. Update the versioned URL through the dependency coordinator, run a normal frozen install on Linux and Windows, then run ingestion/API, export/archive tests and the full quality/browser gates. Record full/production audits and residual dispositions in the [maintenance workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md). Organizer workbooks and Excel/LibreOffice acceptance remain a separate check when those inputs are available.
+
+ExcelJS 4.4.0 remains the export library and latest official stable release at this refresh. Its UUID advisory has a reviewed applicability disposition in the workplan; review again at the next dependency refresh, an ExcelJS release/backport, or a change to conditional formatting/UUID use. Do not force incompatible transitive majors to clear audit output.
+
 ## Technology Stack
 
 | Layer | Library | Version |
