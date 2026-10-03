@@ -2,3 +2,37 @@ allowBuilds:
   core-js: false
   esbuild: true
   simple-git-hooks: false
+# Already reviewed locked releases; keep Dependabot cooldown for future versions.
+# Remove these exceptions after 2026-10-06 14:14 UTC when all are over three days old.
+minimumReleaseAgeExclude:
+  - "@types/node@24.19.1"
+  - "eslint@10.12.0"
+  - "globals@17.13.0"
+  - "vite@8.3.2"
+  - "vite-plugin-pwa@2.0.0"
+  - "rollup@4.64.0"
+  - "@rollup/rollup-android-arm-eabi@4.64.0"
+  - "@rollup/rollup-android-arm64@4.64.0"
+  - "@rollup/rollup-darwin-arm64@4.64.0"
+  - "@rollup/rollup-darwin-x64@4.64.0"
+  - "@rollup/rollup-freebsd-arm64@4.64.0"
+  - "@rollup/rollup-freebsd-x64@4.64.0"
+  - "@rollup/rollup-linux-arm-gnueabihf@4.64.0"
+  - "@rollup/rollup-linux-arm-musleabihf@4.64.0"
+  - "@rollup/rollup-linux-arm64-gnu@4.64.0"
+  - "@rollup/rollup-linux-arm64-musl@4.64.0"
+  - "@rollup/rollup-linux-loong64-gnu@4.64.0"
+  - "@rollup/rollup-linux-loong64-musl@4.64.0"
+  - "@rollup/rollup-linux-ppc64-gnu@4.64.0"
+  - "@rollup/rollup-linux-ppc64-musl@4.64.0"
+  - "@rollup/rollup-linux-riscv64-gnu@4.64.0"
+  - "@rollup/rollup-linux-riscv64-musl@4.64.0"
+  - "@rollup/rollup-linux-s390x-gnu@4.64.0"
+  - "@rollup/rollup-linux-x64-gnu@4.64.0"
+  - "@rollup/rollup-linux-x64-musl@4.64.0"
+  - "@rollup/rollup-openbsd-x64@4.64.0"
+  - "@rollup/rollup-openharmony-arm64@4.64.0"
+  - "@rollup/rollup-win32-arm64-msvc@4.64.0"
+  - "@rollup/rollup-win32-ia32-msvc@4.64.0"
+  - "@rollup/rollup-win32-x64-gnu@4.64.0"
+  - "@rollup/rollup-win32-x64-msvc@4.64.0"

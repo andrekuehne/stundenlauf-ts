@@ -9,6 +9,11 @@ updates:
       time: "06:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    # Node types follow the selected Node 24 runtime; review their major upgrades together.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     groups:
       react:
         patterns:
