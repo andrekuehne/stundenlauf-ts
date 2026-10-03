@@ -1,8 +1,8 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach, beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, vi, type MockInstance } from "vitest";
 
 const ACT_WARNING_PATTERN = /not wrapped in act|inside a test was not wrapped in act/i;
-let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
+let consoleErrorSpy: MockInstance<typeof console.error> | null = null;
 
 beforeEach(() => {
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
