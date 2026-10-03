@@ -206,6 +206,8 @@ The inspected main ruleset prevents deletion and force pushes; it does not curre
 
 The [workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records full and production audits and the remaining ExcelJS → UUID 8.3.2 moderate advisory. That residual has a reviewed applicability decision, owner and review triggers; audit commands may still report it. TypeScript 7 remains deferred because typescript-eslint 8.71.0 supports compiler versions below 6.1. Reassess that holdback when upstream support changes.
 
+Dependabot's three-day cooldown can reject newly reviewed versions already present in the lockfile during an unrelated update. The temporary `minimumReleaseAgeExclude` entries in `pnpm-workspace.yaml` name only exact reviewed releases; future versions remain subject to that cooldown. Remove these entries after 2026-10-06 14:14 UTC, when every listed release is older than three days. Node-types major updates require a coordinated runtime-major review; their minor and patch updates remain enabled.
+
 Organizer workbooks, agreed reference outcomes, an existing season archive, and Windows Excel/Linux LibreOffice application acceptance are tracked separately as **WP-12: Awaiting Fixtures**. The automated Linux/Windows browser checks use synthetic inputs.
 
 ## Technology Stack
