@@ -25,9 +25,7 @@ export interface MatchingConfig {
 export const DEFAULT_AUTO_MIN = 0.5;
 export const DEFAULT_REVIEW_MIN = 0.5;
 
-export function defaultMatchingConfig(
-  overrides?: Partial<MatchingConfig>,
-): MatchingConfig {
+export function defaultMatchingConfig(overrides?: Partial<MatchingConfig>): MatchingConfig {
   return {
     auto_merge_enabled: false,
     perfect_match_auto_merge: true,

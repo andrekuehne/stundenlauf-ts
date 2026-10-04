@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { DomainEvent } from "@/domain/events.ts";
 import type { SeasonDescriptor } from "@/domain/types.ts";
-import {
-  createEventStore,
-  EventAppendValidationError,
-} from "@/storage/event-store.ts";
+import { createEventStore, EventAppendValidationError } from "@/storage/event-store.ts";
 import {
   defaultEntry,
   importBatchRecorded,
@@ -28,10 +25,7 @@ class InMemoryEventDb {
   readonly eventLogs = new Map<string, EventLogRecord>();
   workspace: WorkspaceRecord | undefined;
 
-  get(
-    storeName: string,
-    key: string,
-  ): Promise<EventLogRecord | WorkspaceRecord | undefined> {
+  get(storeName: string, key: string): Promise<EventLogRecord | WorkspaceRecord | undefined> {
     if (storeName === "event_logs") return Promise.resolve(this.eventLogs.get(key));
     if (storeName === "workspace" && key === "singleton") return Promise.resolve(this.workspace);
     return Promise.resolve(undefined);
@@ -72,8 +66,7 @@ class InMemoryEventDb {
     return undefined;
   }
 
-  transaction(storeNames: string | string[], mode: "readwrite") {
-    void mode;
+  transaction(storeNames: string | string[]) {
     const allowed = new Set(Array.isArray(storeNames) ? storeNames : [storeNames]);
     return {
       objectStore: (storeName: string) => {
@@ -151,9 +144,7 @@ describe("EventStore.appendEvents write barrier", () => {
     expect(appendError.batch_index).toBe(0);
     expect(appendError.event_seq).toBe(invalidRace.seq);
     expect(appendError.event_type).toBe("race.registered");
-    expect(
-      appendError.reasons.some((reason) => reason.includes("unregistered team")),
-    ).toBe(true);
+    expect(appendError.reasons.some((reason) => reason.includes("unregistered team"))).toBe(true);
 
     const persisted = await eventStore.getEventLog(seasonId);
     expect(persisted).toHaveLength(1);

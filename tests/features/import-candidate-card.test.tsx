@@ -137,7 +137,7 @@ describe("ImportCandidateCard header chrome", () => {
     );
 
     expect(container.querySelector(".import-candidate__confidence")).toBeNull();
-    expect(container.textContent ?? "").not.toMatch(/\d+\s*%/);
+    expect(container.textContent).not.toMatch(/\d+\s*%/);
   });
 
   it("does not render a 'Empfohlen' recommendation badge", () => {
@@ -177,7 +177,7 @@ describe("ImportCandidateCard header chrome", () => {
     );
 
     expect(container.querySelector(".import-candidate__recommend")).toBeNull();
-    expect(container.textContent ?? "").not.toMatch(/empfohlen/i);
+    expect(container.textContent).not.toMatch(/empfohlen/i);
   });
 });
 

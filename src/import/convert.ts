@@ -8,11 +8,7 @@
  */
 
 import type { IncomingRowData } from "@/domain/types.ts";
-import type {
-  ImportRaceContext,
-  ImportRowCouples,
-  ImportRowSingles,
-} from "@/ingestion/types.ts";
+import type { ImportRaceContext, ImportRowCouples, ImportRowSingles } from "@/ingestion/types.ts";
 
 export function distanceKmToMeters(km: number): number {
   return Math.round(km * 1000);

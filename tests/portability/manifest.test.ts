@@ -50,6 +50,30 @@ describe("portability helpers", () => {
     expect(await checksumMatches(bytes, await sha256Hex(bytes))).toBe(true);
   });
 
+  it.each(["ArrayBuffer", "SharedArrayBuffer"] as const)(
+    "hashes only the payload of offset views backed by %s",
+    async (backingType) => {
+      const payload = new TextEncoder().encode("stundenlauf");
+      const offset = 3;
+      const allocationLength = offset + payload.byteLength + 5;
+      const backing =
+        backingType === "ArrayBuffer"
+          ? new ArrayBuffer(allocationLength)
+          : new SharedArrayBuffer(allocationLength);
+      const allocation = new Uint8Array(backing);
+      allocation.fill(0x5a);
+      allocation.set(payload, offset);
+      const bytes = allocation.subarray(offset, offset + payload.byteLength);
+      const dataView = new DataView(backing, offset, payload.byteLength);
+      const expectedDigest = "4aba3ce731fd32267574d38ccf2ee9fd0ff073a7744ccd407a418c707b566338";
+
+      expect(await sha256Hex(bytes)).toBe(expectedDigest);
+      expect(await sha256Hex(dataView)).toBe(expectedDigest);
+      expect(await checksumMatches(dataView, expectedDigest)).toBe(true);
+      expect(await sha256Hex(allocation)).not.toBe(expectedDigest);
+    },
+  );
+
   it("sanitizes generic season names for archive downloads", () => {
     expect(sanitizeFilename("Trainingsblock Süd 2026")).toBe("trainingsblock-sud-2026");
     expect(sanitizeFilename("   ")).toBe("season");

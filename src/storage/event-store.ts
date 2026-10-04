@@ -113,11 +113,7 @@ export function createEventStore(db: IDBPDatabase<StundenlaufDB>): EventStore {
       await tx.done;
     },
 
-    async writeEventLog(
-      seasonId: string,
-      _label: string,
-      events: DomainEvent[],
-    ): Promise<void> {
+    async writeEventLog(seasonId: string, _label: string, events: DomainEvent[]): Promise<void> {
       await db.put("event_logs", { season_id: seasonId, events: [...events] });
     },
 

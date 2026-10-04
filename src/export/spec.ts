@@ -333,10 +333,7 @@ export function createPdfStyleSpec(input: Partial<PdfStyleSpec> = {}): PdfStyleS
 
 export function resolveColumns(spec: ExportSpec): ExportColumnId[] {
   if (spec.pdf.tableLayout === "laufuebersicht") {
-    if (
-      spec.columns.length !== 1 ||
-      spec.columns[0] !== "laufuebersicht_board"
-    ) {
+    if (spec.columns.length !== 1 || spec.columns[0] !== "laufuebersicht_board") {
       throw new Error(
         "pdf.tableLayout 'laufuebersicht' requires columns: ['laufuebersicht_board'] exactly.",
       );

@@ -4,10 +4,7 @@
  * Reference: F-TS03 (Fuzzy Matching Engine)
  */
 
-import type {
-  PersonRegisteredPayload,
-  TeamRegisteredPayload,
-} from "@/domain/events.ts";
+import type { PersonRegisteredPayload, TeamRegisteredPayload } from "@/domain/events.ts";
 import type { Gender, PersonIdentity } from "@/domain/types.ts";
 
 // --- Name parsing ---

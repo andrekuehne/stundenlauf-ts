@@ -103,14 +103,24 @@ function ComparisonRow({
   );
 }
 
-function DoublesComparison({ candidate, incoming }: { candidate: ImportReviewCandidate; incoming: ImportIncomingRecord }) {
+function DoublesComparison({
+  candidate,
+  incoming,
+}: {
+  candidate: ImportReviewCandidate;
+  incoming: ImportIncomingRecord;
+}) {
   const [incomingLeftName, incomingRightName] = splitPairToken(incoming.displayName);
   const nameComparison = candidate.fieldComparisons.find((item) => item.fieldKey === "name");
   const yobComparison = candidate.fieldComparisons.find((item) => item.fieldKey === "yob");
   const clubComparison = candidate.fieldComparisons.find((item) => item.fieldKey === "club");
 
-  const [incomingSplitLeftName, incomingSplitRightName] = splitPairToken(nameComparison?.incomingValue);
-  const [candidateSplitLeftName, candidateSplitRightName] = splitPairToken(nameComparison?.candidateValue);
+  const [incomingSplitLeftName, incomingSplitRightName] = splitPairToken(
+    nameComparison?.incomingValue,
+  );
+  const [candidateSplitLeftName, candidateSplitRightName] = splitPairToken(
+    nameComparison?.candidateValue,
+  );
   const [incomingLeftYob, incomingRightYob] = splitPairToken(yobComparison?.incomingValue);
   const [candidateLeftYob, candidateRightYob] = splitPairToken(yobComparison?.candidateValue);
   const [incomingLeftClub, incomingRightClub] = splitPairToken(clubComparison?.incomingValue);
@@ -187,7 +197,10 @@ export function ImportCandidateCard({
   onSelect,
 }: ImportCandidateCardProps) {
   const ariaLabel = isSelected
-    ? STR.importCandidate.selectedDisplayName(candidate.displayName, STR.views.import.selectedSuffix)
+    ? STR.importCandidate.selectedDisplayName(
+        candidate.displayName,
+        STR.views.import.selectedSuffix,
+      )
     : candidate.displayName;
 
   return (
@@ -199,9 +212,7 @@ export function ImportCandidateCard({
       aria-pressed={isSelected}
       aria-label={ariaLabel}
     >
-      <small className="import-candidate__hint">
-        {STR.importCandidate.assignmentHint}
-      </small>
+      <small className="import-candidate__hint">{STR.importCandidate.assignmentHint}</small>
       {isDoubles ? (
         <DoublesComparison candidate={candidate} incoming={incoming} />
       ) : (

@@ -163,7 +163,11 @@ describe("applyEvent: person.corrected", () => {
     });
     const corrEvent = personCorrected({
       person_id: "p1",
-      updated_fields: { family_name: "Müller", club: "SC Freiburg", club_normalized: "sc freiburg" },
+      updated_fields: {
+        family_name: "Müller",
+        club: "SC Freiburg",
+        club_normalized: "sc freiburg",
+      },
     });
 
     let state = applyEvent(emptySeasonState("s1"), regEvent);
@@ -401,8 +405,16 @@ describe("applyEvent: ranking.eligibility_set", () => {
   });
 
   it("tracks multiple teams per category", () => {
-    const e1 = rankingEligibilitySet({ category: defaultCategory(), team_id: "t1", eligible: false });
-    const e2 = rankingEligibilitySet({ category: defaultCategory(), team_id: "t2", eligible: false });
+    const e1 = rankingEligibilitySet({
+      category: defaultCategory(),
+      team_id: "t1",
+      eligible: false,
+    });
+    const e2 = rankingEligibilitySet({
+      category: defaultCategory(),
+      team_id: "t2",
+      eligible: false,
+    });
 
     let state = applyEvent(emptySeasonState("s1"), e1);
     state = applyEvent(state, e2);
@@ -494,13 +506,41 @@ describe("isEffectiveRace", () => {
 describe("full import workflow integration", () => {
   it("produces correct state from a typical import sequence", () => {
     const batchId = "batch-import-1";
-    const personA = { person_id: "pa", given_name: "Max", family_name: "Müller", yob: 1990, gender: "M" as const, club: "LG Test", club_normalized: "lg test" };
-    const personB = { person_id: "pb", given_name: "Anna", family_name: "Schmidt", yob: 1985, gender: "F" as const, club: null, club_normalized: "" };
+    const personA = {
+      person_id: "pa",
+      given_name: "Max",
+      family_name: "Müller",
+      yob: 1990,
+      gender: "M" as const,
+      club: "LG Test",
+      club_normalized: "lg test",
+    };
+    const personB = {
+      person_id: "pb",
+      given_name: "Anna",
+      family_name: "Schmidt",
+      yob: 1985,
+      gender: "F" as const,
+      club: null,
+      club_normalized: "",
+    };
     const teamA = { team_id: "ta", member_person_ids: ["pa"], team_kind: "solo" as const };
     const teamB = { team_id: "tb", member_person_ids: ["pb"], team_kind: "solo" as const };
 
-    const entry1 = defaultEntry({ entry_id: "e1", team_id: "ta", startnr: "1", distance_m: 12000, points: 12 });
-    const entry2 = defaultEntry({ entry_id: "e2", team_id: "tb", startnr: "2", distance_m: 10000, points: 10 });
+    const entry1 = defaultEntry({
+      entry_id: "e1",
+      team_id: "ta",
+      startnr: "1",
+      distance_m: 12000,
+      points: 12,
+    });
+    const entry2 = defaultEntry({
+      entry_id: "e2",
+      team_id: "tb",
+      startnr: "2",
+      distance_m: 10000,
+      points: 10,
+    });
 
     const events: DomainEvent[] = [
       importBatchRecorded({ import_batch_id: batchId }),
@@ -543,13 +583,28 @@ describe("full import workflow integration", () => {
 
 describe("correction precedence", () => {
   it("applies multiple corrections to the same entry in sequence", () => {
-    const entry = defaultEntry({ entry_id: "e1", team_id: "ta", distance_m: 10000, points: 10, startnr: "1" });
+    const entry = defaultEntry({
+      entry_id: "e1",
+      team_id: "ta",
+      distance_m: 10000,
+      points: 10,
+      startnr: "1",
+    });
     const events: DomainEvent[] = [
       importBatchRecorded({ import_batch_id: "b1" }),
       raceRegistered({ race_event_id: "r1", import_batch_id: "b1", entries: [entry] }),
-      entryCorrected({ entry_id: "e1", race_event_id: "r1", updated_fields: { distance_m: 11000 } }),
+      entryCorrected({
+        entry_id: "e1",
+        race_event_id: "r1",
+        updated_fields: { distance_m: 11000 },
+      }),
       entryCorrected({ entry_id: "e1", race_event_id: "r1", updated_fields: { points: 15 } }),
-      entryReassigned({ entry_id: "e1", race_event_id: "r1", from_team_id: "ta", to_team_id: "tb" }),
+      entryReassigned({
+        entry_id: "e1",
+        race_event_id: "r1",
+        from_team_id: "ta",
+        to_team_id: "tb",
+      }),
       entryCorrected({ entry_id: "e1", race_event_id: "r1", updated_fields: { startnr: "99" } }),
     ];
 
@@ -564,9 +619,20 @@ describe("correction precedence", () => {
 
   it("applies multiple corrections to a person in sequence", () => {
     const events: DomainEvent[] = [
-      personRegistered({ person_id: "p1", given_name: "Max", family_name: "Muller", yob: 1990, gender: "M", club: "LG A", club_normalized: "lg a" }),
+      personRegistered({
+        person_id: "p1",
+        given_name: "Max",
+        family_name: "Muller",
+        yob: 1990,
+        gender: "M",
+        club: "LG A",
+        club_normalized: "lg a",
+      }),
       personCorrected({ person_id: "p1", updated_fields: { family_name: "Müller" } }),
-      personCorrected({ person_id: "p1", updated_fields: { club: "SC B", club_normalized: "sc b" } }),
+      personCorrected({
+        person_id: "p1",
+        updated_fields: { club: "SC B", club_normalized: "sc b" },
+      }),
     ];
 
     const state = projectState("s1", events);

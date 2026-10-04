@@ -32,11 +32,7 @@ import {
   scoreCoupleMatch,
   type CoupleBlockEntry,
 } from "./teams.ts";
-import type {
-  MatchingFeatures,
-  MatchRoute,
-  ResolvedEntry,
-} from "./types.ts";
+import type { MatchingFeatures, MatchRoute, ResolvedEntry } from "./types.ts";
 
 import type { ImportRowCouples } from "@/ingestion/types.ts";
 
@@ -59,15 +55,11 @@ export function buildReplayIndex(state: SeasonState): Map<string, string> {
     const batch = state.import_batches.get(raceEvent.import_batch_id);
     if (batch && batch.state !== "active") continue;
     for (const entry of raceEvent.entries) {
-      const { resolution, incoming } = entry;
+      const { resolution } = entry;
       const isReplayable =
         (resolution.method === "auto" && resolution.confidence === 1.0) ||
         resolution.method === "manual";
       if (!isReplayable) continue;
-      // Recompute fingerprint from incoming data
-      // We store it keyed by display_name|yob|row_kind for later async lookup
-      // The actual fingerprint computation happens in the resolve functions
-      void incoming;
       // Store team_id keyed by entry for later fingerprint resolution
       index.set(entry.entry_id, entry.team_id);
     }
@@ -97,7 +89,8 @@ export async function buildFingerprintReplayIndex(
       categoryFilter &&
       (raceEvent.category.duration !== categoryFilter.duration ||
         raceEvent.category.division !== categoryFilter.division)
-    ) continue;
+    )
+      continue;
     for (const entry of raceEvent.entries) {
       const { resolution, incoming } = entry;
       const isReplayable =
@@ -119,9 +112,7 @@ export async function buildFingerprintReplayIndex(
             index.set(fp, entry.team_id);
           } else {
             // team row — need to split the composite display_name
-            const names = incoming.display_name
-              .split(" / ")
-              .map((n) => n.trim());
+            const names = incoming.display_name.split(" / ").map((n) => n.trim());
             if (names.length === 2 && names[0] !== undefined && names[1] !== undefined) {
               const parsedA = parsePersonName(names[0]);
               const parsedB = parsePersonName(names[1]);
@@ -159,9 +150,7 @@ export function genderForDivision(division: Division): Gender {
   throw new Error(`No single-runner gender mapping for division ${division}`);
 }
 
-export function memberGendersForCouples(
-  division: Division,
-): [Gender, Gender] {
+export function memberGendersForCouples(division: Division): [Gender, Gender] {
   if (division === "couples_men") return ["M", "M"];
   if (division === "couples_women") return ["F", "F"];
   if (division === "couples_mixed") return ["M", "F"];
@@ -190,9 +179,7 @@ export function emptyRunStats(): RunStats {
   };
 }
 
-export function buildSoloTeamIdByPersonId(
-  teams: ReadonlyMap<string, Team>,
-): Map<string, string> {
+export function buildSoloTeamIdByPersonId(teams: ReadonlyMap<string, Team>): Map<string, string> {
   const soloTeamIdByPersonId = new Map<string, string>();
   for (const team of teams.values()) {
     if (team.team_kind !== "solo") continue;
@@ -308,11 +295,13 @@ export async function resolvePerson(opts: {
       if (hit) {
         const hitTeamId = soloTeamIdByPersonId.get(hit.person_id);
         if (!hitTeamId) {
-          throw new Error(
-            `Strict identity matched person "${hit.person_id}" without solo team.`,
-          );
+          throw new Error(`Strict identity matched person "${hit.person_id}" without solo team.`);
         }
-        top = { team_id: hitTeamId, score: 1.0, features: { strict_identity_auto: 1.0, total: 1.0 } };
+        top = {
+          team_id: hitTeamId,
+          score: 1.0,
+          features: { strict_identity_auto: 1.0, total: 1.0 },
+        };
         topScore = 1.0;
         topFeats = { strict_identity_auto: 1.0, total: 1.0 };
         const mergedUids = [hitTeamId, ...candidateUids.filter((u) => u !== hitTeamId)];
@@ -346,9 +335,7 @@ export async function resolvePerson(opts: {
       if (bestP) {
         const bestTeamId = soloTeamIdByPersonId.get(bestP.person_id);
         if (!bestTeamId) {
-          throw new Error(
-            `Strict identity winner "${bestP.person_id}" has no solo team.`,
-          );
+          throw new Error(`Strict identity winner "${bestP.person_id}" has no solo team.`);
         }
         top = { team_id: bestTeamId, score: bestSc >= 0 ? bestSc : 0.0, features: bestFt };
         topScore = top.score;
@@ -369,13 +356,22 @@ export async function resolvePerson(opts: {
   }
 
   // Strict: no strict hits but would be auto -> downgrade to review
-  if (config.strict_normalized_auto_only && strictHits.length === 0 && top != null && metaRoute === "auto") {
+  if (
+    config.strict_normalized_auto_only &&
+    strictHits.length === 0 &&
+    top != null &&
+    metaRoute === "auto"
+  ) {
     metaRoute = "review";
   }
 
   // 5. SAFETY OVERRIDES
   // Strong name + YOB mismatch -> review
-  if (top != null && metaRoute === "new_identity" && shouldReviewStrongNameYobMismatch(topScore, topFeats, config)) {
+  if (
+    top != null &&
+    metaRoute === "new_identity" &&
+    shouldReviewStrongNameYobMismatch(topScore, topFeats, config)
+  ) {
     metaRoute = "review";
   }
 
@@ -516,14 +512,31 @@ export async function resolveTeamRow(opts: {
   // 2. CANDIDATE SCORING
   const coupleTeams = candidateTeams.filter((t) => t.team_kind === "couple");
   const coupleIndex = buildCoupleBlockIndex(coupleTeams, persons, division);
-  const candidates = gatherCoupleCandidates(parsedA, row.yob_a, parsedB, row.yob_b, coupleIndex, config);
+  const candidates = gatherCoupleCandidates(
+    parsedA,
+    row.yob_a,
+    parsedB,
+    row.yob_b,
+    coupleIndex,
+    config,
+  );
 
-  const scored: { team_id: string; members: [PersonIdentity, PersonIdentity]; score: number; features: MatchingFeatures }[] = [];
+  const scored: {
+    team_id: string;
+    members: [PersonIdentity, PersonIdentity];
+    score: number;
+    features: MatchingFeatures;
+  }[] = [];
   for (const cand of candidates) {
     const [score, feats] = scoreCoupleMatch(
-      parsedA, row.yob_a, clubNormA,
-      parsedB, row.yob_b, clubNormB,
-      cand.members, config,
+      parsedA,
+      row.yob_a,
+      clubNormA,
+      parsedB,
+      row.yob_b,
+      clubNormB,
+      cand.members,
+      config,
     );
     scored.push({ team_id: cand.team.team_id, members: cand.members, score, features: feats });
   }
@@ -552,10 +565,18 @@ export async function resolveTeamRow(opts: {
     if (strictTeamHits.length === 1) {
       const hit = strictTeamHits[0];
       if (hit) {
-        top = { team_id: hit.team.team_id, members: hit.members, score: 1.0, features: { strict_identity_auto: 1.0, pair_score: 1.0 } };
+        top = {
+          team_id: hit.team.team_id,
+          members: hit.members,
+          score: 1.0,
+          features: { strict_identity_auto: 1.0, pair_score: 1.0 },
+        };
         topScore = 1.0;
         topFeats = { strict_identity_auto: 1.0, pair_score: 1.0 };
-        const mergedUids = [hit.team.team_id, ...candidateUids.filter((u) => u !== hit.team.team_id)];
+        const mergedUids = [
+          hit.team.team_id,
+          ...candidateUids.filter((u) => u !== hit.team.team_id),
+        ];
         candidateUids = mergedUids.slice(0, 5);
       }
     } else if (strictTeamHits.length > 1) {
@@ -580,7 +601,12 @@ export async function resolveTeamRow(opts: {
         }
       }
       if (bestC) {
-        top = { team_id: bestC.team.team_id, members: bestC.members, score: bestSc >= 0 ? bestSc : 0.0, features: bestFt };
+        top = {
+          team_id: bestC.team.team_id,
+          members: bestC.members,
+          score: bestSc >= 0 ? bestSc : 0.0,
+          features: bestFt,
+        };
         topScore = top.score;
         topFeats = bestFt;
       }
@@ -598,12 +624,21 @@ export async function resolveTeamRow(opts: {
     metaRoute = route;
   }
 
-  if (config.strict_normalized_auto_only && strictTeamHits.length === 0 && top != null && metaRoute === "auto") {
+  if (
+    config.strict_normalized_auto_only &&
+    strictTeamHits.length === 0 &&
+    top != null &&
+    metaRoute === "auto"
+  ) {
     metaRoute = "review";
   }
 
   // 5. SAFETY OVERRIDES
-  if (top != null && metaRoute === "new_identity" && shouldReviewStrongCoupleYobMismatch(topScore, topFeats, config)) {
+  if (
+    top != null &&
+    metaRoute === "new_identity" &&
+    shouldReviewStrongCoupleYobMismatch(topScore, topFeats, config)
+  ) {
     metaRoute = "review";
   }
 

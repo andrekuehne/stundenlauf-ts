@@ -22,9 +22,7 @@ function buildColumnWidths(
   raceColumnCount: number,
   showExcludedColumn: boolean,
 ): StandingsColumnWidth[] {
-  const widths: StandingsColumnWidth[] = [
-    { key: "rank", width: "3.75rem" },
-  ];
+  const widths: StandingsColumnWidth[] = [{ key: "rank", width: "3.75rem" }];
   if (showExcludedColumn) {
     widths.push({ key: "excluded", width: "3rem" });
   }
@@ -85,8 +83,7 @@ export function StandingsDetailTable({
 
   const columnWidths = buildColumnWidths(raceColumnCount, showExcludedColumn);
   // rank + optional a.W. + name + club + (raceColumnCount * 2) + total km + total points
-  const columnCount =
-    1 + (showExcludedColumn ? 1 : 0) + 2 + raceColumnCount * 2 + 2;
+  const columnCount = 1 + (showExcludedColumn ? 1 : 0) + 2 + raceColumnCount * 2 + 2;
 
   return (
     <div className="table-wrap table-wrap--standings-detail">
@@ -117,7 +114,10 @@ export function StandingsDetailTable({
                 {raceGroupHeaderLabel(index, raceColumnHeaders)}
               </th>
             ))}
-            <th colSpan={2} className="ui-table--standings-detail__group ui-table--standings-detail__group--total">
+            <th
+              colSpan={2}
+              className="ui-table--standings-detail__group ui-table--standings-detail__group--total"
+            >
               {STR.views.standings.headerTotalGroup}
             </th>
           </tr>
@@ -183,23 +183,21 @@ export function StandingsDetailTable({
                       <button
                         type="button"
                         className="standings-team-edit-trigger"
-                        onClick={() => { onEditRow(row); }}
+                        onClick={() => {
+                          onEditRow(row);
+                        }}
                       >
                         <span className="standings-team" data-testid="standings-team-name">
                           {row.team}
                         </span>
-                        {yobLabel ? (
-                          <span className="standings-team-yob">({yobLabel})</span>
-                        ) : null}
+                        {yobLabel ? <span className="standings-team-yob">({yobLabel})</span> : null}
                       </button>
                     ) : (
                       <>
                         <span className="standings-team" data-testid="standings-team-name">
                           {row.team}
                         </span>
-                        {yobLabel ? (
-                          <span className="standings-team-yob">({yobLabel})</span>
-                        ) : null}
+                        {yobLabel ? <span className="standings-team-yob">({yobLabel})</span> : null}
                       </>
                     )}
                   </td>
@@ -208,7 +206,9 @@ export function StandingsDetailTable({
                       <button
                         type="button"
                         className="standings-team-edit-trigger"
-                        onClick={() => { onEditRow(row); }}
+                        onClick={() => {
+                          onEditRow(row);
+                        }}
                       >
                         {row.club || "—"}
                       </button>

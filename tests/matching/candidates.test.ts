@@ -8,9 +8,7 @@ import { defaultMatchingConfig } from "@/matching/config.ts";
 import { parsePersonName } from "@/matching/normalize.ts";
 import type { PersonIdentity } from "@/domain/types.ts";
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "Test",
     family_name: "Person",
@@ -69,16 +67,20 @@ describe("buildPersonBlockIndex", () => {
       makePerson({ person_id: "p2", given_name: "hans", family_name: "schmidt", gender: "M" }),
     ];
     const index = buildPersonBlockIndex(people, "F");
-    const allPersons = new Set(
-      [...index.values()].flat().map((p) => p.person_id),
-    );
+    const allPersons = new Set([...index.values()].flat().map((p) => p.person_id));
     expect(allPersons).toContain("p1");
     expect(allPersons).not.toContain("p2");
   });
 
   it("builds correct blocking keys", () => {
     const people = [
-      makePerson({ person_id: "p1", given_name: "anna", family_name: "meyer", gender: "F", yob: 1990 }),
+      makePerson({
+        person_id: "p1",
+        given_name: "anna",
+        family_name: "meyer",
+        gender: "F",
+        yob: 1990,
+      }),
     ];
     const index = buildPersonBlockIndex(people, "F");
     expect(index.has("fam|mey|1990")).toBe(true);
@@ -90,8 +92,20 @@ describe("buildPersonBlockIndex", () => {
 describe("gatherCandidates", () => {
   it("returns matching candidates", () => {
     const people = [
-      makePerson({ person_id: "p1", given_name: "anna", family_name: "meyer", gender: "F", yob: 1990 }),
-      makePerson({ person_id: "p2", given_name: "anna", family_name: "schmidt", gender: "F", yob: 1990 }),
+      makePerson({
+        person_id: "p1",
+        given_name: "anna",
+        family_name: "meyer",
+        gender: "F",
+        yob: 1990,
+      }),
+      makePerson({
+        person_id: "p2",
+        given_name: "anna",
+        family_name: "schmidt",
+        gender: "F",
+        yob: 1990,
+      }),
     ];
     const index = buildPersonBlockIndex(people, "F");
     const parsed = parsePersonName("Anna Meyer");
@@ -103,7 +117,13 @@ describe("gatherCandidates", () => {
 
   it("deduplicates candidates", () => {
     const people = [
-      makePerson({ person_id: "p1", given_name: "anna", family_name: "meyer", gender: "F", yob: 1990 }),
+      makePerson({
+        person_id: "p1",
+        given_name: "anna",
+        family_name: "meyer",
+        gender: "F",
+        yob: 1990,
+      }),
     ];
     const index = buildPersonBlockIndex(people, "F");
     const parsed = parsePersonName("Anna Meyer");
@@ -115,7 +135,13 @@ describe("gatherCandidates", () => {
 
   it("finds a candidate whose given/family are swapped in the incoming name", () => {
     const people = [
-      makePerson({ person_id: "p1", given_name: "anna", family_name: "meyer", gender: "F", yob: 1990 }),
+      makePerson({
+        person_id: "p1",
+        given_name: "anna",
+        family_name: "meyer",
+        gender: "F",
+        yob: 1990,
+      }),
     ];
     const index = buildPersonBlockIndex(people, "F");
     // Incoming has the names in the wrong order relative to how they were stored

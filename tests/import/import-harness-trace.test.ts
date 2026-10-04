@@ -32,13 +32,27 @@ describe("buildImportTrace", () => {
         {
           context: { race_no: 1, duration: "hour", division: "men", event_date: null },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 8 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 10,
+              points: 8,
+            },
           ],
         },
         {
           context: { race_no: 1, duration: "half_hour", division: "men", event_date: null },
           rows: [
-            { startnr: "2", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 5, points: 4 },
+            {
+              startnr: "2",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 5,
+              points: 4,
+            },
           ],
         },
       ],
@@ -66,7 +80,14 @@ describe("buildImportTrace", () => {
         {
           context: { race_no: 3, duration: "hour", division: "women", event_date: "2026-03-01" },
           rows: [
-            { startnr: "7", name: "Beispiel, Erika", yob: 1988, club: "LG Demo", distance_km: 11.2, points: 9 },
+            {
+              startnr: "7",
+              name: "Beispiel, Erika",
+              yob: 1988,
+              club: "LG Demo",
+              distance_km: 11.2,
+              points: 9,
+            },
           ],
         },
       ],

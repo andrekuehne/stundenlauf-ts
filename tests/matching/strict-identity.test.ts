@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parsePersonName } from "@/matching/normalize.ts";
-import {
-  coupleMatchesStrictRow,
-  personMatchesStrictIncoming,
-} from "@/matching/strict-identity.ts";
+import { coupleMatchesStrictRow, personMatchesStrictIncoming } from "@/matching/strict-identity.ts";
 import type { PersonIdentity } from "@/domain/types.ts";
 import type { ImportRowCouples } from "@/ingestion/types.ts";
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "",
     family_name: "",

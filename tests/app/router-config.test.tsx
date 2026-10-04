@@ -1,13 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-const createHashRouterMock = vi.fn((...args: unknown[]) => {
-  void args;
-  return {};
-});
-const routerProviderMock = vi.fn((props?: unknown) => {
-  void props;
-  return null;
-});
+const createHashRouterMock = vi.fn<(...args: unknown[]) => unknown>(() => ({}));
+const routerProviderMock = vi.fn<(props?: unknown) => null>(() => null);
 
 vi.mock("react-router-dom", () => ({
   createHashRouter: (...args: unknown[]) => createHashRouterMock(...args),
@@ -26,9 +20,19 @@ describe("router config", () => {
     const mod = await import("@/app/router.tsx");
     expect(createHashRouterMock).toHaveBeenCalledTimes(1);
     const firstCall = createHashRouterMock.mock.calls[0];
-    const routes = (firstCall?.[0] ?? []) as Array<{ path?: string; children?: Array<{ path?: string }> }>;
+    const routes = (firstCall?.[0] ?? []) as Array<{
+      path?: string;
+      children?: Array<{ path?: string }>;
+    }>;
     expect(routes[0]?.path).toBe("/");
-    expect(routes[0]?.children?.map((r) => r.path)).toEqual([undefined, "season", "standings", "import", "corrections", "history"]);
+    expect(routes[0]?.children?.map((r) => r.path)).toEqual([
+      undefined,
+      "season",
+      "standings",
+      "import",
+      "corrections",
+      "history",
+    ]);
     expect(routes[1]?.path).toBe("*");
     expect(typeof mod.AppRouter).toBe("function");
   });

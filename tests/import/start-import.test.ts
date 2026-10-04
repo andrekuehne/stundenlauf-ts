@@ -19,7 +19,9 @@ describe("startImport", () => {
     parseWorkbookMock.mockResolvedValueOnce({ parsed: true });
     validateImportMock.mockReturnValueOnce({ valid: false, message: "Ungültig" });
     const { startImport } = await import("@/import/start-import.ts");
-    await expect(startImport(new File(["x"], "test.xlsx"), { season_id: "s1" } as never)).rejects.toThrow("Ungültig");
+    await expect(
+      startImport(new File(["x"], "test.xlsx"), { season_id: "s1" } as never),
+    ).rejects.toThrow("Ungültig");
   });
 
   it("creates session from parsed workbook when valid", async () => {

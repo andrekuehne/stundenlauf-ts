@@ -15,9 +15,9 @@ describe("lazy loading guardrails", () => {
 
   it("loads heavy export/portability modules on demand", () => {
     const apiSource = readSource("src/api/ts/index.ts");
-    expect(apiSource).toContain("await import(\"@/export/pdf.ts\")");
-    expect(apiSource).toContain("await import(\"@/export/excel.ts\")");
-    expect(apiSource).toContain("await import(\"@/portability/export-season.ts\")");
-    expect(apiSource).toContain("await import(\"@/portability/import-season.ts\")");
+    expect(apiSource).toContain('await import("@/export/pdf.ts")');
+    expect(apiSource).toContain('await import("@/export/excel.ts")');
+    expect(apiSource).toContain('await import("@/portability/export-season.ts")');
+    expect(apiSource).toContain('await import("@/portability/import-season.ts")');
   });
 });

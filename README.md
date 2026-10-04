@@ -1,8 +1,8 @@
 # Stundenlauf TS
 
-Static-site TypeScript/React port of the Stundenlauf race-series management app. Runs entirely in the browser — no server, no native dependencies. Data lives in IndexedDB and can be exported/imported as JSON.
+Static-site TypeScript/React port of the Stundenlauf race-series management app. Runs entirely in the browser without an application backend. Season data lives in browser-local IndexedDB; backups are `.stundenlauf-season.zip` archives containing a manifest and event log.
 
-See `PROJECT_PLAN.md` for the full vision, requirements, and milestone roadmap.
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the vision, requirements and milestone roadmap. The [dependency and platform refresh workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records selected versions, independent reviews, Linux/Windows checks, advisory decisions and pending external acceptance.
 
 ## Kurzer Überblick: Ablauf in der Oberfläche
 
@@ -66,24 +66,45 @@ Die folgenden Screenshots entstehen automatisch mit dem Playwright-Test `e2e/rea
 
 | Tool | Version | Notes |
 |---|---|---|
-| Node.js | LTS (v22+) | Only runtime dependency |
-| pnpm | via Corepack | Package manager |
+| Node.js | 24.21.0 LTS | `.node-version` and `.nvmrc`; engines require `>=24.21.0 <25` |
+| pnpm | 10.34.6 via Corepack | Exact `packageManager` pin; pnpm 11/12 await verified Dependabot support |
+| Browser for automated smoke tests | Playwright's bundled Chromium | Installed through the repository's Playwright version on Linux and Windows |
 
-No other global tools required. All dev dependencies (TypeScript, Vite, ESLint, Vitest, Prettier) are project-local in `node_modules/`.
+Development tools are project-local in `node_modules/`. Linux browser tests also need the system libraries installed by Playwright's `--with-deps` command.
 
 ## Environment Setup
 
-```bash
-pnpm install
-```
-
-Verify everything works:
+Install Node 24.21.0 with your platform's Node version manager (`nvm use` on Linux reads `.nvmrc`; on Windows select 24.21.0 explicitly). Enable Corepack once for that Node installation, then use the repository pin:
 
 ```bash
-pnpm run typecheck   # TypeScript strict-mode check (no emit)
-pnpm test            # Vitest test suite
-pnpm run build       # Vite production build → dist/
+corepack enable
+corepack pnpm --version  # 10.34.6
+pnpm install --frozen-lockfile
 ```
+
+These commands work in Bash and PowerShell. Normal installation permits esbuild setup and runs the root `prepare` script to install the pre-push quality hook. Dependency-level core-js and simple-git-hooks scripts are explicitly disabled; root hook setup remains enabled. Text files use LF; `.cmd`/`.bat` use CRLF when present. Engine and peer requirements are enforced during installation.
+
+Install the matching bundled browser on Linux:
+
+```bash
+pnpm exec playwright install --with-deps chromium
+```
+
+On Windows, use:
+
+```powershell
+pnpm exec playwright install chromium
+```
+
+System Chrome is not required for the production smoke tests. Re-run browser installation after updating Playwright.
+
+Run the complete local quality gate:
+
+```bash
+pnpm run ci:local
+```
+
+This is also the pre-push hook. It performs a frozen install, formatting, strict lint and no-emit type checks, tests with coverage and source-scope verification, a production build, lint again after build, the optional fixture CLI and production browser smoke tests. Browser installation is a prerequisite; the gate does not install system libraries on each run.
 
 ## Development
 
@@ -95,18 +116,53 @@ pnpm run dev         # Vite dev server with HMR (http://localhost:5173)
 
 | Script | Purpose |
 |---|---|
-| `pnpm run dev` | Start Vite dev server with hot module replacement |
-| `pnpm run build` | Typecheck + production build to `dist/` |
-| `pnpm run preview` | Serve the production build locally |
-| `pnpm test` | Run Vitest test suite (single run) |
+| `pnpm run dev` | Start Vite with hot module replacement |
+| `pnpm run build` | Strict no-emit type checks, then production build to `dist/` |
+| `pnpm run preview` | Serve `dist/` locally at the configured Pages subpath |
+| `pnpm run ci:local` | Frozen install and all quality/build/browser gates; also the pre-push hook |
+| `pnpm test` | Run unit/integration tests once |
 | `pnpm run test:watch` | Run Vitest in watch mode |
-| `pnpm run test:coverage` | Run tests with coverage report |
-| `pnpm run typecheck` | TypeScript type checking (`tsc --noEmit`) |
-| `pnpm run lint` | ESLint check on `src/` and `tests/` |
+| `pnpm run test:coverage` | Tests with coverage thresholds, followed by application source-scope verification |
+| `pnpm run test:smoke` | Fixture-independent production browser, archive/export and PWA checks |
+| `pnpm run playwright:install` | Install the matching bundled Chromium; Linux system libraries use the setup command above |
+| `pnpm run screenshots:readme` | Optional organizer-fixture workflow that regenerates `docs/readme/` images |
+| `pnpm run typecheck` | Strict no-emit checks for app/tests and scripts/e2e/root tooling configs |
+| `pnpm run lint` | Typed ESLint for src/tests/scripts/e2e and root configs |
 | `pnpm run lint:fix` | ESLint auto-fix |
-| `pnpm run format` | Prettier format all source files |
-| `pnpm run format:check` | Prettier check (CI-friendly, no writes) |
-| `pnpm run inspect:excel-fixtures` | Plain-text parse report for local `.xlsx` under `tests/data/xlsx/` (see below) |
+| `pnpm run format` | Prettier for src/tests/scripts/e2e and root TS configs |
+| `pnpm run format:check` | Check that formatting scope without writes |
+| `pnpm run inspect:excel-fixtures` | Parse report for optional local `.xlsx` files under `tests/data/xlsx/` |
+
+### Production browser checks
+
+```bash
+pnpm run test:smoke
+```
+
+The dedicated smoke suite builds and serves actual production output at `/stundenlauf-ts/`. It creates synthetic workbooks in memory, creates a season, exercises import review/finalization and standings, checks persistence after reload, validates XLSX/PDF result contents, and restores a downloaded season archive into an empty target season. It also checks real service-worker activation, offline startup and the update prompt across two controlled production builds, comparing season events before and after the update.
+
+The suite needs no organizer files and does not regenerate README images. Failure traces/screenshots are kept under `test-results/` and `playwright-report/`; CI retains OS-specific failure artifacts. Production builds used by this suite go into temporary directories.
+
+The automated browser matrix covers Playwright 1.63.0's bundled Chromium, revision 1243 / Chrome 153.0.8010.12, on Linux and Windows. Firefox, Safari, Edge and desktop spreadsheet applications have separate acceptance needs. Vite 8's default syntax targets (Chrome/Edge 111, Firefox 114, Safari 16.4) describe generated code, not a runtime test matrix or a guarantee that every browser at those versions supports the app.
+
+README screenshot generation is optional and separate:
+
+```bash
+pnpm run screenshots:readme
+```
+
+It requires `tests/data/xlsx/Ergebnisliste MW_1.xlsx` and `tests/data/xlsx/Ergebnisliste MW_2.xlsx` and intentionally overwrites `docs/readme/` images. It is excluded from the production smoke command and CI quality gates.
+
+### Move an existing season to another browser or checkout
+
+A Git checkout contains application code; it does not contain the seasons stored in another browser profile's IndexedDB. Browser storage belongs to the profile and origin, so a different local URL or deployed origin has separate data.
+
+1. In the original browser/profile and app origin, export each season using its season-backup action. Keep the resulting `.stundenlauf-season.zip` files; the current UI labels this action “Datensicherung”.
+2. Open the updated app in the target browser/profile. Create an empty target season with the desired name, or select an existing empty target season through “Öffnen”.
+3. Return to “Saison” and use “Saison importieren” to choose the archive. Import replaces the selected target season's event log and keeps that target's name/identity; select an empty season to preserve any other season's data.
+4. Reload, open the restored season and verify its imported runs, standings and history. Retain the original browser data and backup until those checks pass.
+
+Synthetic archive round trips are automated. Acceptance of an existing organizer season archive remains pending in WP-12; a successful synthetic round trip does not establish compatibility with an unavailable historical archive.
 
 ### Manual Excel parse dump (local fixtures)
 
@@ -132,137 +188,121 @@ pnpm run inspect:excel-fixtures | Out-File -Encoding utf8 excel-dump.txt
 
 Optional Vitest integration tests for the same tree are in `tests/ingestion/local-excel-examples.test.ts` (skipped when no matching files are present).
 
+### Spreadsheet dependency maintenance
+
+Imports use SheetJS CE 0.20.3 from its [official versioned tarball](https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz), with integrity in `pnpm-lock.yaml`. The npm registry's `xlsx` release is outdated. The repository maintainer checks the [official installation page](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/) and [upstream releases](https://git.sheetjs.com/sheetjs/sheetjs/tags) quarterly and whenever an import advisory appears. This is a manual procedure; no recurring job is configured.
+
+Before updating, verify the source, package version/license, archive integrity, Node requirements and migration guidance. Update the versioned URL through the dependency coordinator, run a normal frozen install on Linux and Windows, then run ingestion/API, export/archive tests and the full quality/browser gates. Record full/production audits and residual dispositions in the [maintenance workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md). Organizer workbooks and Excel/LibreOffice acceptance remain a separate check when those inputs are available.
+
+ExcelJS 4.4.0 remains the export library and latest official stable release at this refresh. Its UUID advisory has a reviewed applicability disposition in the workplan; review again at the next dependency refresh, an ExcelJS release/backport, or a change to conditional formatting/UUID use. Do not force incompatible transitive majors to clear audit output.
+
+### Dependency automation and acceptance
+
+Dependabot is configured for pnpm through the `npm` ecosystem and for GitHub Actions, with weekly Monday checks at 06:00 Europe/Berlin and PR limits of five and three. React packages and Vitest/coverage update together; build/lint major migrations have separate groups. Automatic merging is not configured. Review dependency PRs with frozen installation and both Linux/Windows quality jobs.
+
+The repository's dependency graph, vulnerability alerts and security updates were verified active during this refresh. The maintainer merged [activation PR #16](https://github.com/andrekuehne/stundenlauf-ts/pull/16); actual npm and Actions update jobs succeeded. The genuine [generated PR #17](https://github.com/andrekuehne/stundenlauf-ts/pull/17) has a consistent manifest/lockfile and passes normal frozen installation and the full Linux/Windows quality gates, with accepted independent review. Its Node 26 types upgrade remains held as a draft because the selected runtime and types stay on Node 24. The final refresh configuration restores default-branch targeting and ignores only Node-types major updates until a coordinated runtime migration; its first scheduled run after merging the refresh remains a maintainer follow-up. SheetJS's pinned CDN release continues to use the manual procedure above.
+
+The inspected main ruleset prevents deletion and force pushes; it does not currently enforce required status checks. Reviewers must confirm both quality jobs pass before merging. The refresh preserves the existing branch policy.
+
+The [workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records full and production audits and the remaining ExcelJS → UUID 8.3.2 moderate advisory. That residual has a reviewed applicability decision, owner and review triggers; audit commands may still report it. TypeScript 7 remains deferred because typescript-eslint 8.71.0 supports compiler versions below 6.1. Reassess that holdback when upstream support changes.
+
+Dependabot's three-day cooldown can reject newly reviewed versions already present in the lockfile during an unrelated update. The temporary `minimumReleaseAgeExclude` entries in `pnpm-workspace.yaml` name only exact reviewed releases; future versions remain subject to that cooldown. Remove these entries after 2026-10-06 14:14 UTC, when every listed release is older than three days. Node-types major updates require a coordinated runtime-major review; their minor and patch updates remain enabled.
+
+The reviewed `.pnpmfile.cjs` hook preserves the official SheetJS 0.20.3 checksum when pnpm 10 drops remote-tarball integrity during a warm lockfile-only update. It restores only that exact artifact's missing checksum and rejects conflicting URL, version or hash metadata. A SheetJS update must revalidate the official archive and update this pin as part of the same reviewed change. After changing the hook, run `pnpm install --lockfile-only` to refresh `pnpmfileChecksum`, then verify frozen installation and the full quality gates. Remove the workaround only after a supported pnpm release preserves integrity through the complete warm update/install sequence; track [the upstream defect](https://github.com/pnpm/pnpm/issues/14351).
+
+Organizer workbooks, agreed reference outcomes, an existing season archive, and Windows Excel/Linux LibreOffice application acceptance are tracked separately as **WP-12: Awaiting Fixtures**. The automated Linux/Windows browser checks use synthetic inputs.
+
 ## Technology Stack
 
-| Layer | Library | Version |
+Versions below are the resolved versions validated for this refresh; compatible manifest ranges and artifact integrity are recorded in `package.json` and `pnpm-lock.yaml`.
+
+| Layer | Library | Validated version |
 |---|---|---|
-| Language | TypeScript | ~5.8 (strict mode, ES2022 target) |
-| UI Framework | React | ^19 |
-| State Management | Zustand | ^5 |
-| Build | Vite | ^6 |
-| Testing | Vitest + @testing-library/react | ^3 / ^16 |
-| Linting | ESLint (flat config) + Prettier | ^9 / ^3 |
+| Language | TypeScript | 6.0.3; strict mode, ES2022 compiler target |
+| UI | React / ReactDOM | 19.3.0 |
+| State | Zustand | 5.0.15 |
+| Build | Vite / React plugin | 8.3.2 / 6.1.1; Rolldown |
+| PWA | vite-plugin-pwa / Workbox | 2.0.0 / 7.4.1 |
+| Import | SheetJS CE | 0.20.3; official versioned CDN artifact |
+| Spreadsheet export | ExcelJS | 4.4.0 |
+| Unit/integration tests | Vitest / coverage-v8 / jsdom | 5.0.3 / 5.0.3 / 30.1.1 |
+| Component tests | Testing Library React / jest-dom | 16.3.3 / 7.0.1 |
+| Browser tests | Playwright | 1.63.0; bundled Chromium |
+| Lint | ESLint / typescript-eslint / globals | 10.12.0 / 8.71.0 / 17.13.0 |
+| Format | Prettier | 3.9.9 |
+| Fixture/coverage CLI | TSX | 4.23.15; directly declared |
 
 ## Folder Structure
 
-```
+```text
 ./
-├── docs/                              # Feature plans and accomplishments
-│   ├── ACCOMPLISHMENTS.md
-│   └── features/                      # Per-feature design docs (F-TS01..F-TS09)
-├── PROJECT_PLAN.md                    # Vision, requirements, milestones
-├── README.md                          # This file
-│
-├── package.json                       # Dependencies and scripts
-├── tsconfig.json                      # TypeScript config (strict, ES2022)
-├── tsconfig.node.json                 # TS config for build tooling files
-├── vite.config.ts                     # Vite build configuration
-├── vitest.config.ts                   # Vitest test runner configuration
-├── eslint.config.ts                   # ESLint flat config (strict TS rules)
-├── .prettierrc                        # Prettier formatting rules
-├── index.html                         # Vite entry HTML
-│
-├── src/                               # Application source
-│   ├── main.tsx                       # React entry point (mounts App)
-│   ├── App.tsx                        # App shell: header, tabs, routing, status
-│   ├── strings.ts                     # German string catalog (typed)
-│   ├── format.ts                      # Display formatting (formatKm, etc.)
-│   ├── theme.css                      # CSS custom properties / design tokens
-│   ├── vite-env.d.ts                  # Vite client type declarations
-│   │
-│   ├── domain/                        # Event-sourced core (F-TS01) — framework-agnostic
-│   │   ├── types.ts                   # Domain value types, enums, projected state
-│   │   ├── events.ts                  # Event envelope + payload type definitions
-│   │   ├── projection.ts             # projectState / applyEvent (pure fold)
-│   │   ├── validation.ts             # Per-event-type validation rules
-│   │   └── workspace.ts              # Season lifecycle (create/delete/reset/import)
-│   │
-│   ├── storage/                       # IndexedDB persistence (F-TS01 §7)
-│   │   ├── db.ts                      # Database schema and setup
-│   │   └── event-store.ts            # Event log read/write/append
-│   │
-│   ├── matching/                      # Fuzzy matching engine (F-TS03)
-│   │   ├── fingerprint.ts            # Identity fingerprinting
-│   │   ├── scoring.ts                # Candidate scoring functions
-│   │   └── workflow.ts               # Match resolution workflow
-│   │
-│   ├── ranking/                       # Standings computation (F-TS04)
-│   │   └── engine.ts                 # stundenlauf_v1 ruleset
-│   │
-│   ├── import/                        # Import orchestration (F-TS02, F-TS05)
-│   │   ├── parser.ts                 # Client-side Excel/CSV parsing
-│   │   └── orchestrator.ts           # parse → validate → match → review → emit
-│   │
-│   ├── export/                        # Export generation (F-TS08)
-│   │   ├── pdf.ts                    # jsPDF + AutoTable standings PDF
-│   │   └── excel.ts                  # ExcelJS standings .xlsx
-│   │
-│   ├── stores/                        # Zustand reactive UI stores
-│   │   ├── season.ts                 # Active season, overview data
-│   │   ├── standings.ts              # Selected category, correction/merge mode
-│   │   ├── import.ts                 # Import draft, review queue, matching config
-│   │   └── status.ts                 # Global status/toast messages
-│   │
-│   ├── components/                    # React components
-│   │   ├── shared/                   # Cross-screen reusable components
-│   │   │   ├── ConfirmModal.tsx      # Styled modal (replaces window.confirm)
-│   │   │   ├── StatusBar.tsx         # Global status bar
-│   │   │   ├── ImportedRunsMatrix.tsx # Race import coverage grid
-│   │   │   └── CategoryGrid.tsx      # Einzel/Paare quick-select
-│   │   │
-│   │   ├── season/                   # Season management screen
-│   │   │   └── SeasonEntryView.tsx   # List, create, open, delete, export, import
-│   │   │
-│   │   ├── standings/                # Standings screen
-│   │   │   ├── StandingsView.tsx     # Layout: sidebar + content
-│   │   │   ├── StandingsTable.tsx    # Gesamtwertung table
-│   │   │   ├── PerRaceTable.tsx      # Laufübersicht with race columns
-│   │   │   ├── IdentityModal.tsx     # Participant/team data correction
-│   │   │   └── MergePanel.tsx        # Duplicate merge workflow
-│   │   │
-│   │   ├── import/                   # Import screen
-│   │   │   ├── ImportView.tsx        # Layout: controls + review panel
-│   │   │   ├── ImportControls.tsx    # File input, type toggle, race select
-│   │   │   ├── MatchingSettings.tsx  # Mode tabs, threshold sliders
-│   │   │   ├── ReviewPanel.tsx       # Review queue display
-│   │   │   ├── ReviewTable.tsx       # Candidate rows with diff highlighting
-│   │   │   └── MergeCorrectModal.tsx # Side-by-side compare + edit
-│   │   │
-│   │   └── history/                  # History screen
-│   │       ├── HistoryView.tsx       # Layout: imports + audit trail
-│   │       ├── ImportHistoryTable.tsx # Grouped imports with rollback
-│   │       └── AuditTrailTable.tsx   # Correction/merge audit entries
-│   │
+├── .github/
+│   ├── dependabot.yml                 # pnpm and Actions update groups/schedule
+│   └── workflows/ts-deploy.yml        # Linux/Windows quality; main-only Pages deployment
+├── .node-version / .nvmrc             # Node 24.21.0
+├── .npmrc                            # Engine/package-manager/peer enforcement
+├── .gitattributes                    # Cross-platform line-ending rules
+├── package.json / pnpm-lock.yaml      # Declared tools/scripts and frozen resolutions
+├── pnpm-workspace.yaml               # Explicit dependency build-script policy
+├── tsconfig.json                     # Strict no-emit app and test checks
+├── tsconfig.node.json                # Strict no-emit scripts/e2e/root-config checks
+├── vite.config.ts                    # Canonical production/PWA config and Pages base
+├── vitest.config.ts                  # Unit config, coverage scope and thresholds
+├── eslint.config.ts                  # Canonical strict typed flat config
+├── playwright.config.ts              # Optional README screenshot workflow
+├── playwright.smoke.config.ts        # Dedicated bundled-Chromium production smoke
+├── src/
+│   ├── main.tsx                      # Browser entry point
+│   ├── app/                          # App shell, routing, German strings/format/theme
+│   ├── api/                          # AppApi contracts, provider and live/mock implementations
+│   ├── features/                     # Season/import/standings/history/corrections screens
+│   ├── components/                   # Reusable layout, tables and feedback/PWA components
+│   ├── domain/                       # Framework-independent events/projection/validation
+│   ├── storage/                      # IndexedDB event-log persistence and serialization
+│   ├── services/                     # Season repository boundary
+│   ├── ingestion/                    # SheetJS workbook/singles/couples parsing
+│   ├── import/                       # Parse → validate → match → review → finalize orchestration
+│   ├── matching/ / ranking/           # Identity matching and derived standings
+│   ├── export/                       # ExcelJS/jsPDF result generation
+│   ├── portability/                  # Season ZIP manifest, checksum, export/import
+│   ├── stores/                       # Zustand UI/application stores
+│   ├── devtools/                     # Development-only harnesses
 │   └── lib/                          # Shared pure utilities
-│       ├── escape-html.ts            # HTML entity escaping
-│       └── normalization.ts          # Name/club normalization
-│
-├── scripts/                           # Dev-only CLI helpers (vite-node)
-│   └── dump-local-excel-fixtures.ts   # inspect:excel-fixtures
-│
-└── tests/                             # Test suite (mirrors src/ structure)
-    ├── data/xlsx/                     # Local .xlsx fixtures (gitignored; optional tests + manual dump)
-    ├── setup.ts                       # Vitest global setup (jest-dom matchers)
-    ├── domain/
-    │   ├── projection.test.ts         # Projection / fold tests
-    │   └── validation.test.ts         # Event validation tests
-    ├── lib/
-    │   └── escape-html.test.ts        # Utility tests
-    └── format.test.ts                 # Formatting utility tests
+├── scripts/
+│   ├── dump-local-excel-fixtures.ts   # Direct TSX fixture CLI
+│   └── check-coverage-scope.ts        # Reject missing application sources in LCOV
+├── tests/                            # Unit/integration tests mirroring source behavior
+│   ├── setup.ts                      # Shared jest-dom setup and React act-warning guard
+│   ├── mocks/                        # Typed unit-only virtual PWA module
+│   ├── build/                        # Entry/config/lazy-loading/coverage-scope checks
+│   └── data/xlsx/                    # Optional private workbooks; gitignored
+├── e2e/
+│   ├── production-smoke.spec.ts       # Fixture-independent production/persistence/export/PWA checks
+│   ├── helpers/                      # Synthetic inputs, content validation, temporary production server
+│   └── readme-main-screen.spec.ts     # Optional organizer-only screenshot workflow
+├── docs/
+│   ├── ACCOMPLISHMENTS.md
+│   ├── features/ / hardening/         # Feature and reliability plans
+│   ├── workplans/                    # Maintenance decisions, review and verification record
+│   └── readme/                       # Committed workflow screenshots
+├── PROJECT_PLAN.md
+└── README.md
 ```
 
 ### Architecture at a Glance
 
-- **`src/domain/`** — Pure TypeScript, no framework imports. All domain logic (types, events, projection, validation) lives here. Testable in isolation.
-- **`src/storage/`** — IndexedDB adapter. The only module with browser API side effects.
-- **`src/matching/`**, **`src/ranking/`**, **`src/import/`**, **`src/export/`** — Feature modules that consume domain types. Each maps to a feature plan in `docs/features/`.
-- **`src/stores/`** — Zustand stores bridge domain state to React. Components subscribe via hooks with selectors for minimal re-renders.
-- **`src/components/`** — React components organized by screen. Shared components live in `shared/`.
-- **`src/lib/`** — Small pure utility functions with no domain or framework dependencies.
+- **`src/domain/`** — Framework-independent event types, projection, validation and lifecycle rules.
+- **`src/storage/`**, **`src/services/`** — IndexedDB persistence and season repository access. **`src/portability/`** handles archive migration through files.
+- **`src/ingestion/`**, **`src/import/`**, **`src/matching/`**, **`src/ranking/`**, **`src/export/`** — Parsing, import orchestration, identity resolution, standings and result generation over domain types.
+- **`src/api/`** — The typed AppApi boundary between screens and application operations, with live and mock implementations.
+- **`src/app/`**, **`src/features/`**, **`src/components/`**, **`src/stores/`** — Routing/shell, workflow screens, reusable UI and Zustand state.
+- **`scripts/`**, **`tests/`**, **`e2e/`** — Developer CLIs, unit/integration checks and dedicated production browser checks. Root TS configs are authoritative; type checks do not regenerate adjacent JS/declaration files.
+
+Coverage thresholds remain 50% for lines/statements/functions and 45% for branches. The coverage command also verifies that every expected application `.ts`/`.tsx` source is present in LCOV (118 files at this refresh, excluding the browser entry, declarations and co-located test modules). This inventory is derived from the source tree rather than a fixed file-count threshold. Vitest 5's instrumentation differs from the previous provider; detailed counter/scope evidence is in the workplan.
 
 ### Key Design Decisions
 
 1. **Domain logic is framework-agnostic** — `src/domain/` has zero React imports. This makes the event-sourced core independently testable and portable.
 2. **Feature modules map to feature plans** — each subdirectory under `src/` corresponds to one or more `F-TS*` feature documents in `docs/features/`.
-3. **Tests mirror source** — `tests/domain/` tests `src/domain/`, etc. Co-located `*.test.ts` files in `src/` are also supported by the Vitest config.
-4. **Path alias** — `@/` maps to `src/` for clean imports (configured in both `tsconfig.json` and `vite.config.ts`).
+3. **Tests mirror source** — `tests/domain/` tests `src/domain/`, etc. The canonical Vitest config selects `tests/**/*.test.{ts,tsx}` and co-located `src/**/*.test.{ts,tsx}`. Test modules are excluded from application coverage; production browser tests use their dedicated Playwright config.
+4. **Path alias** — `@/` maps to `src/` for clean imports (configured in TypeScript and the canonical Vite/Vitest configs; the direct TSX fixture runner also resolves it).

@@ -15,12 +15,7 @@ function prefix(token: string, length = 3): string {
   return token.slice(0, length);
 }
 
-function pushBlockKeys(
-  keys: string[],
-  fam: string,
-  giv: string,
-  yob: number,
-): void {
+function pushBlockKeys(keys: string[], fam: string, giv: string, yob: number): void {
   if (fam && yob > 0) keys.push(`fam|${prefix(fam)}|${yob}`);
   if (giv && yob > 0) keys.push(`giv|${prefix(giv)}|${yob}`);
   if (fam) keys.push(`fam|${prefix(fam)}|no_yob`);
@@ -60,14 +55,12 @@ export function buildPersonBlockIndex(
   return index;
 }
 
-export function candidatePersonKeys(
-  incoming: ParsedName,
-  yob: number,
-): string[] {
+export function candidatePersonKeys(incoming: ParsedName, yob: number): string[] {
   const fam: string =
-    incoming.family || (incoming.tokens.length > 0 ? (incoming.tokens[incoming.tokens.length - 1] ?? "") : "");
+    incoming.family ||
+    (incoming.tokens.length > 0 ? (incoming.tokens[incoming.tokens.length - 1] ?? "") : "");
   const giv: string =
-    (incoming.given ? incoming.given.split(/\s+/)[0] ?? "" : "") ||
+    (incoming.given ? (incoming.given.split(/\s+/)[0] ?? "") : "") ||
     (incoming.tokens.length > 0 ? (incoming.tokens[0] ?? "") : "");
 
   const raw: string[] = [];
@@ -82,12 +75,11 @@ export function candidatePersonKeys(
 export function gatherCandidates(
   incoming: ParsedName,
   yob: number,
-  gender: Gender,
+  _gender: Gender,
   index: Map<string, PersonIdentity[]>,
   config: MatchingConfig,
 ): PersonIdentity[] {
-  // gender parameter is for API consistency; the index is pre-filtered by gender
-  void gender;
+  // The gender parameter is for API consistency; the index is pre-filtered by gender.
   const keys = candidatePersonKeys(incoming, yob);
   const seen = new Set<string>();
   const out: PersonIdentity[] = [];

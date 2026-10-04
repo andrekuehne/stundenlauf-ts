@@ -148,15 +148,15 @@ describe("parseRaceNo", () => {
 describe("fileSha256", () => {
   it("produces hex digest for known input", async () => {
     const encoder = new TextEncoder();
-    const buffer = encoder.encode("hello world").buffer as ArrayBuffer;
+    const buffer = encoder.encode("hello world").buffer;
     const hash = await fileSha256(buffer);
     expect(hash).toBe("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
   });
 
   it("produces different hash for different input", async () => {
     const encoder = new TextEncoder();
-    const buf1 = encoder.encode("aaa").buffer as ArrayBuffer;
-    const buf2 = encoder.encode("bbb").buffer as ArrayBuffer;
+    const buf1 = encoder.encode("aaa").buffer;
+    const buf2 = encoder.encode("bbb").buffer;
     const hash1 = await fileSha256(buf1);
     const hash2 = await fileSha256(buf2);
     expect(hash1).not.toBe(hash2);

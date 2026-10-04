@@ -58,20 +58,37 @@ export const TS_APP_API_METHOD_MAP = {
     "projectState() for derived season metadata",
     "getReviewQueue() for unresolved review counts",
   ],
-  listSeasons: ["SeasonRepository.listSeasons()", "projectState() for event counts and last activity"],
+  listSeasons: [
+    "SeasonRepository.listSeasons()",
+    "projectState() for event counts and last activity",
+  ],
   createSeason: ["SeasonRepository.createSeason(label)"],
   openSeason: ["SeasonRepository.getEventLog(seasonId)", "projectState(seasonId, eventLog)"],
   deleteSeason: ["SeasonRepository.deleteSeason(seasonId)"],
   runSeasonCommand: ["exportSeason()", "importSeason()"],
   getStandings: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "computeStandings()"],
   setStandingsRowExcluded: ["appendEvents()", "ranking.eligibility_set"],
-  getStandingsRowIdentity: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "team + person lookup"],
+  getStandingsRowIdentity: [
+    "SeasonRepository.getEventLog(seasonId)",
+    "projectState()",
+    "team + person lookup",
+  ],
   correctStandingsRowIdentity: ["appendEvents()", "person.corrected per member"],
   runExportAction: ["exportLaufuebersichtDualPdfs()", "exportGesamtwertungWorkbook()"],
-  getHistory: ["SeasonRepository.getEventLog(seasonId)", "projectState()", "legacy timeline synthesis adapter"],
-  previewHistoryState: ["SeasonRepository.getEventLog(seasonId)", "projectState(seasonId, eventsPrefix)"],
+  getHistory: [
+    "SeasonRepository.getEventLog(seasonId)",
+    "projectState()",
+    "legacy timeline synthesis adapter",
+  ],
+  previewHistoryState: [
+    "SeasonRepository.getEventLog(seasonId)",
+    "projectState(seasonId, eventsPrefix)",
+  ],
   rollbackHistory: ["appendEvents()", "race.rolled_back", "import_batch.rolled_back"],
-  hardResetHistoryToSeq: ["SeasonRepository.getEventLog(seasonId)", "writeEventLog(seasonId, eventsPrefix)"],
+  hardResetHistoryToSeq: [
+    "SeasonRepository.getEventLog(seasonId)",
+    "writeEventLog(seasonId, eventsPrefix)",
+  ],
 } as const;
 
 const APP_VERSION = "stundenlauf-ts-ts-app-api-0.1.0";
@@ -203,7 +220,10 @@ function raceById(state: SeasonState): Map<string, RaceEvent> {
   return new Map([...state.race_events.values()].map((race) => [race.race_event_id, race]));
 }
 
-function teamLabel(team: Team, state: SeasonState): { name: string; yob?: number; yobPair?: string; club: string } {
+function teamLabel(
+  team: Team,
+  state: SeasonState,
+): { name: string; yob?: number; yobPair?: string; club: string } {
   if (team.team_kind === "solo") {
     const person = state.persons.get(team.member_person_ids[0] ?? "");
     return {
@@ -282,7 +302,11 @@ function formatIncomingResult(entry: { points: number; distance_m: number }): st
   return `${entry.points} Punkte · ${(entry.distance_m / 1000).toFixed(3)} km`;
 }
 
-function comparisonRow(label: string, incomingValue: string, candidateValue: string): ImportFieldComparison {
+function comparisonRow(
+  label: string,
+  incomingValue: string,
+  candidateValue: string,
+): ImportFieldComparison {
   return {
     fieldKey: label === "Name" ? "name" : label === "Jahrgang" ? "yob" : "club",
     label,
@@ -433,8 +457,9 @@ function buildReviewCandidate(
     : null;
   const candidateClub = alignedDoubles?.clubText ?? candidate.club ?? "—";
   const incomingYob = incomingYobLabel(incoming);
-  const candidateYob = alignedDoubles?.yobText
-    ?? (candidate.yob_text?.trim()
+  const candidateYob =
+    alignedDoubles?.yobText ??
+    (candidate.yob_text?.trim()
       ? candidate.yob_text.trim()
       : candidate.yob > 0
         ? String(candidate.yob)
@@ -493,18 +518,23 @@ class TsAppApi implements AppApi {
   private toReviewItems(record: ImportDraftRecord): ImportReviewItem[] {
     const pendingAndResolved = [...record.session.review_queue];
     return pendingAndResolved.map((entry) => {
-      const staged = record.session.section_results[entry.section_index]?.staged_entries[entry.entry_index];
+      const staged =
+        record.session.section_results[entry.section_index]?.staged_entries[entry.entry_index];
       const candidates = entry.review_item.candidates.map((candidate) =>
-        buildReviewCandidate(staged?.incoming ?? {
-          display_name: entry.review_item.incoming_display_name,
-          yob: entry.review_item.incoming_yob,
-          yob_text: entry.review_item.incoming_yob > 0 ? String(entry.review_item.incoming_yob) : null,
-          club: entry.review_item.incoming_club,
-          row_kind: entry.review_item.incoming_kind,
-          sheet_name: "",
-          section_name: "",
-          row_index: 0,
-        }, candidate),
+        buildReviewCandidate(
+          staged?.incoming ?? {
+            display_name: entry.review_item.incoming_display_name,
+            yob: entry.review_item.incoming_yob,
+            yob_text:
+              entry.review_item.incoming_yob > 0 ? String(entry.review_item.incoming_yob) : null,
+            club: entry.review_item.incoming_club,
+            row_kind: entry.review_item.incoming_kind,
+            sheet_name: "",
+            section_name: "",
+            row_index: 0,
+          },
+          candidate,
+        ),
       );
       if (candidates.length > 0) {
         const topId = entry.review_item.candidates[0]?.team_id ?? null;
@@ -542,7 +572,10 @@ class TsAppApi implements AppApi {
       0,
     );
     const mergedEntries = record.session.section_results.reduce(
-      (sum, section) => sum + section.staged_entries.filter((entry) => entry.resolution?.method !== "new_identity").length,
+      (sum, section) =>
+        sum +
+        section.staged_entries.filter((entry) => entry.resolution?.method !== "new_identity")
+          .length,
       0,
     );
     const newPersonsCreated = record.session.report.new_identities;
@@ -628,14 +661,16 @@ class TsAppApi implements AppApi {
       }
       const name = validateName(input.correction.name);
       validateYob(input.correction.yob);
-      return [{
-        reviewId: input.reviewId,
-        personId: target.personId,
-        member: target.member,
-        name,
-        yob: input.correction.yob,
-        club: normalizeCorrectionClub(input.correction.club),
-      }];
+      return [
+        {
+          reviewId: input.reviewId,
+          personId: target.personId,
+          member: target.member,
+          name,
+          yob: input.correction.yob,
+          club: normalizeCorrectionClub(input.correction.club),
+        },
+      ];
     }
 
     if (targets.length < 2) {
@@ -714,7 +749,7 @@ class TsAppApi implements AppApi {
     const selectedSeasonId =
       this.activeSeasonId && seasons.some((season) => season.seasonId === this.activeSeasonId)
         ? this.activeSeasonId
-        : seasons.find((season) => season.isActive)?.seasonId ?? seasons[0]?.seasonId ?? null;
+        : (seasons.find((season) => season.isActive)?.seasonId ?? seasons[0]?.seasonId ?? null);
     if (selectedSeasonId) {
       this.activeSeasonId = selectedSeasonId;
     }
@@ -848,10 +883,11 @@ class TsAppApi implements AppApi {
         key: table.category_key,
         label: categoryLabel(
           table.rows[0]?.race_contributions[0]
-            ? races.find((race) => categoryKey(race.category) === table.category_key)?.category ?? {
+            ? (races.find((race) => categoryKey(race.category) === table.category_key)
+                ?.category ?? {
                 duration: "hour",
                 division: "men",
-              }
+              })
             : { duration: "hour", division: "men" },
         ),
         description: `Aktueller Wertungsstand für ${table.category_key}.`,
@@ -868,13 +904,10 @@ class TsAppApi implements AppApi {
         const orderedRaces = orderedRacesForCategory(table.category_key);
         const rows: StandingsRow[] = marked.rows.map((row) => {
           const team = snapshot.state.teams.get(row.team_id);
-          const label = team
-            ? teamLabel(team, snapshot.state)
-            : { name: row.team_id, club: "—" };
+          const label = team ? teamLabel(team, snapshot.state) : { name: row.team_id, club: "—" };
           const raceCells = orderedRaces.map((race) => {
-            const contribution = row.race_contributions.find(
-              (c) => c.race_event_id === race.race_event_id,
-            ) ?? null;
+            const contribution =
+              row.race_contributions.find((c) => c.race_event_id === race.race_event_id) ?? null;
             if (!contribution) return null;
             return {
               distanceKm: Math.round((contribution.distance_m / 1000) * 1000) / 1000,
@@ -907,7 +940,8 @@ class TsAppApi implements AppApi {
         raceLabel: `Lauf ${race.race_no}`,
         categoryLabel: categoryLabel(race.category),
         dateLabel: formatDateLabel(race.race_date),
-        sourceLabel: snapshot.state.import_batches.get(race.import_batch_id)?.source_file ?? "Unbekannt",
+        sourceLabel:
+          snapshot.state.import_batches.get(race.import_batch_id)?.source_file ?? "Unbekannt",
         entries: race.entries.length,
       }));
 
@@ -918,7 +952,9 @@ class TsAppApi implements AppApi {
         totalTeams: snapshot.state.teams.size,
         totalParticipants: snapshot.state.persons.size,
         totalRuns: races.length,
-        lastUpdatedAt: snapshot.eventLog[snapshot.eventLog.length - 1]?.recorded_at ?? snapshot.descriptor.created_at,
+        lastUpdatedAt:
+          snapshot.eventLog[snapshot.eventLog.length - 1]?.recorded_at ??
+          snapshot.descriptor.created_at,
       },
       categories,
       rowsByCategory,
@@ -1001,33 +1037,33 @@ class TsAppApi implements AppApi {
     const [duration, division] = input.categoryKey.split(":");
     if (
       (duration !== "half_hour" && duration !== "hour") ||
-      (
-        division !== "men" &&
+      (division !== "men" &&
         division !== "women" &&
         division !== "couples_men" &&
         division !== "couples_women" &&
-        division !== "couples_mixed"
-      )
+        division !== "couples_mixed")
     ) {
       throw new Error("Ungültige Kategorie.");
     }
 
     const repo = await this.repo();
-    await repo.appendEvents(seasonId, [{
-      event_id: crypto.randomUUID(),
-      seq: snapshot.eventLog.length,
-      recorded_at: new Date().toISOString(),
-      type: "ranking.eligibility_set",
-      schema_version: 1,
-      payload: {
-        category: { duration, division },
-        team_id: input.teamId,
-        eligible: !input.excluded,
+    await repo.appendEvents(seasonId, [
+      {
+        event_id: crypto.randomUUID(),
+        seq: snapshot.eventLog.length,
+        recorded_at: new Date().toISOString(),
+        type: "ranking.eligibility_set",
+        schema_version: 1,
+        payload: {
+          category: { duration, division },
+          team_id: input.teamId,
+          eligible: !input.excluded,
+        },
+        metadata: {
+          app_version: APP_VERSION,
+        },
       },
-      metadata: {
-        app_version: APP_VERSION,
-      },
-    }]);
+    ]);
   }
 
   async getStandingsRowIdentity(
@@ -1078,14 +1114,16 @@ class TsAppApi implements AppApi {
       if (!existing) {
         throw new Error(`Person ${member.personId} wurde nicht gefunden.`);
       }
-      events.push(this.buildPersonCorrectedEvent(
-        seqCursor++,
-        member.personId,
-        member.name,
-        member.yob,
-        member.club || null,
-        "Korrektur über Korrekturen-Ansicht",
-      ));
+      events.push(
+        this.buildPersonCorrectedEvent(
+          seqCursor++,
+          member.personId,
+          member.name,
+          member.yob,
+          member.club || null,
+          "Korrektur über Korrekturen-Ansicht",
+        ),
+      );
     }
 
     await repo.appendEvents(seasonId, events);
@@ -1151,7 +1189,9 @@ class TsAppApi implements AppApi {
     }
 
     if (decision.action === "create_new") {
-      draft.session = resolveReviewEntry(draft.session, decision.reviewId, { type: "create_new_identity" });
+      draft.session = resolveReviewEntry(draft.session, decision.reviewId, {
+        type: "create_new_identity",
+      });
     } else {
       if (!decision.candidateId) {
         throw new Error("Bitte einen Kandidaten auswählen.");
@@ -1209,20 +1249,25 @@ class TsAppApi implements AppApi {
     let seqCursor = nextSeq;
     for (const corrections of draft.correctionByReviewId.values()) {
       for (const correction of corrections) {
-        correctionEvents.push(this.buildPersonCorrectedEvent(
-          seqCursor++,
-          correction.personId,
-          correction.name,
-          correction.yob,
-          correction.club || null,
-          correction.member == null
-            ? "Import review merge_with_typo_fix"
-            : `Import review merge_with_typo_fix member ${correction.member}`,
-        ));
+        correctionEvents.push(
+          this.buildPersonCorrectedEvent(
+            seqCursor++,
+            correction.personId,
+            correction.name,
+            correction.yob,
+            correction.club || null,
+            correction.member == null
+              ? "Import review merge_with_typo_fix"
+              : `Import review merge_with_typo_fix member ${correction.member}`,
+          ),
+        );
       }
     }
     const importEvents = finalizeOrchestratedImport(draft.session, { startSeq: seqCursor });
-    await repo.appendEvents(draft.session.season_state_at_start.season_id, [...correctionEvents, ...importEvents]);
+    await repo.appendEvents(draft.session.season_state_at_start.season_id, [
+      ...correctionEvents,
+      ...importEvents,
+    ]);
     this.importDrafts.delete(draftId);
     return asSuccess(
       `Import erfolgreich abgeschlossen: ${draft.sourceFileName} (${draft.session.report.rows_imported} Einträge).`,
@@ -1234,7 +1279,12 @@ class TsAppApi implements AppApi {
     const raceMap = raceById(snapshot.state);
     const raceEventId = query?.raceEventId ?? null;
     const rows = snapshot.eventLog
-      .filter((event) => query?.includeNonRace || !raceEventId || (event.payload as { race_event_id?: string }).race_event_id === raceEventId)
+      .filter(
+        (event) =>
+          query?.includeNonRace ||
+          !raceEventId ||
+          (event.payload as { race_event_id?: string }).race_event_id === raceEventId,
+      )
       .map((event) => {
         const payload = event.payload as {
           race_event_id?: string;
@@ -1272,7 +1322,8 @@ class TsAppApi implements AppApi {
       .filter((event) => event.type === "import_batch.recorded")
       .map((event) => {
         const payload = event.payload as { import_batch_id: string; source_file: string };
-        const batchState = snapshot.state.import_batches.get(payload.import_batch_id)?.state ?? "active";
+        const batchState =
+          snapshot.state.import_batches.get(payload.import_batch_id)?.state ?? "active";
         const batchRace = [...snapshot.state.race_events.values()].find(
           (race) => race.import_batch_id === payload.import_batch_id,
         );
@@ -1302,7 +1353,10 @@ class TsAppApi implements AppApi {
     };
   }
 
-  async previewHistoryState(seasonId: string, input: HistoryPreviewInput): Promise<HistoryPreviewState> {
+  async previewHistoryState(
+    seasonId: string,
+    input: HistoryPreviewInput,
+  ): Promise<HistoryPreviewState> {
     const snapshot = await this.loadSnapshot(seasonId);
     const anchor = snapshot.eventLog.find((event) => event.seq === input.anchorSeq);
     if (!anchor) {
@@ -1328,13 +1382,14 @@ class TsAppApi implements AppApi {
     const reason = input.reason.trim() || "ui.history.rollback";
 
     if (input.mode === "atomic") {
-      const raceEventId = input.raceEventId ?? (anchor.payload as { race_event_id?: string }).race_event_id;
+      const raceEventId =
+        input.raceEventId ?? (anchor.payload as { race_event_id?: string }).race_event_id;
       if (!raceEventId) {
         throw new Error("Für Atomic-Rollback fehlt ein Laufkontext.");
       }
       newEvents.push({
         event_id: crypto.randomUUID(),
-        seq: nextSeq++,
+        seq: nextSeq,
         recorded_at: new Date().toISOString(),
         type: "race.rolled_back",
         schema_version: 1,
@@ -1377,7 +1432,7 @@ class TsAppApi implements AppApi {
     }
     newEvents.push({
       event_id: crypto.randomUUID(),
-      seq: nextSeq++,
+      seq: nextSeq,
       recorded_at: new Date().toISOString(),
       type: "import_batch.rolled_back",
       schema_version: 1,
@@ -1391,10 +1446,15 @@ class TsAppApi implements AppApi {
       },
     });
     await repo.appendEvents(seasonId, newEvents);
-    return asSuccess(`Gruppen-Rollback für Importgruppe ab seq ${input.anchorSeq} wurde ausgeführt.`);
+    return asSuccess(
+      `Gruppen-Rollback für Importgruppe ab seq ${input.anchorSeq} wurde ausgeführt.`,
+    );
   }
 
-  async hardResetHistoryToSeq(seasonId: string, input: HistoryHardResetInput): Promise<AppCommandResult> {
+  async hardResetHistoryToSeq(
+    seasonId: string,
+    input: HistoryHardResetInput,
+  ): Promise<AppCommandResult> {
     await this.ensureSeason(seasonId);
     const repo = await this.repo();
     const eventLog = await repo.getEventLog(seasonId);
@@ -1403,12 +1463,16 @@ class TsAppApi implements AppApi {
       throw new Error("Der ausgewählte Verlaufspunkt wurde nicht gefunden.");
     }
     const exclusive = input.truncateMode === "exclusive";
-    const nextEvents = exclusive ? eventLog.slice(0, anchorIndex) : eventLog.slice(0, anchorIndex + 1);
+    const nextEvents = exclusive
+      ? eventLog.slice(0, anchorIndex)
+      : eventLog.slice(0, anchorIndex + 1);
     await repo.clearEventLog(seasonId);
     if (nextEvents.length > 0) {
       await repo.appendEvents(seasonId, nextEvents);
     }
-    return asWarn(`Hard reset bis seq ${input.anchorSeq} durchgeführt. Nachfolgende Events wurden verworfen.`);
+    return asWarn(
+      `Hard reset bis seq ${input.anchorSeq} durchgeführt. Nachfolgende Events wurden verworfen.`,
+    );
   }
 }
 

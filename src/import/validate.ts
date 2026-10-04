@@ -10,10 +10,7 @@ import type { SeasonState } from "@/domain/types.ts";
 import type { ParsedWorkbook } from "@/ingestion/types.ts";
 import type { ValidationResult } from "./types.ts";
 
-export function validateDuplicateImport(
-  sha256: string,
-  state: SeasonState,
-): ValidationResult {
+export function validateDuplicateImport(sha256: string, state: SeasonState): ValidationResult {
   for (const batch of state.import_batches.values()) {
     if (batch.source_sha256 === sha256 && batch.state === "active") {
       return {
@@ -45,8 +42,7 @@ export function validateCategoryRaceNoConflicts(
           valid: false,
           code: "category_race_no_conflict",
           message:
-            `Kategorie ${key} Lauf ${ctx.race_no} existiert bereits ` +
-            `(Rennen ${raceEventId}).`,
+            `Kategorie ${key} Lauf ${ctx.race_no} existiert bereits ` + `(Rennen ${raceEventId}).`,
         };
       }
     }
@@ -105,10 +101,7 @@ export function validateNoDuplicateRows(parsed: ParsedWorkbook): ValidationResul
   return { valid: true };
 }
 
-export function validateImport(
-  parsed: ParsedWorkbook,
-  state: SeasonState,
-): ValidationResult {
+export function validateImport(parsed: ParsedWorkbook, state: SeasonState): ValidationResult {
   const dupCheck = validateDuplicateImport(parsed.meta.source_sha256, state);
   if (!dupCheck.valid) return dupCheck;
 

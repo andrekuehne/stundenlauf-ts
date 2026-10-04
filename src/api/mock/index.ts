@@ -152,7 +152,12 @@ function buildStandings(
           ],
         },
         {
-          rank: 2, team: "Paula Kruse", club: "TSV Wolgast", points: 38, distanceKm: 17.012, races: 2,
+          rank: 2,
+          team: "Paula Kruse",
+          club: "TSV Wolgast",
+          points: 38,
+          distanceKm: 17.012,
+          races: 2,
           raceCells: [
             { distanceKm: 8.5, points: 19, countsTowardTotal: true },
             { distanceKm: 8.512, points: 19, countsTowardTotal: true },
@@ -161,14 +166,24 @@ function buildStandings(
       ],
       "half_hour:men": [
         {
-          rank: 1, team: "Max Mustermann", club: "HSG Triathlon", points: 44, distanceKm: 19.123, races: 2,
+          rank: 1,
+          team: "Max Mustermann",
+          club: "HSG Triathlon",
+          points: 44,
+          distanceKm: 19.123,
+          races: 2,
           raceCells: [
             { distanceKm: 9.6, points: 22, countsTowardTotal: true },
             { distanceKm: 9.523, points: 22, countsTowardTotal: true },
           ],
         },
         {
-          rank: 2, team: "Lukas Meyer", club: "SV Anklam", points: 39, distanceKm: 18.678, races: 2,
+          rank: 2,
+          team: "Lukas Meyer",
+          club: "SV Anklam",
+          points: 39,
+          distanceKm: 18.678,
+          races: 2,
           raceCells: [
             { distanceKm: 9.3, points: 20, countsTowardTotal: true },
             { distanceKm: 9.378, points: 19, countsTowardTotal: true },
@@ -177,7 +192,12 @@ function buildStandings(
       ],
       "hour:men": [
         {
-          rank: 1, team: "Max Mustermann", club: "HSG Triathlon", points: 75, distanceKm: 48.123, races: 3,
+          rank: 1,
+          team: "Max Mustermann",
+          club: "HSG Triathlon",
+          points: 75,
+          distanceKm: 48.123,
+          races: 3,
           raceCells: [
             { distanceKm: 16.0, points: 25, countsTowardTotal: true },
             { distanceKm: 16.1, points: 25, countsTowardTotal: true },
@@ -185,7 +205,12 @@ function buildStandings(
           ],
         },
         {
-          rank: 2, team: "Lukas Meyer", club: "SV Anklam", points: 71, distanceKm: 45.678, races: 3,
+          rank: 2,
+          team: "Lukas Meyer",
+          club: "SV Anklam",
+          points: 71,
+          distanceKm: 45.678,
+          races: 3,
           raceCells: [
             { distanceKm: 15.2, points: 24, countsTowardTotal: true },
             { distanceKm: 15.3, points: 23, countsTowardTotal: true },
@@ -193,7 +218,12 @@ function buildStandings(
           ],
         },
         {
-          rank: 3, team: "Tim Becker", club: "Laufteam Nord", points: 66, distanceKm: 42.505, races: 3,
+          rank: 3,
+          team: "Tim Becker",
+          club: "Laufteam Nord",
+          points: 66,
+          distanceKm: 42.505,
+          races: 3,
           raceCells: [
             { distanceKm: 14.1, points: 22, countsTowardTotal: true },
             { distanceKm: 14.2, points: 22, countsTowardTotal: true },
@@ -216,7 +246,12 @@ function buildStandings(
           ],
         },
         {
-          rank: 2, team: "Paula Kruse", club: "TSV Wolgast", points: 70, distanceKm: 43.012, races: 3,
+          rank: 2,
+          team: "Paula Kruse",
+          club: "TSV Wolgast",
+          points: 70,
+          distanceKm: 43.012,
+          races: 3,
           raceCells: [
             { distanceKm: 14.3, points: 24, countsTowardTotal: true },
             { distanceKm: 14.4, points: 23, countsTowardTotal: true },
@@ -240,14 +275,24 @@ function buildStandings(
       ],
       "half_hour:mixed": [
         {
-          rank: 1, team: "Lea + Tom", club: "Greifswald Laufteam", points: 39, distanceKm: 18.444, races: 2,
+          rank: 1,
+          team: "Lea + Tom",
+          club: "Greifswald Laufteam",
+          points: 39,
+          distanceKm: 18.444,
+          races: 2,
           raceCells: [
             { distanceKm: 9.2, points: 20, countsTowardTotal: true },
             { distanceKm: 9.244, points: 19, countsTowardTotal: true },
           ],
         },
         {
-          rank: 2, team: "Nina + Paul", club: "HSG Triathlon", points: 35, distanceKm: 17.901, races: 2,
+          rank: 2,
+          team: "Nina + Paul",
+          club: "HSG Triathlon",
+          points: 35,
+          distanceKm: 17.901,
+          races: 2,
           raceCells: [
             { distanceKm: 9.0, points: 18, countsTowardTotal: true },
             { distanceKm: 8.901, points: 17, countsTowardTotal: true },
@@ -303,7 +348,12 @@ function createInitialSeasons(): MockSeasonRecord[] {
       importedEvents: 3,
       lastModifiedAt: isoDate("2026-04-13T18:30:00"),
       isActive: true,
-      standings: buildStandings("season-2026", "Stundenlauf 2026", isoDate("2026-04-13T18:30:00"), 3),
+      standings: buildStandings(
+        "season-2026",
+        "Stundenlauf 2026",
+        isoDate("2026-04-13T18:30:00"),
+        3,
+      ),
     },
     {
       seasonId: "season-2025",
@@ -311,7 +361,12 @@ function createInitialSeasons(): MockSeasonRecord[] {
       importedEvents: 6,
       lastModifiedAt: isoDate("2025-11-20T20:15:00"),
       isActive: false,
-      standings: buildStandings("season-2025", "Stundenlauf 2025", isoDate("2025-11-20T20:15:00"), 6),
+      standings: buildStandings(
+        "season-2025",
+        "Stundenlauf 2025",
+        isoDate("2025-11-20T20:15:00"),
+        6,
+      ),
     },
     {
       seasonId: "season-2024",
@@ -319,7 +374,12 @@ function createInitialSeasons(): MockSeasonRecord[] {
       importedEvents: 5,
       lastModifiedAt: isoDate("2024-10-05T15:45:00"),
       isActive: false,
-      standings: buildStandings("season-2024", "Stundenlauf 2024", isoDate("2024-10-05T15:45:00"), 5),
+      standings: buildStandings(
+        "season-2024",
+        "Stundenlauf 2024",
+        isoDate("2024-10-05T15:45:00"),
+        5,
+      ),
     },
   ];
 }
@@ -371,9 +431,27 @@ function buildReviewItems(category: ImportCategory): ImportReviewItem[] {
           confidence: 0.95,
           isRecommended: true,
           fieldComparisons: [
-            { fieldKey: "name", label: "Name", incomingValue: "Katharina Moeller", candidateValue: "Katharina Moller", isMatch: false },
-            { fieldKey: "yob", label: "Jahrgang", incomingValue: "1993", candidateValue: "1993", isMatch: true },
-            { fieldKey: "club", label: "Verein", incomingValue: "—", candidateValue: "HSG Uni Greifswald", isMatch: false },
+            {
+              fieldKey: "name",
+              label: "Name",
+              incomingValue: "Katharina Moeller",
+              candidateValue: "Katharina Moller",
+              isMatch: false,
+            },
+            {
+              fieldKey: "yob",
+              label: "Jahrgang",
+              incomingValue: "1993",
+              candidateValue: "1993",
+              isMatch: true,
+            },
+            {
+              fieldKey: "club",
+              label: "Verein",
+              incomingValue: "—",
+              candidateValue: "HSG Uni Greifswald",
+              isMatch: false,
+            },
           ],
         },
         {
@@ -382,9 +460,27 @@ function buildReviewItems(category: ImportCategory): ImportReviewItem[] {
           confidence: 0.72,
           isRecommended: false,
           fieldComparisons: [
-            { fieldKey: "name", label: "Name", incomingValue: "Katharina Moeller", candidateValue: "Katrin Moeller", isMatch: false },
-            { fieldKey: "yob", label: "Jahrgang", incomingValue: "1993", candidateValue: "1991", isMatch: false },
-            { fieldKey: "club", label: "Verein", incomingValue: "—", candidateValue: "HSG Uni Greifswald", isMatch: false },
+            {
+              fieldKey: "name",
+              label: "Name",
+              incomingValue: "Katharina Moeller",
+              candidateValue: "Katrin Moeller",
+              isMatch: false,
+            },
+            {
+              fieldKey: "yob",
+              label: "Jahrgang",
+              incomingValue: "1993",
+              candidateValue: "1991",
+              isMatch: false,
+            },
+            {
+              fieldKey: "club",
+              label: "Verein",
+              incomingValue: "—",
+              candidateValue: "HSG Uni Greifswald",
+              isMatch: false,
+            },
           ],
         },
       ],
@@ -405,9 +501,27 @@ function buildReviewItems(category: ImportCategory): ImportReviewItem[] {
           confidence: 0.99,
           isRecommended: true,
           fieldComparisons: [
-            { fieldKey: "name", label: "Name", incomingValue: "Max Mustermann", candidateValue: "Max Mustermann", isMatch: true },
-            { fieldKey: "yob", label: "Jahrgang", incomingValue: "1989", candidateValue: "1989", isMatch: true },
-            { fieldKey: "club", label: "Verein", incomingValue: "SV Nord", candidateValue: "SV Nord", isMatch: true },
+            {
+              fieldKey: "name",
+              label: "Name",
+              incomingValue: "Max Mustermann",
+              candidateValue: "Max Mustermann",
+              isMatch: true,
+            },
+            {
+              fieldKey: "yob",
+              label: "Jahrgang",
+              incomingValue: "1989",
+              candidateValue: "1989",
+              isMatch: true,
+            },
+            {
+              fieldKey: "club",
+              label: "Verein",
+              incomingValue: "SV Nord",
+              candidateValue: "SV Nord",
+              isMatch: true,
+            },
           ],
         },
       ],
@@ -432,9 +546,27 @@ function buildReviewItems(category: ImportCategory): ImportReviewItem[] {
             confidence: 0.91,
             isRecommended: true,
             fieldComparisons: [
-              { fieldKey: "name", label: "Name", incomingValue: "Lea + Tom", candidateValue: "Lea + Thom", isMatch: false },
-              { fieldKey: "yob", label: "Jahrgang", incomingValue: "1992", candidateValue: "1992", isMatch: true },
-              { fieldKey: "club", label: "Verein", incomingValue: "Greifswald Laufteam", candidateValue: "Greifswald Laufteam", isMatch: true },
+              {
+                fieldKey: "name",
+                label: "Name",
+                incomingValue: "Lea + Tom",
+                candidateValue: "Lea + Thom",
+                isMatch: false,
+              },
+              {
+                fieldKey: "yob",
+                label: "Jahrgang",
+                incomingValue: "1992",
+                candidateValue: "1992",
+                isMatch: true,
+              },
+              {
+                fieldKey: "club",
+                label: "Verein",
+                incomingValue: "Greifswald Laufteam",
+                candidateValue: "Greifswald Laufteam",
+                isMatch: true,
+              },
             ],
           },
         ],
@@ -656,7 +788,9 @@ function cloneHistoryData(record: HistoryRecord, query?: HistoryQuery): HistoryD
       sourceFile: row.summary,
       recordedAt: row.recordedAt,
       anchorSeq: row.seq,
-      state: rolledBackBatchIds.has(row.importBatchId ?? "") ? ("rolled_back" as const) : ("active" as const),
+      state: rolledBackBatchIds.has(row.importBatchId ?? "")
+        ? ("rolled_back" as const)
+        : ("active" as const),
       categoryLabel: null,
     }));
   return {
@@ -673,7 +807,12 @@ function cloneHistoryData(record: HistoryRecord, query?: HistoryQuery): HistoryD
   };
 }
 
-function upsertImportedRun(record: MockSeasonRecord, fileName: string, category: ImportCategory, raceNumber: number) {
+function upsertImportedRun(
+  record: MockSeasonRecord,
+  fileName: string,
+  category: ImportCategory,
+  raceNumber: number,
+) {
   const raceLabel = `Lauf ${raceNumber}`;
   const existing = record.standings.importedRuns.find((entry) => entry.raceLabel === raceLabel);
   const categoryLabel = category === "doubles" ? "30 Minuten Paare" : "60 Minuten Herren/Damen";
@@ -803,7 +942,9 @@ class MockAppApi implements AppApi {
     if (next.length === this.seasons.length) {
       throw new Error("Die ausgewählte Saison wurde nicht gefunden.");
     }
-    const hadActive = this.seasons.some((season) => season.seasonId === seasonId && season.isActive);
+    const hadActive = this.seasons.some(
+      (season) => season.seasonId === seasonId && season.isActive,
+    );
     this.seasons = next.map((season, index) => ({
       ...season,
       isActive: hadActive ? index === 0 : season.isActive,
@@ -813,8 +954,8 @@ class MockAppApi implements AppApi {
 
   runSeasonCommand(command: SeasonCommand, seasonId?: string) {
     const season = seasonId
-      ? this.seasons.find((entry) => entry.seasonId === seasonId) ?? null
-      : this.seasons.find((entry) => entry.isActive) ?? null;
+      ? (this.seasons.find((entry) => entry.seasonId === seasonId) ?? null)
+      : (this.seasons.find((entry) => entry.isActive) ?? null);
 
     if (command === "import_backup") {
       return Promise.resolve({

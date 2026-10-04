@@ -7,13 +7,12 @@ const previewOrigin = `http://${host}:${port}`;
 const appBasePath = "/stundenlauf-ts/";
 const appEntryUrl = `${previewOrigin}${appBasePath.replace(/\/$/, "")}/`;
 
-/** Set `PW_USE_SYSTEM_CHROME=1` to use Google Chrome (skip `playwright install`). On Windows, defaults on unless `PW_USE_BUNDLED_CHROMIUM=1`. */
-const useSystemChrome =
-  process.env.PW_USE_SYSTEM_CHROME === "1" ||
-  (process.platform === "win32" && process.env.PW_USE_BUNDLED_CHROMIUM !== "1");
+/** Optional README workflow only: explicitly opt into installed Google Chrome. */
+const useSystemChrome = process.env.PW_USE_SYSTEM_CHROME === "1";
 
 export default defineConfig({
   testDir: "e2e",
+  testMatch: "readme-main-screen.spec.ts",
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -25,7 +24,7 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     /** Full HD for README / e2e screenshots */
     viewport: { width: 1600, height: 900 },
-    ...(useSystemChrome ? { channel: "chrome" as const } : {}),
+    channel: useSystemChrome ? "chrome" : "chromium",
   },
   projects: [{ name: "chromium", use: {} }],
   webServer: {

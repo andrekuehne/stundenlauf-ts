@@ -6,7 +6,10 @@ import { parseSinglesWorkbook, type SinglesParserInput } from "@/ingestion/parse
 
 import { buildXlsx } from "./xlsx-test-helpers";
 
-function makeInput(rows: unknown[][], fileName = "Ergebnisliste MW Lauf 1.xlsx"): SinglesParserInput {
+function makeInput(
+  rows: unknown[][],
+  fileName = "Ergebnisliste MW Lauf 1.xlsx",
+): SinglesParserInput {
   return {
     buffer: buildXlsx(rows),
     fileName,
@@ -194,10 +197,7 @@ describe("parseSinglesWorkbook", () => {
   });
 
   it("throws missing_section_marker for data row before markers", () => {
-    const rows = [
-      HEADER,
-      [1, "12", "Meyer, Anna", 1990, "TSV", "5,2", "0,0", "100"],
-    ];
+    const rows = [HEADER, [1, "12", "Meyer, Anna", 1990, "TSV", "5,2", "0,0", "100"]];
     try {
       parseSinglesWorkbook(makeInput(rows));
       expect.fail("should have thrown");

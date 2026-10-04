@@ -1,18 +1,11 @@
-export {
-  renderPdfBlob,
-  exportLaufuebersichtDualPdfs,
-  type PdfExportArtifact,
-} from "./pdf.ts";
+export { renderPdfBlob, exportLaufuebersichtDualPdfs, type PdfExportArtifact } from "./pdf.ts";
 export {
   renderExcelBlob,
   exportGesamtwertungWorkbook,
   exportKidsParticipationWorkbook,
   type ExcelExportArtifact,
 } from "./excel.ts";
-export {
-  buildGuiLaufuebersichtDualSpecs,
-  buildLaufuebersichtGuiSpec,
-} from "./gui-pdf-spec.ts";
+export { buildGuiLaufuebersichtDualSpecs, buildLaufuebersichtGuiSpec } from "./gui-pdf-spec.ts";
 export {
   createExportSpec,
   createPdfStyleSpec,

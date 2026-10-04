@@ -64,8 +64,11 @@ export function buildCoupleBlockIndex(
     const entry: CoupleBlockEntry = { team, members };
     for (const member of members) {
       const parsed = personParsed(member);
-      const fam = parsed.family || (parsed.tokens.length > 0 ? parsed.tokens[parsed.tokens.length - 1] : "");
-      const giv = (parsed.given ? parsed.given.split(/\s+/)[0] : "") || (parsed.tokens.length > 0 ? parsed.tokens[0] : "");
+      const fam =
+        parsed.family || (parsed.tokens.length > 0 ? parsed.tokens[parsed.tokens.length - 1] : "");
+      const giv =
+        (parsed.given ? parsed.given.split(/\s+/)[0] : "") ||
+        (parsed.tokens.length > 0 ? parsed.tokens[0] : "");
       const yob = member.yob;
 
       const keys: string[] = [];

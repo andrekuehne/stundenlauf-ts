@@ -43,7 +43,8 @@ function buildCategoryHistoryPersonPool(
     if (raceEvent.state !== "active") continue;
     const batch = state.import_batches.get(raceEvent.import_batch_id);
     if (batch?.state === "rolled_back") continue;
-    if (raceEvent.category.duration !== duration || raceEvent.category.division !== division) continue;
+    if (raceEvent.category.duration !== duration || raceEvent.category.division !== division)
+      continue;
 
     for (const entry of raceEvent.entries) {
       const team = state.teams.get(entry.team_id);
@@ -72,7 +73,8 @@ function buildCategoryHistoryCoupleTeamPool(
     if (raceEvent.state !== "active") continue;
     const batch = state.import_batches.get(raceEvent.import_batch_id);
     if (batch?.state === "rolled_back") continue;
-    if (raceEvent.category.duration !== duration || raceEvent.category.division !== division) continue;
+    if (raceEvent.category.duration !== duration || raceEvent.category.division !== division)
+      continue;
 
     for (const entry of raceEvent.entries) {
       const team = state.teams.get(entry.team_id);
@@ -87,7 +89,15 @@ function buildCategoryHistoryCoupleTeamPool(
 }
 
 function buildReviewItemForSingles(
-  entry: { route: string; confidence: number; features: Record<string, number>; conflict_flags: string[]; top_candidate_uid: string | null; candidate_uids: string[]; candidate_confidences: number[] },
+  entry: {
+    route: string;
+    confidence: number;
+    features: Record<string, number>;
+    conflict_flags: string[];
+    top_candidate_uid: string | null;
+    candidate_uids: string[];
+    candidate_confidences: number[];
+  },
   entryId: string,
   rawName: string,
   yob: number,
@@ -195,8 +205,14 @@ export async function processSinglesSection(
     newTeamPayloads.push(...result.new_teams);
 
     const reviewItem = buildReviewItemForSingles(
-      result, entryId, row.name, row.yob, row.club, gender,
-      state.persons, state.teams,
+      result,
+      entryId,
+      row.name,
+      row.yob,
+      row.club,
+      gender,
+      state.persons,
+      state.teams,
     );
     if (reviewItem) reviewItems.push(reviewItem);
   }
@@ -236,12 +252,15 @@ export async function processCouplesSection(
   const reviewItems: ReviewItem[] = [];
   const newPersonPayloads: SectionMatchResult["new_person_payloads"] = [];
   const newTeamPayloads: SectionMatchResult["new_team_payloads"] = [];
-  const displayNameByTeamId = new Map<string, {
-    display_name: string;
-    yob: number;
-    yob_text: string | null;
-    club: string | null;
-  }>();
+  const displayNameByTeamId = new Map<
+    string,
+    {
+      display_name: string;
+      yob: number;
+      yob_text: string | null;
+      club: string | null;
+    }
+  >();
 
   for (const team of candidateTeams) {
     const memberA = state.persons.get(team.member_person_ids[0] ?? "");
@@ -290,7 +309,12 @@ export async function processCouplesSection(
         route: "review",
         confidence: result.confidence,
         candidates: result.candidate_uids.map((uid, i) => ({
-          ...(displayNameByTeamId.get(uid) ?? { display_name: uid, yob: 0, yob_text: null, club: null }),
+          ...(displayNameByTeamId.get(uid) ?? {
+            display_name: uid,
+            yob: 0,
+            yob_text: null,
+            club: null,
+          }),
           team_id: uid,
           score: result.candidate_confidences[i] ?? 0,
           features: result.features,

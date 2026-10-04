@@ -12,9 +12,7 @@ import { scorePersonMatch } from "@/matching/score.ts";
 import { defaultMatchingConfig } from "@/matching/config.ts";
 import type { PersonIdentity } from "@/domain/types.ts";
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "",
     family_name: "",
@@ -79,17 +77,13 @@ describe("identityFingerprint parity with Python", () => {
   it("Anna Meyer, 1990, F", async () => {
     const parsed = parsePersonName("Anna Meyer");
     const fp = await identityFingerprint(parsed, 1990, "F");
-    expect(fp).toBe(
-      "b1c51382fd7d0119de60dab5bfcb05ccfe6953963b552590106a2337efd82735",
-    );
+    expect(fp).toBe("b1c51382fd7d0119de60dab5bfcb05ccfe6953963b552590106a2337efd82735");
   });
 
   it("Hans Schmidt, 1985, M", async () => {
     const parsed = parsePersonName("Hans Schmidt");
     const fp = await identityFingerprint(parsed, 1985, "M");
-    expect(fp).toBe(
-      "b575986d30d56a019050811478f8f639af7b6da117a7c1023f8e7dd1e7302ab0",
-    );
+    expect(fp).toBe("b575986d30d56a019050811478f8f639af7b6da117a7c1023f8e7dd1e7302ab0");
   });
 });
 

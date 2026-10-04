@@ -4,9 +4,7 @@ import { emptyRunStats, resolvePerson, resolveTeamRow } from "@/matching/resolve
 import type { PersonIdentity, Team } from "@/domain/types.ts";
 import type { ImportRowCouples } from "@/ingestion/types.ts";
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "",
     family_name: "",

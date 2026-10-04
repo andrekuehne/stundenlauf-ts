@@ -13,7 +13,13 @@
  * Reference: F-TS05 §6 (Event Batch Construction)
  */
 
-import type { DomainEvent, EventMetadata, ImportBatchRecordedPayload, RaceRegisteredPayload, RankingEligibilitySetPayload } from "@/domain/events.ts";
+import type {
+  DomainEvent,
+  EventMetadata,
+  ImportBatchRecordedPayload,
+  RaceRegisteredPayload,
+  RankingEligibilitySetPayload,
+} from "@/domain/events.ts";
 import type { RaceCategory, RaceEntryInput } from "@/domain/types.ts";
 import { assertPhase } from "./session.ts";
 import type { ImportSession, StagedEntry } from "./types.ts";
@@ -24,15 +30,10 @@ export interface FinalizeOptions {
   startSeq: number;
 }
 
-export function finalizeImport(
-  session: ImportSession,
-  options: FinalizeOptions,
-): DomainEvent[] {
+export function finalizeImport(session: ImportSession, options: FinalizeOptions): DomainEvent[] {
   assertPhase(session, "committing");
 
-  const unresolved = session.section_results.some(
-    (s) => !s.all_resolved,
-  );
+  const unresolved = session.section_results.some((s) => !s.all_resolved);
   if (unresolved) {
     throw new Error("Cannot finalize: not all entries are resolved.");
   }
@@ -86,9 +87,7 @@ export function finalizeImport(
 
   // 4. race.registered (1 per section)
   for (const section of session.section_results) {
-    const entries: RaceEntryInput[] = section.staged_entries.map(
-      stagedToRaceEntryInput,
-    );
+    const entries: RaceEntryInput[] = section.staged_entries.map(stagedToRaceEntryInput);
 
     const racePayload: RaceRegisteredPayload = {
       race_event_id: crypto.randomUUID(),

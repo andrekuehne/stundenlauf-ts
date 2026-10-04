@@ -6,9 +6,7 @@ import {
 } from "@/matching/review-display.ts";
 import type { PersonIdentity } from "@/domain/types.ts";
 
-function makePerson(
-  overrides: Partial<PersonIdentity> & { person_id: string },
-): PersonIdentity {
+function makePerson(overrides: Partial<PersonIdentity> & { person_id: string }): PersonIdentity {
   return {
     given_name: "",
     family_name: "",
@@ -57,42 +55,41 @@ describe("splitDisplayNameParts", () => {
 describe("fieldHighlightsForPersonLine", () => {
   it("no diffs for identical data", () => {
     const result = fieldHighlightsForPersonLine(
-      "Anna Meyer", 1990, "TSV",
-      "Anna Meyer", 1990, "TSV",
+      "Anna Meyer",
+      1990,
+      "TSV",
+      "Anna Meyer",
+      1990,
+      "TSV",
     );
     expect(result.yob.diff).toBe(false);
     expect(result.club.diff).toBe(false);
   });
 
   it("detects YOB diff when both present and different", () => {
-    const result = fieldHighlightsForPersonLine(
-      "Anna Meyer", 1990, null,
-      "Anna Meyer", 1991, null,
-    );
+    const result = fieldHighlightsForPersonLine("Anna Meyer", 1990, null, "Anna Meyer", 1991, null);
     expect(result.yob.diff).toBe(true);
   });
 
   it("no YOB diff when incoming YOB is 0", () => {
-    const result = fieldHighlightsForPersonLine(
-      "Anna Meyer", 0, null,
-      "Anna Meyer", 1991, null,
-    );
+    const result = fieldHighlightsForPersonLine("Anna Meyer", 0, null, "Anna Meyer", 1991, null);
     expect(result.yob.diff).toBe(false);
   });
 
   it("detects club diff", () => {
     const result = fieldHighlightsForPersonLine(
-      "Anna Meyer", 1990, "TSV",
-      "Anna Meyer", 1990, "LG Nord",
+      "Anna Meyer",
+      1990,
+      "TSV",
+      "Anna Meyer",
+      1990,
+      "LG Nord",
     );
     expect(result.club.diff).toBe(true);
   });
 
   it("shows dash for missing YOB", () => {
-    const result = fieldHighlightsForPersonLine(
-      "Anna Meyer", 0, null,
-      "Anna Meyer", 0, null,
-    );
+    const result = fieldHighlightsForPersonLine("Anna Meyer", 0, null, "Anna Meyer", 0, null);
     expect(result.yob.text).toBe("-");
   });
 });

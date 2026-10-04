@@ -170,8 +170,7 @@ export interface ImportTeamIdentityCorrectionInput {
 }
 
 export type ImportIdentityCorrectionInput =
-  | ImportSingleIdentityCorrectionInput
-  | ImportTeamIdentityCorrectionInput;
+  ImportSingleIdentityCorrectionInput | ImportTeamIdentityCorrectionInput;
 
 export interface ImportReviewCorrectionInput {
   reviewId: string;
@@ -329,8 +328,14 @@ export interface AppApi {
   ): Promise<AppCommandResult>;
   createImportDraft(input: ImportDraftInput): Promise<ImportDraftState>;
   getImportDraft(draftId: string): Promise<ImportDraftState>;
-  setImportReviewDecision(draftId: string, decision: ImportReviewDecision): Promise<ImportDraftState>;
-  applyImportReviewCorrection(draftId: string, input: ImportReviewCorrectionInput): Promise<ImportDraftState>;
+  setImportReviewDecision(
+    draftId: string,
+    decision: ImportReviewDecision,
+  ): Promise<ImportDraftState>;
+  applyImportReviewCorrection(
+    draftId: string,
+    input: ImportReviewCorrectionInput,
+  ): Promise<ImportDraftState>;
   finalizeImportDraft(draftId: string): Promise<AppCommandResult>;
   getHistory(seasonId: string, query?: HistoryQuery): Promise<HistoryData>;
   previewHistoryState(seasonId: string, input: HistoryPreviewInput): Promise<HistoryPreviewState>;

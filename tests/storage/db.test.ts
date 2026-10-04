@@ -9,16 +9,27 @@ describe("openStundenlaufDB", () => {
   it("opens DB with expected stores in upgrade", async () => {
     const workspaceCreate = vi.fn();
     const eventLogCreate = vi.fn();
-    openDBMock.mockImplementation(async (_name: string, _version: number, options: { upgrade: (db: { objectStoreNames: { contains: (name: string) => boolean }; createObjectStore: (name: string, opts: unknown) => void }) => void }) => {
-      options.upgrade({
-        objectStoreNames: { contains: () => false },
-        createObjectStore: (name: string) => {
-          if (name === "workspace") workspaceCreate();
-          if (name === "event_logs") eventLogCreate();
+    openDBMock.mockImplementation(
+      async (
+        _name: string,
+        _version: number,
+        options: {
+          upgrade: (db: {
+            objectStoreNames: { contains: (name: string) => boolean };
+            createObjectStore: (name: string, opts: unknown) => void;
+          }) => void;
         },
-      });
-      return {} as never;
-    });
+      ) => {
+        options.upgrade({
+          objectStoreNames: { contains: () => false },
+          createObjectStore: (name: string) => {
+            if (name === "workspace") workspaceCreate();
+            if (name === "event_logs") eventLogCreate();
+          },
+        });
+        return {} as never;
+      },
+    );
 
     const mod = await import("@/storage/db.ts");
     await mod.openStundenlaufDB();

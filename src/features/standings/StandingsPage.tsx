@@ -36,10 +36,13 @@ export function StandingsPage() {
   const selectCategory = useStandingsStore((state) => state.selectCategory);
   const [data, setData] = useState<StandingsData | null>(null);
 
-  const loadStandings = useCallback(async (seasonId: string) => {
-    const next = await api.getStandings(seasonId);
-    setData(next);
-  }, [api]);
+  const loadStandings = useCallback(
+    async (seasonId: string) => {
+      const next = await api.getStandings(seasonId);
+      setData(next);
+    },
+    [api],
+  );
 
   useEffect(() => {
     const seasonId = shellData.selectedSeasonId;
@@ -64,14 +67,16 @@ export function StandingsPage() {
     }
   }, [data, selectedCategoryKey, selectCategory]);
 
-  const selectedCategory = data?.categories.find((entry) => entry.key === selectedCategoryKey) ?? null;
+  const selectedCategory =
+    data?.categories.find((entry) => entry.key === selectedCategoryKey) ?? null;
   const selectedRows = useMemo(
     () => (selectedCategory ? [...(data?.rowsByCategory[selectedCategory.key] ?? [])] : []),
     [data, selectedCategory],
   );
 
   const seasonRaceColumnCount = useMemo(
-    () => (data ? computeStandingsRaceColumnCount(data.categories) : STANDINGS_RACE_COLUMNS_WHEN_EMPTY),
+    () =>
+      data ? computeStandingsRaceColumnCount(data.categories) : STANDINGS_RACE_COLUMNS_WHEN_EMPTY,
     [data],
   );
 
@@ -132,7 +137,11 @@ export function StandingsPage() {
             </span>
           </p>
 
-          <div className="standings-overview__kpis" role="group" aria-label={STR.views.standings.summaryTitle}>
+          <div
+            className="standings-overview__kpis"
+            role="group"
+            aria-label={STR.views.standings.summaryTitle}
+          >
             <div
               className="summary-card standings-overview__kpi standings-overview__kpi--teams"
               data-testid="standings-kpi-teams"
@@ -181,9 +190,7 @@ export function StandingsPage() {
                     className={exportClass}
                     onClick={() => void handleExport(data.seasonId, action)}
                   >
-                    {isPdf
-                      ? STR.views.standings.exportPdf
-                      : STR.views.standings.exportExcel}
+                    {isPdf ? STR.views.standings.exportPdf : STR.views.standings.exportExcel}
                   </button>
                 );
               })}

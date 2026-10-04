@@ -23,7 +23,13 @@ let shellData: ShellData = {
 
 const standingsWithRuns: StandingsData = {
   seasonId: "season-2",
-  summary: { seasonLabel: "Saison 2", totalTeams: 1, totalParticipants: 1, totalRuns: 1, lastUpdatedAt: new Date().toISOString() },
+  summary: {
+    seasonLabel: "Saison 2",
+    totalTeams: 1,
+    totalParticipants: 1,
+    totalRuns: 1,
+    lastUpdatedAt: new Date().toISOString(),
+  },
   categories: [],
   rowsByCategory: {},
   importedRuns: [],
@@ -40,7 +46,9 @@ vi.mock("react-router-dom", () => ({
   useLocation: () => ({ pathname: currentPathname }),
   useNavigate: () => navigateMock,
   Outlet: ({ context }: { context?: unknown }) => {
-    latestOutletContext = context as { setNavigationGuard: (guard: { message: string } | null) => void };
+    latestOutletContext = context as {
+      setNavigationGuard: (guard: { message: string } | null) => void;
+    };
     return null;
   },
   NavLink: ({
@@ -54,7 +62,8 @@ vi.mock("react-router-dom", () => ({
     children: ReactNode;
     onClick?: (event: MouseEvent) => void;
   }) => {
-    const resolvedClass = typeof className === "function" ? className({ isActive: false }) : className;
+    const resolvedClass =
+      typeof className === "function" ? className({ isActive: false }) : className;
     return (
       <a
         href={to}
@@ -79,8 +88,12 @@ vi.mock("@/stores/status.ts", () => ({
 }));
 vi.mock("@/components/feedback/UpdatePrompt.tsx", () => ({ UpdatePrompt: () => null }));
 vi.mock("@/version.ts", () => ({ APP_VERSION: "test-version" }));
-vi.mock("@/devtools/ImportOrchestrationHarness.tsx", () => ({ ImportOrchestrationHarness: () => null }));
-vi.mock("@/devtools/ImportSeasonWalkthroughHarness.tsx", () => ({ ImportSeasonWalkthroughHarness: () => null }));
+vi.mock("@/devtools/ImportOrchestrationHarness.tsx", () => ({
+  ImportOrchestrationHarness: () => null,
+}));
+vi.mock("@/devtools/ImportSeasonWalkthroughHarness.tsx", () => ({
+  ImportSeasonWalkthroughHarness: () => null,
+}));
 vi.mock("@/devtools/LegacyLayoutParityPage.tsx", () => ({ LegacyLayoutParityPage: () => null }));
 
 beforeEach(() => {
@@ -144,7 +157,9 @@ describe("App shell and navigation guard", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Saison" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Bereichsspezifische Saison-Steuerungen erscheinen hier.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Bereichsspezifische Saison-Steuerungen erscheinen hier."),
+    ).not.toBeInTheDocument();
   });
 
   it("hides standings fallback sidebar heading and hint", async () => {
@@ -152,7 +167,9 @@ describe("App shell and navigation guard", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Auswertung" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Steuerungen fuer die Auswertung werden geladen.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Steuerungen fuer die Auswertung werden geladen."),
+    ).not.toBeInTheDocument();
   });
 
   it("hides import fallback sidebar heading and hint", async () => {
@@ -160,14 +177,18 @@ describe("App shell and navigation guard", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "Bereiche" });
     expect(screen.queryByRole("heading", { name: "Import" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Bereichsspezifische Import-Steuerungen erscheinen hier.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Bereichsspezifische Import-Steuerungen erscheinen hier."),
+    ).not.toBeInTheDocument();
   });
 
   it("hides corrections and history sidebar control panels when no outlet injects controls", async () => {
     currentPathname = "/corrections";
     const { unmount } = render(<App />);
     await screen.findByRole("heading", { name: "Bereiche" });
-    expect(screen.queryByRole("heading", { name: "Korrekturen", level: 3 })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Korrekturen", level: 3 }),
+    ).not.toBeInTheDocument();
     unmount();
 
     currentPathname = "/history";
@@ -193,7 +214,9 @@ describe("App shell and navigation guard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
 
     await waitFor(() => {
-      expect(screen.queryByRole("dialog", { name: "Import-Prozess verlassen?" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("dialog", { name: "Import-Prozess verlassen?" }),
+      ).not.toBeInTheDocument();
     });
     expect(navigateMock).not.toHaveBeenCalled();
   });

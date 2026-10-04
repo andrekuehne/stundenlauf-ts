@@ -13,7 +13,9 @@ describe("computeStandingsRaceColumnCount", () => {
   });
 
   it("uses a fixed width only while no races exist yet", () => {
-    expect(computeStandingsRaceColumnCount([{ importedRuns: 0 }])).toBe(STANDINGS_RACE_COLUMNS_WHEN_EMPTY);
+    expect(computeStandingsRaceColumnCount([{ importedRuns: 0 }])).toBe(
+      STANDINGS_RACE_COLUMNS_WHEN_EMPTY,
+    );
   });
 });
 

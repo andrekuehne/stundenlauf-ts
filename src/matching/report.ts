@@ -18,9 +18,7 @@ export function emptyMatchingReport(): MatchingReport {
   };
 }
 
-export function aggregateMatchingReports(
-  reports: Iterable<MatchingReport>,
-): MatchingReport {
+export function aggregateMatchingReports(reports: Iterable<MatchingReport>): MatchingReport {
   const items = [...reports];
   if (items.length === 0) return emptyMatchingReport();
 

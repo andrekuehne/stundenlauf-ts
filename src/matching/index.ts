@@ -32,11 +32,7 @@ export {
 
 export { sequenceMatcherRatio } from "./ratcliff-obershelp.ts";
 
-export {
-  identityFingerprint,
-  nameKey,
-  teamFingerprint,
-} from "./fingerprint.ts";
+export { identityFingerprint, nameKey, teamFingerprint } from "./fingerprint.ts";
 
 export {
   nameSimilarity,
@@ -47,11 +43,7 @@ export {
   shouldReviewStrongNameYobMismatch,
 } from "./score.ts";
 
-export {
-  buildPersonBlockIndex,
-  candidatePersonKeys,
-  gatherCandidates,
-} from "./candidates.ts";
+export { buildPersonBlockIndex, candidatePersonKeys, gatherCandidates } from "./candidates.ts";
 
 export {
   buildCoupleBlockIndex,
@@ -62,10 +54,7 @@ export {
 } from "./teams.ts";
 export type { CoupleBlockEntry } from "./teams.ts";
 
-export {
-  coupleMatchesStrictRow,
-  personMatchesStrictIncoming,
-} from "./strict-identity.ts";
+export { coupleMatchesStrictRow, personMatchesStrictIncoming } from "./strict-identity.ts";
 
 export {
   buildFingerprintReplayIndex,
@@ -77,23 +66,13 @@ export {
 } from "./resolve.ts";
 export type { ReplayHint, RunStats } from "./resolve.ts";
 
-export {
-  processCouplesSection,
-  processSinglesSection,
-} from "./workflow.ts";
+export { processCouplesSection, processSinglesSection } from "./workflow.ts";
 
-export {
-  aggregateMatchingReports,
-  emptyMatchingReport,
-} from "./report.ts";
+export { aggregateMatchingReports, emptyMatchingReport } from "./report.ts";
 
 export {
   alignCoupleMembersForDisplay,
   buildCoupleLineHighlights,
   fieldHighlightsForPersonLine,
 } from "./review-display.ts";
-export type {
-  FieldHighlight,
-  FieldSegment,
-  PersonLineHighlights,
-} from "./review-display.ts";
+export type { FieldHighlight, FieldSegment, PersonLineHighlights } from "./review-display.ts";

@@ -1,16 +1,19 @@
-# Temporary activation before PR #15; remove target-branch entries when the refresh merges.
 version: 2
 updates:
   # Dependabot uses the npm ecosystem for pnpm manifests and lockfiles.
   - package-ecosystem: npm
     directory: /
-    target-branch: codex/dependency-and-platform-refresh
     schedule:
       interval: weekly
       day: monday
       time: "06:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    # Node types follow the selected Node 24 runtime; review their major upgrades together.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     groups:
       react:
         patterns:
@@ -47,7 +50,6 @@ updates:
           - patch
   - package-ecosystem: github-actions
     directory: /
-    target-branch: codex/dependency-and-platform-refresh
     schedule:
       interval: weekly
       day: monday

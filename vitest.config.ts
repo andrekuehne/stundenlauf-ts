@@ -6,7 +6,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": resolve(__dirname, "src"),
+      "@": resolve(import.meta.dirname, "src"),
+      // Unit tests mock the hook; production browser tests exercise the actual SW.
+      "virtual:pwa-register/react": resolve(import.meta.dirname, "tests/mocks/pwa-register.ts"),
     },
   },
   test: {

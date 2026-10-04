@@ -7,7 +7,12 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { buildGuiLaufuebersichtDualSpecs } from "./gui-pdf-spec.ts";
-import { podiumFillForBand, resolvePdfLayoutTokens, type RgbColor, type ResolvedPdfLayoutTokens } from "./layout-tokens.ts";
+import {
+  podiumFillForBand,
+  resolvePdfLayoutTokens,
+  type RgbColor,
+  type ResolvedPdfLayoutTokens,
+} from "./layout-tokens.ts";
 import {
   buildExportSections,
   type ColumnDef,
@@ -19,7 +24,9 @@ import {
 import { resolvedLaufuebersichtNotice, type ExportSpec, type PdfStyleSpec } from "./spec.ts";
 import type { SeasonState } from "@/domain/types.ts";
 
-type AutoTableCellInput = string | { content: string; rowSpan?: number; colSpan?: number; styles?: Record<string, unknown> };
+type AutoTableCellInput =
+  | string
+  | { content: string; rowSpan?: number; colSpan?: number; styles?: Record<string, unknown> };
 
 export interface PdfExportArtifact {
   readonly filename: string;
@@ -88,7 +95,8 @@ function tableColumnWidths(
     widths[index] = resolved;
     fixed += resolved;
   });
-  const flexibleWidth = flexible.length > 0 ? Math.max((available - fixed) / flexible.length, 1.2) : 0;
+  const flexibleWidth =
+    flexible.length > 0 ? Math.max((available - fixed) / flexible.length, 1.2) : 0;
   for (const index of flexible) {
     widths[index] = flexibleWidth;
   }
@@ -102,12 +110,8 @@ function spanOrigin(
   column: number,
 ): ExportSection["spans"][number] | null {
   return (
-    spans.find(
-      (span) =>
-        span.area === area &&
-        span.startRow === row &&
-        span.startCol === column,
-    ) ?? null
+    spans.find((span) => span.area === area && span.startRow === row && span.startCol === column) ??
+    null
   );
 }
 
@@ -143,7 +147,10 @@ function buildAutoTableRows(
   section: ExportSection,
   area: "header" | "body",
 ): AutoTableCellInput[][] {
-  const rows = area === "header" ? section.headerRows.map((row) => row.cells) : section.bodyRows.map((row) => row.cells);
+  const rows =
+    area === "header"
+      ? section.headerRows.map((row) => row.cells)
+      : section.bodyRows.map((row) => row.cells);
   return rows.map((cells, rowIndex) => {
     const rendered: AutoTableCellInput[] = [];
     for (let columnIndex = 0; columnIndex < section.columns.length; columnIndex += 1) {
@@ -417,7 +424,10 @@ function renderSectionTable(
           data.cell.styles.fontSize = tokens.tableHeaderFontSizePt;
         }
         const raw = data.cell.raw as Record<string, unknown> | undefined;
-        const textColor = raw?.styles && typeof raw.styles === "object" ? (raw.styles as Record<string, unknown>).textColor : undefined;
+        const textColor =
+          raw?.styles && typeof raw.styles === "object"
+            ? (raw.styles as Record<string, unknown>).textColor
+            : undefined;
         if (Array.isArray(textColor)) {
           data.cell.styles.textColor = textColor as [number, number, number];
         }
@@ -431,7 +441,10 @@ function renderSectionTable(
       data.cell.styles.fillColor = bodyFillColor(section, data.row.index, tokens);
       data.cell.styles.fontSize = tokens.tableFontSizePt;
       const raw = data.cell.raw as Record<string, unknown> | undefined;
-      const fontStyle = raw?.styles && typeof raw.styles === "object" ? (raw.styles as Record<string, unknown>).fontStyle : undefined;
+      const fontStyle =
+        raw?.styles && typeof raw.styles === "object"
+          ? (raw.styles as Record<string, unknown>).fontStyle
+          : undefined;
       if (fontStyle === "bold") {
         data.cell.styles.fontStyle = "bold";
       }
@@ -445,7 +458,8 @@ function renderSectionTable(
       const rowSpan = rawSpanValue(raw, "rowSpan");
       const colSpan = rawSpanValue(raw, "colSpan");
       const endColumnIndex = data.column.index + colSpan - 1;
-      const columnRule = section.columnRules.find((rule) => rule.afterColumn === endColumnIndex) ?? null;
+      const columnRule =
+        section.columnRules.find((rule) => rule.afterColumn === endColumnIndex) ?? null;
       if (columnRule) {
         drawRuleLine(
           doc,
@@ -475,7 +489,8 @@ function renderSectionTable(
       }
 
       const bottomBodyRowIndex = data.row.index + rowSpan - 1;
-      const rowRule = section.rowRules.find((rule) => rule.afterBodyRow === bottomBodyRowIndex) ?? null;
+      const rowRule =
+        section.rowRules.find((rule) => rule.afterBodyRow === bottomBodyRowIndex) ?? null;
       if (rowRule) {
         drawRuleLine(
           doc,
@@ -489,10 +504,16 @@ function renderSectionTable(
       }
     },
     didDrawPage: () => {
-      drawFooter(doc, tokens, spec.pdf, {
-        seasonYear,
-        categoryLabel: section.footerContext.categoryLabel,
-      }, exportTimestamp);
+      drawFooter(
+        doc,
+        tokens,
+        spec.pdf,
+        {
+          seasonYear,
+          categoryLabel: section.footerContext.categoryLabel,
+        },
+        exportTimestamp,
+      );
     },
   });
 
@@ -520,10 +541,16 @@ export function renderPdfBlob(
   });
 
   if (sections.length === 0) {
-    drawFooter(doc, resolvePdfLayoutTokens(spec.pdf), spec.pdf, {
-      seasonYear: options.seasonYear,
-      categoryLabel: "",
-    }, exportTimestamp);
+    drawFooter(
+      doc,
+      resolvePdfLayoutTokens(spec.pdf),
+      spec.pdf,
+      {
+        seasonYear: options.seasonYear,
+        categoryLabel: "",
+      },
+      exportTimestamp,
+    );
   }
 
   const output = doc.output("arraybuffer");

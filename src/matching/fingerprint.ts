@@ -10,9 +10,7 @@ import type { Gender } from "@/domain/types.ts";
 import type { ParsedName } from "./types.ts";
 
 export function nameKey(parsed: ParsedName): string {
-  return parsed.tokens.length > 0
-    ? [...parsed.tokens].sort().join("|")
-    : parsed.display_compact;
+  return parsed.tokens.length > 0 ? [...parsed.tokens].sort().join("|") : parsed.display_compact;
 }
 
 async function sha256hex(input: string): Promise<string> {

@@ -5,14 +5,8 @@
  * Reference: F-TS05 §5 (Review Resolution)
  */
 
-import type {
-  PersonRegisteredPayload,
-  TeamRegisteredPayload,
-} from "@/domain/events.ts";
-import {
-  canonicalPersonIdentityFromIncoming,
-  normalizeClub,
-} from "@/matching/normalize.ts";
+import type { PersonRegisteredPayload, TeamRegisteredPayload } from "@/domain/events.ts";
+import { canonicalPersonIdentityFromIncoming, normalizeClub } from "@/matching/normalize.ts";
 import { genderForDivision, memberGendersForCouples } from "@/matching/resolve.ts";
 import { assertPhase } from "./session.ts";
 import type {
@@ -59,9 +53,7 @@ function applyLinkExisting(
   reviewEntry: OrchestratedReviewEntry,
   teamId: string,
 ): ImportSession {
-  const candidate = reviewEntry.review_item.candidates.find(
-    (c) => c.team_id === teamId,
-  );
+  const candidate = reviewEntry.review_item.candidates.find((c) => c.team_id === teamId);
   if (!candidate) {
     throw new Error(
       `Review link rejected: team "${teamId}" is not a candidate for entry "${reviewEntry.entry_id}".`,
@@ -99,10 +91,7 @@ function applyCreateNewIdentity(
     throw new Error(`Section index ${reviewEntry.section_index} out of range.`);
   }
 
-  const { personPayloads, teamPayload } = createIdentityPayloads(
-    staged,
-    section,
-  );
+  const { personPayloads, teamPayload } = createIdentityPayloads(staged, section);
 
   const updatedStaged: StagedEntry = {
     ...staged,
@@ -121,23 +110,12 @@ function applyCreateNewIdentity(
     resolved_method: "new_identity",
   };
 
-  let updated = updateSessionAfterResolve(
-    session,
-    reviewIdx,
-    updatedReview,
-    updatedStaged,
-  );
+  let updated = updateSessionAfterResolve(session, reviewIdx, updatedReview, updatedStaged);
 
   updated = {
     ...updated,
-    accumulated_person_payloads: [
-      ...updated.accumulated_person_payloads,
-      ...personPayloads,
-    ],
-    accumulated_team_payloads: [
-      ...updated.accumulated_team_payloads,
-      teamPayload,
-    ],
+    accumulated_person_payloads: [...updated.accumulated_person_payloads, ...personPayloads],
+    accumulated_team_payloads: [...updated.accumulated_team_payloads, teamPayload],
     report: {
       ...updated.report,
       new_identities: updated.report.new_identities + 1,
@@ -148,17 +126,16 @@ function applyCreateNewIdentity(
   return updated;
 }
 
-function getStagedEntry(
-  session: ImportSession,
-  review: OrchestratedReviewEntry,
-): StagedEntry {
+function getStagedEntry(session: ImportSession, review: OrchestratedReviewEntry): StagedEntry {
   const section = session.section_results[review.section_index];
   if (section === undefined) {
     throw new Error(`Section index ${review.section_index} out of range.`);
   }
   const entry = section.staged_entries[review.entry_index];
   if (entry === undefined) {
-    throw new Error(`Entry index ${review.entry_index} out of range in section ${review.section_index}.`);
+    throw new Error(
+      `Entry index ${review.entry_index} out of range in section ${review.section_index}.`,
+    );
   }
   return entry;
 }

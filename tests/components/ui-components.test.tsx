@@ -8,7 +8,15 @@ vi.mock("react-router-dom", async () => {
   const mod = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return {
     ...mod,
-    NavLink: ({ to, className, children }: { to: string; className: ({ isActive }: { isActive: boolean }) => string; children: ReactNode }) => (
+    NavLink: ({
+      to,
+      className,
+      children,
+    }: {
+      to: string;
+      className: ({ isActive }: { isActive: boolean }) => string;
+      children: ReactNode;
+    }) => (
       <a href={to} className={className({ isActive: to === "/season" })}>
         {children}
       </a>
@@ -37,7 +45,10 @@ describe("shared UI components", () => {
           selectedSeasonId: "s1",
           selectedSeasonLabel: "S1",
           unresolvedReviews: 3,
-          availableSeasons: [{ seasonId: "s1", label: "S1" }, { seasonId: "s2", label: "S2" }],
+          availableSeasons: [
+            { seasonId: "s1", label: "S1" },
+            { seasonId: "s2", label: "S2" },
+          ],
         }}
       >
         <div>Child</div>
@@ -64,7 +75,9 @@ describe("shared UI components", () => {
       </AppShell>,
     );
 
-    expect(screen.getByRole("heading", { level: 1, name: "Stundenlauf-Auswertung" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Stundenlauf-Auswertung" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Bereiche" })).toBeInTheDocument();
   });
 

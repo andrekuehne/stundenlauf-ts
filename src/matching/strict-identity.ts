@@ -34,8 +34,7 @@ export function personMatchesStrictIncoming(opts: {
   gender: Gender;
   person: PersonIdentity;
 }): boolean {
-  const { incoming_parsed, incoming_yob, incoming_club_norm, gender, person } =
-    opts;
+  const { incoming_parsed, incoming_yob, incoming_club_norm, gender, person } = opts;
   if (person.gender !== gender) return false;
   if (!strictYobEqual(incoming_yob, person.yob)) return false;
   if (nameKey(incoming_parsed) !== storedPersonNameKey(person)) return false;
@@ -43,15 +42,8 @@ export function personMatchesStrictIncoming(opts: {
   return incClub === personClubNorm(person);
 }
 
-function memberStrictTuple(
-  person: PersonIdentity,
-): [string, number, string, string] {
-  return [
-    storedPersonNameKey(person),
-    person.yob,
-    personClubNorm(person),
-    person.gender,
-  ];
+function memberStrictTuple(person: PersonIdentity): [string, number, string, string] {
+  return [storedPersonNameKey(person), person.yob, personClubNorm(person), person.gender];
 }
 
 export function coupleMatchesStrictRow(

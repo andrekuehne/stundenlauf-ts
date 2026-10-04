@@ -39,7 +39,10 @@ function incomingLabelFor(item: ImportReviewItem): string {
   return Number.isFinite(yob) && yob > 0 ? `${name} (${yob})` : name;
 }
 
-function actionLabelFor(action: ImportReviewAction): { label: string; modifier: DecisionRow["actionModifier"] } {
+function actionLabelFor(action: ImportReviewAction): {
+  label: string;
+  modifier: DecisionRow["actionModifier"];
+} {
   if (action === "merge_with_typo_fix") {
     return { label: STR.views.import.summaryDecisionTypoFix, modifier: "typo" };
   }
@@ -57,7 +60,10 @@ function targetLabelFor(item: ImportReviewItem, decision: DecisionLike): string 
   return match?.displayName ?? STR.views.import.summaryDecisionCreateNewTarget;
 }
 
-function buildDecisionRows(reviewItems: ImportReviewItem[], decisions: DecisionLike[]): DecisionRow[] {
+function buildDecisionRows(
+  reviewItems: ImportReviewItem[],
+  decisions: DecisionLike[],
+): DecisionRow[] {
   const decisionByReview = new Map(decisions.map((decision) => [decision.reviewId, decision]));
   return reviewItems
     .map((item): DecisionRow | null => {
@@ -91,7 +97,10 @@ export function ImportSummaryOverview({
 
   return (
     <section className="import-summary" aria-label={STR.views.import.summaryTitle}>
-      <section className="import-summary__context" aria-label={STR.views.import.summaryContextEyebrow}>
+      <section
+        className="import-summary__context"
+        aria-label={STR.views.import.summaryContextEyebrow}
+      >
         <span className="import-summary__context-eyebrow">
           {STR.views.import.summaryContextEyebrow}
         </span>
@@ -119,7 +128,10 @@ export function ImportSummaryOverview({
         </div>
       </div>
 
-      <section className="import-summary__decisions" aria-label={STR.views.import.summaryDecisionsTitle}>
+      <section
+        className="import-summary__decisions"
+        aria-label={STR.views.import.summaryDecisionsTitle}
+      >
         <header className="import-summary__decisions-header">
           <h3>{STR.views.import.summaryDecisionsTitle}</h3>
           <p>{STR.views.import.summaryDecisionsHint}</p>

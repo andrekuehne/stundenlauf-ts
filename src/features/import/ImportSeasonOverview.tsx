@@ -73,10 +73,7 @@ export function ImportSeasonOverview({
   const hasSelectedRace = Number.isFinite(selectedRace) && selectedRace > 0;
 
   return (
-    <section
-      className="import-season-overview"
-      aria-label={STR.views.import.seasonOverviewTitle}
-    >
+    <section className="import-season-overview" aria-label={STR.views.import.seasonOverviewTitle}>
       <div className="import-select-section__header">
         <h2>{STR.views.import.seasonOverviewTitle}</h2>
         <p>{STR.views.import.seasonOverviewHint}</p>

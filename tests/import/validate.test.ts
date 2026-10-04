@@ -14,9 +14,7 @@ import {
 } from "@/import/validate.ts";
 import type { ParsedWorkbook } from "@/ingestion/types.ts";
 
-function minimalParsedWorkbook(
-  overrides?: Partial<ParsedWorkbook>,
-): ParsedWorkbook {
+function minimalParsedWorkbook(overrides?: Partial<ParsedWorkbook>): ParsedWorkbook {
   return {
     meta: {
       source_file: "test.xlsx",
@@ -173,8 +171,22 @@ describe("validateNoDuplicateRows", () => {
             event_date: null,
           },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 10 },
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 12, points: 12 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 10,
+              points: 10,
+            },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 12,
+              points: 12,
+            },
           ],
         },
       ],
@@ -198,8 +210,28 @@ describe("validateNoDuplicateRows", () => {
             event_date: null,
           },
           rows: [
-            { startnr: "1", name_a: "A", yob_a: 1990, club_a: "C", name_b: "B", yob_b: 1985, club_b: "C", distance_km: 10, points: 10 },
-            { startnr: "1", name_a: "A", yob_a: 1990, club_a: "C", name_b: "B", yob_b: 1985, club_b: "C", distance_km: 12, points: 12 },
+            {
+              startnr: "1",
+              name_a: "A",
+              yob_a: 1990,
+              club_a: "C",
+              name_b: "B",
+              yob_b: 1985,
+              club_b: "C",
+              distance_km: 10,
+              points: 10,
+            },
+            {
+              startnr: "1",
+              name_a: "A",
+              yob_a: 1990,
+              club_a: "C",
+              name_b: "B",
+              yob_b: 1985,
+              club_b: "C",
+              distance_km: 12,
+              points: 12,
+            },
           ],
         },
       ],
@@ -223,8 +255,22 @@ describe("validateNoDuplicateRows", () => {
             event_date: null,
           },
           rows: [
-            { startnr: "1", name: "Müller, Max", yob: 1990, club: "LG A", distance_km: 10, points: 10 },
-            { startnr: "2", name: "Schmidt, Hans", yob: 1985, club: "LG B", distance_km: 12, points: 12 },
+            {
+              startnr: "1",
+              name: "Müller, Max",
+              yob: 1990,
+              club: "LG A",
+              distance_km: 10,
+              points: 10,
+            },
+            {
+              startnr: "2",
+              name: "Schmidt, Hans",
+              yob: 1985,
+              club: "LG B",
+              distance_km: 12,
+              points: 12,
+            },
           ],
         },
       ],

@@ -21,7 +21,8 @@ export function ContentSplitLayout({
     "--content-split-side-max-width": `${sideMaxWidth}px`,
   } as CSSProperties;
   const rootClass = `content-split-layout ${fillHeight ? "content-split-layout--fill" : ""}`.trim();
-  const sideClass = `content-split-layout__side ${stickySide ? "content-split-layout__side--sticky" : ""}`.trim();
+  const sideClass =
+    `content-split-layout__side ${stickySide ? "content-split-layout__side--sticky" : ""}`.trim();
 
   return (
     <div className={rootClass}>

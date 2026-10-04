@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import type { StandingsData, StandingsRow, StandingsRowIdentity, StandingsRowIdentityMember } from "@/api/contracts/index.ts";
+import type {
+  StandingsData,
+  StandingsRow,
+  StandingsRowIdentity,
+  StandingsRowIdentityMember,
+} from "@/api/contracts/index.ts";
 import { useAppApi } from "@/api/provider.tsx";
 import { useAppShellContext } from "@/app/shell-context.ts";
 import { STR } from "@/app/strings.ts";
@@ -30,10 +35,13 @@ export function CorrectionsPage() {
   const [editRow, setEditRow] = useState<StandingsRow | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const loadStandings = useCallback(async (seasonId: string) => {
-    const next = await api.getStandings(seasonId);
-    setData(next);
-  }, [api]);
+  const loadStandings = useCallback(
+    async (seasonId: string) => {
+      const next = await api.getStandings(seasonId);
+      setData(next);
+    },
+    [api],
+  );
 
   useEffect(() => {
     const seasonId = shellData.selectedSeasonId;
@@ -64,13 +72,15 @@ export function CorrectionsPage() {
     };
   }, [setSidebarControls]);
 
-  const selectedCategory = data?.categories.find((entry) => entry.key === selectedCategoryKey) ?? null;
+  const selectedCategory =
+    data?.categories.find((entry) => entry.key === selectedCategoryKey) ?? null;
   const selectedRows = useMemo(
     () => (selectedCategory ? [...(data?.rowsByCategory[selectedCategory.key] ?? [])] : []),
     [data, selectedCategory],
   );
   const seasonRaceColumnCount = useMemo(
-    () => (data ? computeStandingsRaceColumnCount(data.categories) : STANDINGS_RACE_COLUMNS_WHEN_EMPTY),
+    () =>
+      data ? computeStandingsRaceColumnCount(data.categories) : STANDINGS_RACE_COLUMNS_WHEN_EMPTY,
     [data],
   );
 
@@ -115,7 +125,8 @@ export function CorrectionsPage() {
       } catch (reason) {
         setStatus({
           severity: "error",
-          message: reason instanceof Error ? reason.message : "Fehler beim Ändern der Wertungsstellung.",
+          message:
+            reason instanceof Error ? reason.message : "Fehler beim Ändern der Wertungsstellung.",
           source: "corrections",
         });
       } finally {
@@ -140,7 +151,8 @@ export function CorrectionsPage() {
       } catch (reason) {
         setStatus({
           severity: "error",
-          message: reason instanceof Error ? reason.message : "Identität konnte nicht geladen werden.",
+          message:
+            reason instanceof Error ? reason.message : "Identität konnte nicht geladen werden.",
           source: "corrections",
         });
       } finally {
@@ -159,7 +171,11 @@ export function CorrectionsPage() {
       setBusy(true);
       setSaveError(null);
       try {
-        const result = await api.correctStandingsRowIdentity(seasonId, { categoryKey, teamId, members });
+        const result = await api.correctStandingsRowIdentity(seasonId, {
+          categoryKey,
+          teamId,
+          members,
+        });
         const next = await api.getStandings(seasonId);
         setData(next);
         setEditIdentity(null);
@@ -190,7 +206,11 @@ export function CorrectionsPage() {
         <section className="standings-overview">
           <p className="surface-card__note">{STR.views.corrections.guidance}</p>
 
-          <div className="standings-overview__kpis" role="group" aria-label={STR.views.standings.summaryTitle}>
+          <div
+            className="standings-overview__kpis"
+            role="group"
+            aria-label={STR.views.standings.summaryTitle}
+          >
             <div
               className="summary-card standings-overview__kpi standings-overview__kpi--teams"
               data-testid="corrections-kpi-teams"

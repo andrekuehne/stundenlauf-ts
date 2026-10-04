@@ -17,6 +17,14 @@ Copy this block for each notable accomplishment:
 
 ## Entries
 
+### 2026-10-03 - Dependency and Linux/Windows platform refresh
+
+- Requirement/Milestone: [R7], [R8], [M-TS7]; [maintenance workplan](workplans/2026-10-dependency-and-platform-refresh.md)
+- What changed: Established shared Node 24.21.0/pnpm 10.34.6 pins, authoritative no-emit TypeScript configs, a directly declared fixture runner, strict Linux/Windows quality gates and grouped dependency automation; refreshed compatible dependencies and migrated TypeScript, Vitest/jsdom, Vite/Rolldown/PWA and ESLint as separately reviewed changes. SheetJS imports now use the official 0.20.3 artifact.
+- Evidence: [PR#15](https://github.com/andrekuehne/stundenlauf-ts/pull/15), [Linux/Windows production PR CI](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37152254368) at `06548d2`, the [successful npm update job](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37151048886), and [generated-PR Linux/Windows CI](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37152143765) at `112e0fe`; the workplan records exact accepted revisions, independent reviews and re-reviews, environments, gates and advisory dispositions.
+- Impact: Synthetic imports return exactly their workbook byte views; quality checks no longer regenerate conflicting configs; coverage verifies its full application source scope. Fixture-independent production browser checks exercise import review, standings, persisted state, archive restore, XLSX/PDF result content and real offline/update behavior without rewriting README screenshots.
+- Follow-up: WP-00 through WP-11 are complete; Dependabot graph/alerts/security updates and actual version-update/generated-PR operation are independently verified. The generated Node 26 types upgrade remains held outside the selected Node 24 dependency set. WP-12 remains Awaiting Fixtures for organizer workbooks/reference results, an existing season archive, Windows Excel and Linux LibreOffice acceptance. The reviewed ExcelJS → UUID residual, temporary exact cooldown exceptions and unsupported major holdbacks retain owners and review triggers in the workplan.
+
 ### 2026-04-14 - F-TS09 GitHub Pages deployment and PWA implemented
 - Requirement/Milestone: [R7], [R8], [M-TS7], [F-TS09]
 - What shipped: Added a deploy-ready GitHub Pages pipeline and PWA runtime with Vite base-path targeting, Workbox-powered service worker precaching, prompt-based update UI, hash-routing compatibility, manifest/meta wiring, and production icon assets.

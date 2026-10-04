@@ -73,14 +73,7 @@ function countMatchingChars(
 
   // Recurse on right portion
   if (bestI + bestSize < aHi && bestJ + bestSize < bHi) {
-    total += countMatchingChars(
-      a,
-      b,
-      bestI + bestSize,
-      aHi,
-      bestJ + bestSize,
-      bHi,
-    );
+    total += countMatchingChars(a, b, bestI + bestSize, aHi, bestJ + bestSize, bHi);
   }
 
   return total;
