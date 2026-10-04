@@ -43,7 +43,7 @@ Mapped from the Python version's requirements, adapted for the static-site conte
 
 The [dependency and platform refresh workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records the 2026-10 toolchain/dependency decisions, scoped implementation and independent review, Linux/Windows CI and production browser evidence, advisory dispositions and remaining external verification. [README setup and checks](README.md#environment-setup) describe the implemented tools and commands; the proposed stack below is historical planning context.
 
-The refresh covers synthetic automated acceptance. Dependabot's new default-branch update job and representative generated PR remain an external activation check; organizer/reference workbooks, an existing season archive, and Windows Excel/Linux LibreOffice acceptance remain WP-12: Awaiting Fixtures. Maintenance completion does not change unrelated feature or milestone statuses.
+The refresh completes WP-00 through WP-11 using synthetic automated acceptance, including actual Dependabot update jobs and an independently reviewed generated PR with passing Linux/Windows gates. Organizer/reference workbooks, an existing season archive, and Windows Excel/Linux LibreOffice acceptance remain WP-12: Awaiting Fixtures. Maintenance completion does not change unrelated feature or milestone statuses.
 
 ## Technology Stack (Proposed)
 
@@ -211,7 +211,7 @@ TS version: UI components call domain functions directly. No serialization bound
 
 | Date | Change | Why |
 |---|---|---|
-| 2026-10-03 | Dependency and Linux/Windows platform refresh | Linked the maintenance execution/review record and current setup; shared Node/pnpm pins, canonical configs, refreshed dependency families, OS quality/browser checks and grouped dependency automation are implemented. Default-branch Dependabot job/PR validation and organizer/desktop acceptance remain explicit external checks. |
+| 2026-10-03 | Dependency and Linux/Windows platform refresh | WP-00 through WP-11 complete with accepted independent reviews: shared Node/pnpm pins, canonical configs, refreshed dependency families, passing OS quality/browser checks and verified Dependabot job/generated-PR operation. Organizer/desktop acceptance remains WP-12: Awaiting Fixtures. |
 | 2026-04-15 | Added F-TS11a through F-TS11e frontend rewrite plan | Split the updated frontend brainstorm into a mock-first implementation roadmap with an explicit `AppApi` seam, staged live-data wiring, import workflow delivery, final cutover/polish milestones, clear folder-boundary rules for migration and cleanup, and an explicit initial reorg snapshot documenting the moved entry-layer files |
 | 2026-04-14 | F-TS09 implementation completed | Added GitHub Pages CI/CD workflow (`.github/workflows/ts-deploy.yml`), Vite base path + PWA Workbox setup, manifest/meta/install icons, prompt-based SW update UX, hash routing compatibility, and build-time git version injection for deploy-ready PWA distribution |
 | 2026-04-14 | F-TS08 Excel Gesamtwertung export implemented | Added the requested two-sheet Excel workbook (`Gesamtwertung_Einzel`, `Gesamtwertung_Paare`) with continuous section numbering, duplicated pair numerics, and legacy frontend download wiring; completes F-TS08 and M-TS6 |
