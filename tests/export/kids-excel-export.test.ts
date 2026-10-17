@@ -286,6 +286,23 @@ function buildSameRaceDuplicateKidsState() {
 }
 
 describe("Kids Excel participation export", () => {
+  it("keeps printed participation columns together and repeats the title and headers", async () => {
+    const artifact = await exportKidsParticipationWorkbook(buildKidsState(), {
+      seasonYear: 2026,
+      cutoffYear: 2014,
+    });
+    const workbook = await loadWorkbook(artifact.blob);
+    const worksheet = workbook.getWorksheet("Kids_Teilnahme");
+
+    expect(worksheet?.pageSetup).toMatchObject({
+      orientation: "landscape",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      printTitlesRow: "1:2",
+    });
+  });
+
   it("renders children only with participation markers across singles and split doubles", async () => {
     const artifact = await exportKidsParticipationWorkbook(buildKidsState(), {
       seasonYear: 2026,
