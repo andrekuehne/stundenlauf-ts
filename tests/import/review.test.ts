@@ -8,7 +8,7 @@ import type {
   OrchestratedSection,
   StagedEntry,
 } from "@/import/types.ts";
-import type { ParsedWorkbook } from "@/ingestion/types.ts";
+import type { ImportRowCouples, ParsedWorkbook } from "@/ingestion/types.ts";
 
 function makeStaged(overrides?: Partial<StagedEntry>): StagedEntry {
   return {
@@ -109,6 +109,52 @@ function makeReviewingSession(
     accumulated_team_payloads: [],
     report: { ...emptyImportReport(), review_items: reviewQueue.length },
   };
+}
+
+function makeCouplesReviewSession(rowOverrides: Partial<ImportRowCouples> = {}) {
+  const row: ImportRowCouples = {
+    startnr: "12",
+    name_a: "Müller, Max",
+    yob_a: 1990,
+    club_a: "LG A",
+    name_b: "Schmidt, Anna",
+    yob_b: 1992,
+    club_b: "LG B",
+    distance_km: 10,
+    points: 10,
+    ...rowOverrides,
+  };
+  const context = {
+    race_no: 1,
+    duration: "hour",
+    division: "couples_mixed",
+    event_date: null,
+  } as const;
+  const staged = makeStaged({
+    entry_id: "couple-entry-1",
+    startnr: row.startnr,
+    incoming: {
+      display_name: `${row.name_a} / ${row.name_b}`,
+      yob: null,
+      yob_text: `${row.yob_a} / ${row.yob_b}`,
+      club: [row.club_a, row.club_b].filter(Boolean).join(" / ") || null,
+      row_kind: "team",
+      sheet_name: "test.xlsx",
+      section_name: "Paare Mix 60min",
+      row_index: 0,
+    },
+  });
+  const review = makeReviewEntry(staged, 1, 0);
+  review.review_item.incoming_kind = "team";
+  const section: OrchestratedSection = { context, staged_entries: [staged], all_resolved: false };
+  const precedingSection: OrchestratedSection = {
+    context: { race_no: 1, duration: "hour", division: "men", event_date: null },
+    staged_entries: [],
+    all_resolved: true,
+  };
+  const session = makeReviewingSession([precedingSection, section], [review]);
+  session.parsed = { ...session.parsed, couples_sections: [{ context, rows: [row] }] };
+  return { session, row, staged, review };
 }
 
 describe("getReviewQueue", () => {
@@ -266,35 +312,7 @@ describe("resolveReviewEntry — create_new_identity", () => {
   });
 
   it("creates two persons and one couple team for a team entry", () => {
-    const couplesStaged = makeStaged({
-      entry_id: "couple-entry-1",
-      incoming: {
-        display_name: "Müller, Max / Schmidt, Anna",
-        yob: null,
-        yob_text: "1990 / 1992",
-        club: "LG A / LG B",
-        row_kind: "team",
-        sheet_name: "paare.xlsx",
-        section_name: "Paare Mix 60min",
-        row_index: 0,
-      },
-    });
-    const review = makeReviewEntry(couplesStaged, 0, 0);
-    review.entry_id = "couple-entry-1";
-    review.review_item.incoming_kind = "team";
-
-    const section: OrchestratedSection = {
-      context: {
-        race_no: 1,
-        duration: "hour",
-        division: "couples_mixed",
-        event_date: null,
-      },
-      staged_entries: [couplesStaged],
-      all_resolved: false,
-    };
-
-    const session = makeReviewingSession([section], [review]);
+    const { session } = makeCouplesReviewSession();
     const updated = resolveReviewEntry(session, "couple-entry-1", {
       type: "create_new_identity",
     });
@@ -306,6 +324,49 @@ describe("resolveReviewEntry — create_new_identity", () => {
     expect(team.team_kind).toBe("couple");
     expect(team.member_person_ids).toHaveLength(2);
   });
+
+  it.each([
+    { club_a: null, club_b: "LG B" },
+    { club_a: "LG A", club_b: null },
+    { club_a: "LG A / Team Nord", club_b: "LG B / Team Süd" },
+    { club_a: null, club_b: null, yob_a: 1900, yob_b: 1900 },
+    { name_a: "Müller / Beispiel, Max", name_b: "Schmidt, Anna" },
+  ])("preserves each member's structured source identity %#", (overrides) => {
+    const { session, row } = makeCouplesReviewSession(overrides);
+    const updated = resolveReviewEntry(session, "couple-entry-1", { type: "create_new_identity" });
+    expect(
+      updated.accumulated_person_payloads.map((person) => [
+        person.display_name,
+        person.yob,
+        person.club,
+      ]),
+    ).toEqual([
+      [row.name_a, row.yob_a, row.club_a],
+      [row.name_b, row.yob_b, row.club_b],
+    ]);
+    expect(updated.accumulated_person_payloads.map((person) => person.gender)).toEqual(["M", "F"]);
+    expect(session.accumulated_person_payloads).toEqual([]);
+  });
+
+  it.each(["missing_row", "wrong_context", "wrong_row_index", "wrong_start_number"] as const)(
+    "rejects invalid couples source provenance: %s",
+    (failure) => {
+      const { session, staged } = makeCouplesReviewSession();
+      if (failure === "missing_row") session.parsed = { ...session.parsed, couples_sections: [] };
+      if (failure === "wrong_context")
+        session.section_results[1]!.context = {
+          ...session.section_results[1]!.context,
+          duration: "half_hour",
+        };
+      if (failure === "wrong_row_index") staged.incoming.row_index = 7;
+      if (failure === "wrong_start_number") staged.startnr = "wrong-start-number";
+      expect(() =>
+        resolveReviewEntry(session, "couple-entry-1", { type: "create_new_identity" }),
+      ).toThrow("source row");
+      expect(session.accumulated_person_payloads).toEqual([]);
+      expect(session.review_queue[0]?.status).toBe("pending");
+    },
+  );
 });
 
 describe("resolveReviewEntry — errors", () => {
