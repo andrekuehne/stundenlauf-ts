@@ -6,6 +6,7 @@
  */
 
 import type { PersonRegisteredPayload, TeamRegisteredPayload } from "@/domain/events.ts";
+import type { ImportRowCouples } from "@/ingestion/types.ts";
 import { canonicalPersonIdentityFromIncoming, normalizeClub } from "@/matching/normalize.ts";
 import { genderForDivision, memberGendersForCouples } from "@/matching/resolve.ts";
 import { assertPhase } from "./session.ts";
@@ -91,7 +92,12 @@ function applyCreateNewIdentity(
     throw new Error(`Section index ${reviewEntry.section_index} out of range.`);
   }
 
-  const { personPayloads, teamPayload } = createIdentityPayloads(staged, section);
+  const { personPayloads, teamPayload } = createIdentityPayloads(
+    session,
+    reviewEntry,
+    staged,
+    section,
+  );
 
   const updatedStaged: StagedEntry = {
     ...staged,
@@ -179,6 +185,8 @@ function updateSessionAfterResolve(
 }
 
 function createIdentityPayloads(
+  session: ImportSession,
+  review: OrchestratedReviewEntry,
   staged: StagedEntry,
   section: OrchestratedSection,
 ): {
@@ -188,7 +196,34 @@ function createIdentityPayloads(
   const isCouple = staged.incoming.row_kind === "team";
 
   if (isCouple) {
-    return createCoupleIdentity(staged, section);
+    // runMatching stages all singles sections before all couples sections.
+    // Recover the exact structured row; the combined display labels lose empty
+    // member clubs and cannot safely encode a literal " / " inside a field.
+    const sourceSection =
+      session.parsed.couples_sections[
+        review.section_index - session.parsed.singles_sections.length
+      ];
+    if (!sourceSection) {
+      throw new Error("Couples review source row is missing or inconsistent.");
+    }
+    const row = sourceSection.rows[review.entry_index];
+    if (
+      !row ||
+      sourceSection.context.race_no !== section.context.race_no ||
+      sourceSection.context.duration !== section.context.duration ||
+      sourceSection.context.division !== section.context.division ||
+      sourceSection.context.event_date !== section.context.event_date ||
+      staged.entry_id !== review.entry_id ||
+      staged.incoming.row_index !== review.entry_index ||
+      staged.incoming.sheet_name !== session.source_file ||
+      staged.startnr !== row.startnr ||
+      staged.incoming.display_name !== `${row.name_a} / ${row.name_b}` ||
+      staged.incoming.yob_text !== `${row.yob_a} / ${row.yob_b}` ||
+      staged.incoming.club !== ([row.club_a, row.club_b].filter(Boolean).join(" / ") || null)
+    ) {
+      throw new Error("Couples review source row is missing or inconsistent.");
+    }
+    return createCoupleIdentity(row, section);
   }
   return createSoloIdentity(staged, section);
 }
@@ -227,29 +262,20 @@ function createSoloIdentity(
 }
 
 function createCoupleIdentity(
-  staged: StagedEntry,
+  row: ImportRowCouples,
   section: OrchestratedSection,
 ): {
   personPayloads: PersonRegisteredPayload[];
   teamPayload: TeamRegisteredPayload;
 } {
-  const names = staged.incoming.display_name.split(" / ").map((n) => n.trim());
   const [genderA, genderB] = memberGendersForCouples(section.context.division);
-
-  const yobs = staged.incoming.yob_text
-    ? staged.incoming.yob_text.split(" / ").map((y) => parseInt(y, 10) || 0)
-    : [0, 0];
-
-  const clubs = staged.incoming.club
-    ? staged.incoming.club.split(" / ").map((c) => c.trim() || null)
-    : [null, null];
 
   const personIdA = crypto.randomUUID();
   const personIdB = crypto.randomUUID();
   const teamId = crypto.randomUUID();
 
-  const canonicalNameA = canonicalPersonIdentityFromIncoming(names[0] ?? "");
-  const canonicalNameB = canonicalPersonIdentityFromIncoming(names[1] ?? "");
+  const canonicalNameA = canonicalPersonIdentityFromIncoming(row.name_a);
+  const canonicalNameB = canonicalPersonIdentityFromIncoming(row.name_b);
 
   const personPayloads: PersonRegisteredPayload[] = [
     {
@@ -258,10 +284,10 @@ function createCoupleIdentity(
       family_name: canonicalNameA.family_name,
       display_name: canonicalNameA.display_name,
       name_normalized: canonicalNameA.name_normalized,
-      yob: yobs[0] ?? 0,
+      yob: row.yob_a,
       gender: genderA,
-      club: clubs[0] ?? null,
-      club_normalized: normalizeClub(clubs[0] ?? null),
+      club: row.club_a,
+      club_normalized: normalizeClub(row.club_a),
     },
     {
       person_id: personIdB,
@@ -269,10 +295,10 @@ function createCoupleIdentity(
       family_name: canonicalNameB.family_name,
       display_name: canonicalNameB.display_name,
       name_normalized: canonicalNameB.name_normalized,
-      yob: yobs[1] ?? 0,
+      yob: row.yob_b,
       gender: genderB,
-      club: clubs[1] ?? null,
-      club_normalized: normalizeClub(clubs[1] ?? null),
+      club: row.club_b,
+      club_normalized: normalizeClub(row.club_b),
     },
   ];
 

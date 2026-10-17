@@ -4,6 +4,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+/.local/organizer-acceptance/
 *.xlsx
 *.png
 !docs/readme/*.png

@@ -17,6 +17,8 @@ import { describe, expect, it } from "vitest";
 
 import { parseWorkbook } from "@/ingestion/parse-workbook";
 
+import { privateDigest, readOrganizerFixture } from "./local-organizer-acceptance.ts";
+
 import {
   LOCAL_XLSX_FIXTURE_ROOT,
   fixtureBasename,
@@ -38,8 +40,12 @@ describe.skipIf(singlesExamples.length === 0)("local singles workbooks (tests/da
     const filePath = join(LOCAL_XLSX_FIXTURE_ROOT, relPath);
     const buffer = bufferFromPath(filePath);
     const result = await parseWorkbook(buffer, relPath);
+    const source = await readOrganizerFixture(relPath);
 
     expect(result.meta.source_file).toBe(relPath);
+    expect(result.meta.source_sha256).toBe(source.sha256);
+    // Hash comparisons keep real names, years of birth and clubs out of failure logs.
+    expect(privateDigest(result.singles_sections)).toBe(privateDigest(source.singles));
     expect(result.couples_sections).toHaveLength(0);
     expect(result.singles_sections.length).toBeGreaterThan(0);
 
@@ -61,8 +67,11 @@ describe.skipIf(couplesExamples.length === 0)("local couples workbooks (tests/da
     const filePath = join(LOCAL_XLSX_FIXTURE_ROOT, relPath);
     const buffer = bufferFromPath(filePath);
     const result = await parseWorkbook(buffer, relPath);
+    const source = await readOrganizerFixture(relPath);
 
     expect(result.meta.source_file).toBe(relPath);
+    expect(result.meta.source_sha256).toBe(source.sha256);
+    expect(privateDigest(result.couples_sections)).toBe(privateDigest(source.couples));
     expect(result.singles_sections).toHaveLength(0);
     expect(result.couples_sections.length).toBeGreaterThan(0);
 

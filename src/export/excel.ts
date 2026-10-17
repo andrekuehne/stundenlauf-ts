@@ -947,6 +947,14 @@ export async function exportKidsParticipationWorkbook(
     options.participationMergeStrategy ?? "strict_name_yob",
   );
   const worksheet = workbook.addWorksheet(EXCEL_SHEET_KIDS);
+  worksheet.pageSetup = {
+    ...worksheet.pageSetup,
+    orientation: "landscape",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    printTitlesRow: "1:2",
+  };
   renderKidsWorksheet(worksheet, options.seasonYear, raceNos, rows);
 
   const buffer = await workbook.xlsx.writeBuffer();
