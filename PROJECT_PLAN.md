@@ -43,7 +43,7 @@ Mapped from the Python version's requirements, adapted for the static-site conte
 
 The [dependency and platform refresh workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records the 2026-10 toolchain/dependency decisions, scoped implementation and independent review, Linux/Windows CI and production browser evidence, advisory dispositions and remaining external verification. [README setup and checks](README.md#environment-setup) describe the implemented tools and commands; the proposed stack below is historical planning context.
 
-The refresh completes WP-00 through WP-11 using synthetic automated acceptance, including actual Dependabot update jobs and an independently reviewed generated PR with passing Linux/Windows gates. Organizer/reference workbooks, an existing season archive, and Windows Excel/Linux LibreOffice acceptance remain WP-12: Awaiting Fixtures. Maintenance completion does not change unrelated feature or milestone statuses.
+The merged refresh completes WP-00 through WP-11, including actual Dependabot jobs and an independently reviewed generated PR with passing Linux/Windows gates. On 2026-10-17, WP-12 resumed with ten private organizer workbooks; source/identity/ranking/export checks and two discovered repairs pass independent review. The expired release-age exceptions are removed. Windows Excel and the recorded wide-workbook print limitation remain manual acceptance gates; historical archive testing was excluded by the user. See the [acceptance checklist](docs/validation/organizer-acceptance.md) and workplan for actual LibreOffice/hosted evidence. This maintenance does not change unrelated feature or milestone statuses.
 
 ## Technology Stack (Proposed)
 

@@ -17,13 +17,21 @@ Copy this block for each notable accomplishment:
 
 ## Entries
 
+### 2026-10-17 - Organizer fixture acceptance and dependency-refresh cleanup
+
+- Requirement/Milestone: [R7], [R8], [M-TS7]; [maintenance workplan](workplans/2026-10-dependency-and-platform-refresh.md), [Windows acceptance checklist](validation/organizer-acceptance.md).
+- What changed: Removed the 40 expired dependency release-age exceptions without changing dependency versions; closed the held Node 26 types proposal unmerged. Ten private organizer workbooks now receive independent source-cell, identity, ranking, export and new-archive checks. Real inputs exposed and drove repairs for lost couples club associations during review and horizontally split kids printouts; ranking/matching rules and event schemas are unchanged.
+- Evidence: Independently accepted cleanup `174e3ea`, couples repair `740b83f`, optional fixture checks `a2dc33b` and kids print repair `a6525a4`; meaningful failing synthetic regressions and negative oracle probes; full pinned local gate passes 741 tests, the 118-source coverage gate and two production browser tests. Exact input/artifact hashes, real LibreOffice results and hosted checks are recorded in the workplan after observation.
+- Impact: All 651 source rows are checked; the final QA season's 730 registered identities preserve source names, years and clubs. Kids printing keeps columns together and repeats its title/headers without changing report values or forcing a paper size. Private data and acceptance artifacts remain ignored.
+- Follow-up: WP-12 remains pending Windows Excel and acceptance of the wide result-workbook print limitation; dedicated result PDFs provide the printing path. The documented conservative QA review choices are not organizer-approved final identities. Historical archive testing was explicitly excluded by the user. No PR is merged by the agent.
+
 ### 2026-10-03 - Dependency and Linux/Windows platform refresh
 
 - Requirement/Milestone: [R7], [R8], [M-TS7]; [maintenance workplan](workplans/2026-10-dependency-and-platform-refresh.md)
 - What changed: Established shared Node 24.21.0/pnpm 10.34.6 pins, authoritative no-emit TypeScript configs, a directly declared fixture runner, strict Linux/Windows quality gates and grouped dependency automation; refreshed compatible dependencies and migrated TypeScript, Vitest/jsdom, Vite/Rolldown/PWA and ESLint as separately reviewed changes. SheetJS imports now use the official 0.20.3 artifact.
 - Evidence: [PR#15](https://github.com/andrekuehne/stundenlauf-ts/pull/15), [Linux/Windows production PR CI](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37152254368) at `06548d2`, the [successful npm update job](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37151048886), and [generated-PR Linux/Windows CI](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37152143765) at `112e0fe`; the workplan records exact accepted revisions, independent reviews and re-reviews, environments, gates and advisory dispositions.
 - Impact: Synthetic imports return exactly their workbook byte views; quality checks no longer regenerate conflicting configs; coverage verifies its full application source scope. Fixture-independent production browser checks exercise import review, standings, persisted state, archive restore, XLSX/PDF result content and real offline/update behavior without rewriting README screenshots.
-- Follow-up: WP-00 through WP-11 are complete; Dependabot graph/alerts/security updates and actual version-update/generated-PR operation are independently verified. The generated Node 26 types upgrade remains held outside the selected Node 24 dependency set. WP-12 remains Awaiting Fixtures for organizer workbooks/reference results, an existing season archive, Windows Excel and Linux LibreOffice acceptance. The reviewed ExcelJS → UUID residual, temporary exact cooldown exceptions and unsupported major holdbacks retain owners and review triggers in the workplan.
+- Follow-up: WP-00 through WP-11 are complete; Dependabot graph/alerts/security updates and actual version-update/generated-PR operation are independently verified. WP-12 resumed with private inputs on October 17; see that entry for the current acceptance scope, repairs and manual Windows gate. The reviewed ExcelJS → UUID residual and unsupported major holdbacks retain owners and review triggers in the workplan.
 
 ### 2026-04-14 - F-TS09 GitHub Pages deployment and PWA implemented
 - Requirement/Milestone: [R7], [R8], [M-TS7], [F-TS09]

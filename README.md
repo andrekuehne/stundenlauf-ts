@@ -162,7 +162,7 @@ A Git checkout contains application code; it does not contain the seasons stored
 3. Return to “Saison” and use “Saison importieren” to choose the archive. Import replaces the selected target season's event log and keeps that target's name/identity; select an empty season to preserve any other season's data.
 4. Reload, open the restored season and verify its imported runs, standings and history. Retain the original browser data and backup until those checks pass.
 
-Synthetic archive round trips are automated. Acceptance of an existing organizer season archive remains pending in WP-12; a successful synthetic round trip does not establish compatibility with an unavailable historical archive.
+Synthetic and newly generated organizer-derived archive round trips are automated. Historical archive compatibility was excluded from WP-12 by the user on 2026-10-17; it is not claimed verified.
 
 ### Manual Excel parse dump (local fixtures)
 
@@ -186,7 +186,13 @@ The script prints **ASCII separators** so the file stays readable if an editor a
 pnpm run inspect:excel-fixtures | Out-File -Encoding utf8 excel-dump.txt
 ```
 
-Optional Vitest integration tests for the same tree are in `tests/ingestion/local-excel-examples.test.ts` (skipped when no matching files are present).
+Optional Vitest integration tests for the same tree independently compare source cells with imported values and exercise matching, identities, rankings, exports and a new archive round-trip:
+
+```bash
+pnpm exec vitest run tests/ingestion/local-excel-examples.test.ts tests/ingestion/local-organizer-acceptance.test.ts
+```
+
+These checks skip without matching private files. Their QA matching policy and the remaining Windows Excel checklist are described in [organizer acceptance](docs/validation/organizer-acceptance.md). Private acceptance outputs belong under ignored `.local/organizer-acceptance/`; do not commit workbooks, participant values, archives or parse dumps.
 
 ### Spreadsheet dependency maintenance
 
@@ -200,17 +206,17 @@ ExcelJS 4.4.0 remains the export library and latest official stable release at t
 
 Dependabot is configured for pnpm through the `npm` ecosystem and for GitHub Actions, with weekly Monday checks at 06:00 Europe/Berlin and PR limits of five and three. React packages and Vitest/coverage update together; build/lint major migrations have separate groups. Automatic merging is not configured. Review dependency PRs with frozen installation and both Linux/Windows quality jobs.
 
-The repository's dependency graph, vulnerability alerts and security updates were verified active during this refresh. The maintainer merged [activation PR #16](https://github.com/andrekuehne/stundenlauf-ts/pull/16); actual npm and Actions update jobs succeeded. The genuine [generated PR #17](https://github.com/andrekuehne/stundenlauf-ts/pull/17) has a consistent manifest/lockfile and passes normal frozen installation and the full Linux/Windows quality gates, with accepted independent review. Its Node 26 types upgrade remains held as a draft because the selected runtime and types stay on Node 24. The final refresh configuration restores default-branch targeting and ignores only Node-types major updates until a coordinated runtime migration; its first scheduled run after merging the refresh remains a maintainer follow-up. SheetJS's pinned CDN release continues to use the manual procedure above.
+The repository's dependency graph, vulnerability alerts and security updates were verified active during this refresh. The maintainer merged [activation PR #16](https://github.com/andrekuehne/stundenlauf-ts/pull/16) and [refresh PR #15](https://github.com/andrekuehne/stundenlauf-ts/pull/15). Actual [October 5 npm](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37264034393) and [Actions](https://github.com/andrekuehne/stundenlauf-ts/actions/runs/37264034632) update jobs succeeded on main with default-branch targeting; the npm log confirms the Node-types major ignore. The genuine [generated PR #17](https://github.com/andrekuehne/stundenlauf-ts/pull/17) passed frozen installation and Linux/Windows quality checks and supplied independently accepted automation evidence. It was closed unmerged on 2026-10-17 because its Node 26 types proposal does not match the selected Node 24 runtime. SheetJS's pinned CDN release continues to use the manual procedure above.
 
 The inspected main ruleset prevents deletion and force pushes; it does not currently enforce required status checks. Reviewers must confirm both quality jobs pass before merging. The refresh preserves the existing branch policy.
 
 The [workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records full and production audits and the remaining ExcelJS → UUID 8.3.2 moderate advisory. That residual has a reviewed applicability decision, owner and review triggers; audit commands may still report it. TypeScript 7 remains deferred because typescript-eslint 8.71.0 supports compiler versions below 6.1. Reassess that holdback when upstream support changes.
 
-Dependabot's three-day cooldown can reject newly reviewed versions already present in the lockfile during an unrelated update. The temporary `minimumReleaseAgeExclude` entries in `pnpm-workspace.yaml` name only exact reviewed releases; future versions remain subject to that cooldown. Remove these entries after 2026-10-06 14:14 UTC, when every listed release is older than three days. Node-types major updates require a coordinated runtime-major review; their minor and patch updates remain enabled.
+The 40 temporary `minimumReleaseAgeExclude` entries were removed on 2026-10-17 after their October 6 maturity deadline. Pinned pnpm passes the complete warm update/install/frozen sequence with the three-day gate and unchanged dependency/lockfile bytes. Node-types major updates still require a coordinated runtime-major review; their minor and patch updates remain enabled.
 
 The reviewed `.pnpmfile.cjs` hook preserves the official SheetJS 0.20.3 checksum when pnpm 10 drops remote-tarball integrity during a warm lockfile-only update. It restores only that exact artifact's missing checksum and rejects conflicting URL, version or hash metadata. A SheetJS update must revalidate the official archive and update this pin as part of the same reviewed change. After changing the hook, run `pnpm install --lockfile-only` to refresh `pnpmfileChecksum`, then verify frozen installation and the full quality gates. Remove the workaround only after a supported pnpm release preserves integrity through the complete warm update/install sequence; track [the upstream defect](https://github.com/pnpm/pnpm/issues/14351).
 
-Organizer workbooks, agreed reference outcomes, an existing season archive, and Windows Excel/Linux LibreOffice application acceptance are tracked separately as **WP-12: Awaiting Fixtures**. The automated Linux/Windows browser checks use synthetic inputs.
+WP-12 now uses ten private organizer workbooks. Its independent source/ranking checks, actual LibreOffice evidence, fixes and remaining Windows Excel acceptance are recorded in the [workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) and [manual checklist](docs/validation/organizer-acceptance.md). The generated season is a documented QA matching scenario, not organizer-approved final results. Historical archive compatibility is outside the user-approved scope. Hosted Linux/Windows browser checks continue to use synthetic inputs.
 
 ## Technology Stack
 
