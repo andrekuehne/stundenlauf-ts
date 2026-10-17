@@ -2,7 +2,7 @@
 
 Static-site TypeScript/React port of the Stundenlauf race-series management app. Runs entirely in the browser without an application backend. Season data lives in browser-local IndexedDB; backups are `.stundenlauf-season.zip` archives containing a manifest and event log.
 
-See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the vision, requirements and milestone roadmap. The [dependency and platform refresh workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records selected versions, independent reviews, Linux/Windows checks, advisory decisions and pending external acceptance.
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the vision, requirements and milestone roadmap. The [dependency and platform refresh workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) records selected versions, independent reviews, Linux/Windows checks, advisory decisions and scoped desktop acceptance.
 
 ## Kurzer Überblick: Ablauf in der Oberfläche
 
@@ -192,7 +192,7 @@ Optional Vitest integration tests for the same tree independently compare source
 pnpm exec vitest run tests/ingestion/local-excel-examples.test.ts tests/ingestion/local-organizer-acceptance.test.ts
 ```
 
-These checks skip without matching private files. Their QA matching policy and the remaining Windows Excel checklist are described in [organizer acceptance](docs/validation/organizer-acceptance.md). Private acceptance outputs belong under ignored `.local/organizer-acceptance/`; do not commit workbooks, participant values, archives or parse dumps.
+These checks skip without matching private files. Their QA matching policy, recorded Windows Excel acceptance and reusable checklist are described in [organizer acceptance](docs/validation/organizer-acceptance.md). Private acceptance outputs belong under ignored `.local/organizer-acceptance/`; do not commit workbooks, participant values, archives or parse dumps.
 
 ### Spreadsheet dependency maintenance
 
@@ -216,7 +216,7 @@ The 40 temporary `minimumReleaseAgeExclude` entries were removed on 2026-10-17 a
 
 The reviewed `.pnpmfile.cjs` hook preserves the official SheetJS 0.20.3 checksum when pnpm 10 drops remote-tarball integrity during a warm lockfile-only update. It restores only that exact artifact's missing checksum and rejects conflicting URL, version or hash metadata. A SheetJS update must revalidate the official archive and update this pin as part of the same reviewed change. After changing the hook, run `pnpm install --lockfile-only` to refresh `pnpmfileChecksum`, then verify frozen installation and the full quality gates. Remove the workaround only after a supported pnpm release preserves integrity through the complete warm update/install sequence; track [the upstream defect](https://github.com/pnpm/pnpm/issues/14351).
 
-WP-12 now uses ten private organizer workbooks. Its independent source/ranking checks, actual LibreOffice evidence, fixes and remaining Windows Excel acceptance are recorded in the [workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) and [manual checklist](docs/validation/organizer-acceptance.md). The generated season is a documented QA matching scenario, not organizer-approved final results. Historical archive compatibility is outside the user-approved scope. Hosted Linux/Windows browser checks continue to use synthetic inputs.
+WP-12 uses ten private organizer workbooks. Its independent source/ranking checks, actual LibreOffice evidence, fixes and user-reported Windows Excel PASS are recorded in the [workplan](docs/workplans/2026-10-dependency-and-platform-refresh.md) and [acceptance record](docs/validation/organizer-acceptance.md). The owner accepts expected club clipping and the dedicated PDFs as the result-printing path; direct printing of the wide results XLSX remains unsuitable. Physical printing was not tested. The generated season remains a documented QA matching scenario without organizer-approved identities or final standings. Historical archive compatibility is outside the user-approved scope. Hosted Linux/Windows browser checks continue to use synthetic inputs.
 
 ## Technology Stack
 
