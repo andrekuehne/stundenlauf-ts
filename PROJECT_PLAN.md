@@ -101,6 +101,7 @@ Features are prefixed `F-TS` to distinguish from the Python version's `F` prefix
 | F-TS11c | Core read workflows on live data | M-TS5 | Planned |
 | F-TS11d | Import wizard and review workflow | M-TS5 | Planned |
 | F-TS11e | Live cutover, exports, and polish | M-TS5 | Planned |
+| F-TS12 | Participant gender correction and category move (corrections add-on) | post M-TS5 | Planned |
 
 ## Hardening Inventory
 
@@ -211,6 +212,7 @@ TS version: UI components call domain functions directly. No serialization bound
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-11-01 | F-TS12 feature plan created | Planned post-import correction for participants listed in the wrong gendered section: gender on `person.corrected`, new `entry.moved` event, target-category name matching reusing the import resolver, and an atomic corrections-table move/merge command |
 | 2026-10-03 | Dependency and Linux/Windows platform refresh | WP-00 through WP-11 complete with accepted independent reviews: shared Node/pnpm pins, canonical configs, refreshed dependency families, passing OS quality/browser checks and verified Dependabot job/generated-PR operation. Organizer/desktop acceptance remains WP-12: Awaiting Fixtures. |
 | 2026-04-15 | Added F-TS11a through F-TS11e frontend rewrite plan | Split the updated frontend brainstorm into a mock-first implementation roadmap with an explicit `AppApi` seam, staged live-data wiring, import workflow delivery, final cutover/polish milestones, clear folder-boundary rules for migration and cleanup, and an explicit initial reorg snapshot documenting the moved entry-layer files |
 | 2026-04-14 | F-TS09 implementation completed | Added GitHub Pages CI/CD workflow (`.github/workflows/ts-deploy.yml`), Vite base path + PWA Workbox setup, manifest/meta/install icons, prompt-based SW update UX, hash routing compatibility, and build-time git version injection for deploy-ready PWA distribution |
